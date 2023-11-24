@@ -2,9 +2,16 @@ From mathcomp Require Import all_ssreflect finmap zify.
 Require Import Paco.paco.
 From Equations Require Import Equations.
 
+Notation Forall := List.Forall.
 
 Notation Forall2 := List.Forall2.
-Notation Forall := List.Forall.
+
+Inductive Forall3 {A B C : Type} (R : A -> B -> C -> Prop) : seq A -> seq B -> seq C ->  Prop :=
+    Forall3_nil : Forall3 R [::] [::] [::]
+  | Forall3_cons : forall (x : A) (y : B) (z: C) (l : seq A) (l' : seq B) (l'' : seq C),
+                   R x y z -> Forall3 R l l' l'' -> Forall3 R (x :: l) (y :: l') (z::l'').
+Hint Constructors Forall3.
+
 Notation In := List.In.
 Let inE := (inE, eqxx,negb_or,negb_and).
 
