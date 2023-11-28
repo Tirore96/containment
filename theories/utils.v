@@ -611,8 +611,7 @@ Variant ApplyF {A B : Type} (fa : A -> A) (fb : B -> B) (R : A -> B  -> Prop) : 
 Lemma ApplyF_mon A B fa fb  : monotone2 (@ApplyF A B fa fb). 
 Proof. intro. intros. inv IN. con. eauto. Qed. 
 
-#[export] 
-Hint Resolve ApplyF_mon : paco.
+
 
 Variant ApplyF1 {A : Type} (f : A -> A) (R : A ->  Prop) : A  -> Prop :=
     Unf1_intro : forall (a : A), R (f a) -> ApplyF1 f R a.

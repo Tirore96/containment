@@ -1,0 +1,109 @@
+Containment proofs can be reduced to showing there exists a coercion from one type to the other.
+Should this coercion be written in gallina or DSL?
+The difference is Gallina allows coerions that does not preserve the underlying string, which is bad.
+For any bad coercion, there exists a good coercion interpreted from our DSL, so we do not lack expressivity in proving containments from coercions
+Could make sense from a usability point of view. The dsl is awkward to program in
+
+Coercive subtyping vs subsubptive subtyping:
+Subsumptive way destroys canonicity, bad for subtyping in type theory. Not relevant for our application
+Coercive approach is good for effeciency, for a typing s : T, we can always retrieve string by flatten(s). 
+This is not the case for subsumptive way, s : T is weaker, it means exists T', T <= T for which s : T (without use of subsumption rule), to retrieve s, we must determine T', traversing the derivation of s : T, flatten(s) is no longer linear
+
+Is this in any way related to mailbox programming: specifying the inbox by a regular expression?
+
+
+From induxctive to coinductive dsl:
+Benefit of no exotic terms.
+Being mixed inductive/coinductive, termination of interpretation can be shown by induction.
+Inconvenient as a programming language. Possibly ineffecient for decision procedure certifying containment with coercion 
+Can be related to inductive syntax ala unraveling if necessary
+
+Inductive syntax uses binders from autosubst disallowing intrinsically typed terms, 
+would complicate interpretation, as a proof of well-typedness must be interpeted to coerion.
+By the fix rule, the typing rule would necessarily be coinductive (or inductive with explicit visited list maybe?) 
+Intrinsic typing allows stating the coercion system faithfully to Henglein & Nielsen,
+reordering their judgment c : E <= F, to E <= F ~> c, let's us compactly state the judgment simply as
+P c, where (c : dsl E F).
+
+Hmmm.
+The coercion system is a type system, but we use intrinsic typing, so why do we care about the coercion system?
+Our dsl is our coercion system
+
+Accidentally implemented equi-recursion by translating star to list without any fold/unfold operations.
+Although parse trees become smaller, matching them to their regular expressions can involve backtracking
+since sum rules can be confused with fold
+Actually there is not confusion with sum rules because proof terms inl T and cons a T are distinct, but
+it lets us express the empty string as nil and tt, which is bad. Why is it important we avoid this?
+
+Shallow vs deep embedding of regex as types
+The shallow approach of as_type(r) has reached it's limit, cannot compute the size of a parse_tree 
+because it is not an inductive definition.
+Replace as_type(r) with (T : treeOf r), solving the issue
+
+Intrsinsically typed dsl vs coercion system:
+The coercion system restricts the shape of the dsl, otherwise using fx counters, the dsl itself might
+be too expressive. What's an example of a program that's not derivable in coercion system?
+There is no example, I have proved that all programs can be derived.
+The coercion system is defined with paco, which disallows the judgment from living in Type.
+Using Coq's Coinductive directive instead and switching from Prop to Type, directly yields our intrinsicially typed dsl
+
+Summation in equivalence rules:
+Summation not necessary, should be removed
+
+Why is intrinsic typing of dsl and parse trees important:
+DSL programs are restricted to well-typed, making interpretation a total function on dsls
+Using extrinsic typnig, the interpretation would be on a derivation of the dsl.
+Derivation would need to be in Type.
+We used both representations, extrinsic gave us the flexibility of writing a generator,
+This let us go from Match to pTree
+
+
+Soundness:
+Use this trick: https://coq.inria.fr/doc/V8.18.0/stdlib/Coq.Logic.ConstructiveEpsilon.html
+Maybe it doesn't work, it turns H : exists a, P a into {a | P a} type, we want to turn (H : Match s r) into (H' : parse R)
+
+Alternative to constructive epsilon is to state Match in Type:
+Explored this in syntax2.v
+Got to coinductive characterization implies match equivalence, cannot destruct coinductive, it goes Prop,
+if functor for gfp goes to Type, then universe inconsistency. This does not happen when using Coinductive to take fixpoint, only happens for paco fixpoint, which requires Type index to increase. Using coinductive directive that is not necessary. 
+Can paco because used to take the gfp of a functor on Type?
+Extrinsic typing is just doing the same thing thing in two steps, mapping each typing constructor 
+to dsl constructor, allowing us to divorce syntax from meaningful programs.
+
+
+Paper note:
+A section discussing whether Match should be in Type or in Prop
+
+
+Side idea:
+Scoped de brujin captures openess of a term, could something similar be used for contractiveness?
+
+
+
+Why do we need DSL?
+Showing containment proofs corresponds to a trace-preserving 
+gallina function on parse trees (indexed by regular expressions) is very quick.
+This would be a characterization of containment with a single rule (f : [r] -> [r']) and (forall s, flat(s) = flat (f s))
+We defined encode/decode functions betwen Match derivation and pTrees, so by completeness, f always exists 
+when a containment is derivable. Decode has no practical use because it is terribly slow (encode is linear).
+The point of the DSL is to synthesise effecient functions, by translating the coinductive proof steps
+directly into a function, with use of decode!
+Can a coinductive proof tree be translated to a typed dsl, or even directly interpreted?
+
+extrinsically typed DSL:
+Will be necessary for effeciently building DSL. Going from Prop to Type is computationally expensive, large search space,
+Building coinductive DSL requires going through Prop, (unless we define Functor without paco, going to Type and decide membership in ot
+
+Cannot find single argument for why we should use inductive dsl, it is not more effecient, we use inductive in session types because we need decidable equivalence
+
+Interpretation:
+Interpreting using as_types was easy, Coq understands the input type,
+When using pTree r, pattern matching forgets this information, and we get unreachable cases,
+using dependent destruction we can define intepretaitons interactively, but proof terms are huge (not effecient)
+
+Intrinsic parse trees:
+Being indexed by types, such as (p_inl r0 r1 p) they are not space effecient. Will not work when we go to bitcodings.
+Instead have extrinsic parse trees and intrinsic dsl.
+A main lemma is then forall (d : dsl r0 r1), with (interp p ) : upTree -> upTree, 
+then typing p r0 -> typing (interp d p) r1  
+

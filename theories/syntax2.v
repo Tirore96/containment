@@ -3,10 +3,10 @@ From HB Require Import structures.
 
 From mathcomp Require Import all_ssreflect zify.
 From deriving Require Import deriving. 
+Require Import Relation_Definitions Setoid.
+
 Require Import Paco.paco.
 Require Import Coq.btauto.Btauto.
-Require Import ConstructiveEpsilon.
-
 From Containment Require Import  utils.
 
 Check Fix.
@@ -90,7 +90,7 @@ where "s \\ c" := (trace_derive s c).
 
 
 (*Reserved Notation "s (:) re" (at level 63).*)
-Inductive Match : trace -> regex -> Prop :=
+Inductive Match : trace -> regex -> Type :=
   | MEps : Match [::]  Eps
   | MEvent x : Match [::x] (Event x)
   | MSeq s1 c1 s2 c2 :
@@ -121,16 +121,16 @@ Proof.
 move => s0 s1 c s HM0 HM1 Heq;subst. eauto.
 Qed.
 
-Definition equiv (r0 r1: regex) := forall s, Match s r0 <-> Match s r1.
+Definition equiv (r0 r1: regex) := forall s, (Match s r0 -> Match s r1)*(Match s r1 -> Match s r0).
 
 Lemma seq_Eps : forall c, equiv (Eps _;_ c) c.
 Proof.
-move=> c s;split;intros. inversion H. inversion H3; subst. now simpl. by  apply/MSeq2;eauto.
+move=> c s;split;intros. inversion X. inversion X0; subst. now simpl. by  apply/MSeq2;eauto.
 Qed. 
 
 Lemma seq_Empt : forall c, equiv (Empt _;_ c) Empt.
 Proof.
-move=> c s;split;intros. inversion H. inversion H3. inversion H.
+move=> c s;split;intros. inversion X. inversion X0. inversion X.
 Qed.
 
 Hint Resolve seq_Eps seq_Empt.
@@ -195,19 +195,19 @@ Qed.
 Lemma Match_nil_nu : forall (c : regex), nu c  -> Match [::] c.
 Proof.
 intros;induction c; simpl in H ; try discriminate; auto.
-- case: (orP H). move/IHc1;eauto. move/IHc2;eauto.
-- case: (andP H). move=>/IHc1 HH0 /IHc2 HH1. apply/MSeq2;eauto.
+- destruct (nu c1) eqn:Heqn; ssa.
+- destruct (nu c1) eqn:Heq;ssa. apply/MSeq2. eauto. eauto. done.
 Qed.
 
 
 
-Lemma Match_nil_seq: forall c0 c1, Match nil (Seq c0 c1) -> Match nil c0 /\ Match nil c1.
+Lemma Match_nil_seq: forall c0 c1, Match nil (Seq c0 c1) -> (Match nil c0 * Match nil c1).
 Proof.
 move=> c0 c1 HM. inversion HM;subst. 
 destruct s1;ssa. destruct s2;ssa.
 Qed.
 
-Lemma nuP : forall c, nu c <-> Match [::] c.
+Lemma nuP : forall c, (nu c -> Match [::] c) * ( Match [::] c -> nu c) .
 Proof.
 move=> c. con;first by apply/Match_nil_nu=>//.
 elim: c=>//=. move=> HM. inv HM. move=> s HM. inv HM.
@@ -216,26 +216,32 @@ move=> r IH r0 IH2 HM. apply/andP.
 move/Match_nil_seq: HM=>[]. eauto.
 Qed.
 
+Lemma nuP1 : forall c, (nu c -> Match [::] c). 
+Proof. intros. case: (nuP c);eauto. Qed.
+
+Lemma nuP2 : forall c, (Match [::] c -> nu c). 
+Proof. intros. case: (nuP c);eauto. Qed.
+
 
 (*This direction with longer trace on the right because of induction step on trace*)
 Lemma Match_matchb : forall (c : regex)(e : A)(s : trace), Match s (e \ c)-> Match (e::s) c.
 Proof.
-induction c;intros; simpl in*; try solve [inversion H].
-- move: H. case Hcase:(_==_)=>// HM. rewrite (eqP Hcase).
+induction c;intros; simpl in*; try solve [inversion X].
+- move: X. case Hcase:(_==_)=>// HM. rewrite (eqP Hcase).
   inv HM;auto. inv HM.
-- inv H;eauto.
+- inv X;eauto.
 - destruct (nu c1) eqn:Heqn.
-  * inv H.
-    ** inv H2. apply/MSeq2;eauto.
+  * inv X.
+    ** inv X0. apply/MSeq2;eauto.
     ** apply/MSeq2. apply/Match_nil_nu=>//. eauto. done.
-  * inv H. apply/MSeq2. eauto. eauto. done.
-- inversion H. apply/MStar2;eauto.
+  * inv X. apply/MSeq2. eauto. eauto. done.
+- inversion X. apply/MStar2;eauto.
 Qed.
 
 
 
 
-Theorem  matchbP: forall (c : regex)(s : trace), Match s c <-> matchb s c. 
+Theorem  matchbP: forall (c : regex)(s : trace), (Match s c -> matchb s c) *   (matchb s c -> Match s c) . 
 Proof.
 move=> c s. rewrite /matchb.
 split;first by apply/Match_i_matchb=>//.
@@ -243,10 +249,25 @@ elim: s c=>//;first by move=> c /Match_nil_nu=>//.
 move=> a l IH c /=. move/IH/Match_matchb=>//.
 Qed.
 
-Lemma deriveP : forall (c : regex)(e : A)(s : trace), Match (e::s) c <-> Match s (e \ c).
+Theorem  matchbP1: forall (c : regex)(s : trace), (Match s c -> matchb s c).   
+Proof.  intros. case: (matchbP c s)=>//. eauto. Qed.
+
+Theorem  matchbP2: forall (c : regex)(s : trace), (matchb s c -> Match s c). 
+Proof. intros. case: (matchbP c s)=>//. eauto. Qed.
+
+(*Inconvenient I cannot rewrite*)
+Lemma deriveP : forall (c : regex)(e : A)(s : trace), (Match (e::s) c -> Match s (e \ c)) *  ( Match s (e \ c) -> Match (e::s) c) .
 Proof.
-by move=> c e s; rewrite !matchbP.
+move=> c e s. con;intros. 
+apply/((matchbP _ _).2). move/((matchbP _ _).1) : X=>//.
+apply/((matchbP _ _).2). move/((matchbP _ _).1) : X=>//.
 Qed.
+
+Lemma deriveP1 : forall (c : regex)(e : A)(s : trace), (Match (e::s) c -> Match s (e \ c)).
+Proof. intros. case: (deriveP c e s)=>//. eauto. Qed.
+
+Lemma deriveP2 : forall (c : regex)(e : A)(s : trace), ( Match s (e \ c) -> Match (e::s) c) .
+Proof. intros. case: (deriveP c e s)=>//. eauto. Qed.
 
 
 Section Equivalence.
@@ -277,7 +298,10 @@ Inductive c_eq : regex -> regex -> Prop :=
 | c_plus_ctx c0 c0' c1 c1' (H1 : c0 =R=c0') (H2 : c1 =R=c1') : c0 _+_ c1 =R=c0' _+_ c1'
 | c_seq_ctx c0 c0' c1 c1' (H1 : c0 =R=c0') (H2 : c1 =R=c1') : c0 _;_ c1 =R=c0' _;_ c1'
 | c_star_ctx c0 c1 (H : c0 =R=c1) : Star c0 =R= Star c1  (*new context rule*) 
-| c_fix a c0 c1 : co_eq c0 c1 ->  Event a _;_ c0 =R= Event a _;_ c1
+| c_fix (l0 l1 : seq (A * regex)) : Forall2 (fun x y => x.1 = y.1) l0 l1 -> Forall2 (fun r0 r1 => co_eq r0.2 r1.2) l0 l1 ->
+                                    \big[Plus/Empt]_(i <- l0) ((Event i.1) _;_ i.2) =R=  
+                                    \big[Plus/Empt]_(i <- l1) ((Event i.1) _;_ i.2)
+
  where "c1 =R= c2" := (c_eq c1 c2).
 End Equivalence.
 Hint Constructors c_eq.
@@ -288,6 +312,7 @@ Lemma c_eq_gen_mon: monotone2 c_eq.
 Proof.
 unfold monotone2.
 intros. induction IN; eauto. 
+apply/c_fix. done. elim: H0 LE;eauto.
 Qed.
 Hint Resolve c_eq_gen_mon : paco.
 
@@ -296,7 +321,6 @@ Notation "c0 = ( R ) = c1" := (c_eq R c0 c1)(at level 63).
 Definition EQ c0 c1 := paco2 c_eq bot2 c0 c1.
 Notation "c0 =C= c1" := (EQ c0 c1)(at level 63).
 
-Require Import Relation_Definitions Setoid.
 
 Add Parametric Relation R : regex (@c_eq R)
   reflexivity proved by (c_refl R)
@@ -345,9 +369,9 @@ Lemma c_eq_nu : forall R (c0 c1 : regex) , c0 =(R)= c1 -> nu c0 = nu c1.
 Proof. 
 intros. induction H; simpl; auto with bool; try btauto.
 all : try (rewrite IHc_eq1; rewrite IHc_eq2; auto).
-(*clear H.
+clear H.
 elim: H0=>//. move=> x y l l' R' Hfor IH.
-rewrite !big_cons //=.*)
+rewrite !big_cons //=.
 Qed.
 
 Lemma co_eq_nu : forall (c0 c1 : regex) , c0 =C= c1 -> nu c0 = nu c1.
@@ -407,7 +431,7 @@ Qed.
 Let eqs :=   (eqs_aux,o_plus,o_seq).
 
 
-(*Lemma c_fix_derive : forall l0 l1 R e,
+Lemma c_fix_derive : forall l0 l1 R e,
                                  Forall2 (fun x y => x.1 = y.1) l0 l1 -> Forall2 (fun r0 r1 => r0.2 =(R)= r1.2) l0 l1 ->
                                   e \ \big[Plus/Empt]_(i <- l0) ((Event i.1) _;_ i.2) =(R)= 
                                   e \  \big[Plus/Empt]_(i <- l1) ((Event i.1) _;_ i.2).
@@ -419,7 +443,7 @@ move=> x y l l' Hlab Hfor IH /Forall2_cons [] HR Hfor' e.
 rewrite !big_cons /= Hlab. case Hcase:(_==_)=>//.
 rewrite !eqs. apply/c_plus_ctx=>//. apply/IH. done.
 rewrite !eqs. apply/IH. done.
-Qed.*)
+Qed.
 
 Ltac eq_m_left := repeat rewrite c_plus_assoc; apply c_plus_ctx;
                   auto.
@@ -441,20 +465,26 @@ intros. pfold. punfold H. induction H; try solve [ simpl; rewrite ?eqs;eauto] .
 - rewrite /=. 
   have: nu c0 = nu c0' by apply/c_eq_nu; eauto. move=>->.
   case Hcase:(nu _)=>//=. eauto.  eauto. 
-- rewrite /=. case Hcase: (_==_)=>//. rewrite !eqs //. case: H=>//=>H'. pfold_reverse.
-  rewrite !eqs //.
-(*econ.
-apply c_fix_derive. done. clear H. elim: H0. done. move=> x y l l' [] // HC Hfor Hfor'. con. punfold HC. 
-  done.*)
+- apply c_fix_derive. done. clear H. elim: H0. done. move=> x y l l' [] // HC Hfor Hfor'. con. punfold HC. 
+  done.
 Qed.
 
+Set Printing Universes.
+Inductive bisimilarity_gen bisim : regex -> regex -> Type :=
+ bisimilarity_con c0 c1 (H0: forall e, bisim (e \ c0) (e \ c1) : Type ) (H1: nu c0 == nu c1 : Type) : bisimilarity_gen bisim c0 c1.
 
-Inductive bisimilarity_gen bisim : regex -> regex -> Prop :=
- bisimilarity_con c0 c1 (H0: forall e, bisim (e \ c0) (e \ c1) : Prop ) (H1: nu c0 = nu c1) : bisimilarity_gen bisim c0 c1.
 
+Inductive bot2T {A : Type} : A -> A -> Set :=.
 
+CoInductive Testt : regex -> regex -> Type := 
+| TT r0 r1 : bisimilarity_gen Testt r0 r1 -> Testt r0 r1.
+Check paco2. Check bisimilarity_gen.
 
-Definition Bisimilarity c0 c1 := paco2 bisimilarity_gen bot2 c0 c1.
+Check paco2.
+
+Inductive SomeF rel : nat -> nat -> Type := Con n0 n1 : rel n0 n1 -> SomeF rel n0 n1.
+
+Definition Bisimilarity := paco2 SomeF.
 Hint Unfold  Bisimilarity : core.
 
 Lemma bisimilarity_gen_mon: monotone2 bisimilarity_gen. 
@@ -464,17 +494,21 @@ auto. inversion IN. auto.
 Qed.
 Hint Resolve bisimilarity_gen_mon : paco.
 
-Definition equiv_r (r0 r1 : regex) := forall s, Match s r0 <-> Match s r1.
+(*Print equiv.
+Definition equiv_r (r0 r1 : regex) := forall s, Match s r0 <-> Match s r1.*)
 
-Theorem equiv_r1 : forall c0 c1, equiv_r c0 c1 -> Bisimilarity c0 c1.
+Theorem equiv_r1 : forall c0 c1, equiv c0 c1 -> Bisimilarity c0 c1.
 Proof.
 pcofix CIH. intros. pfold. constructor.
-- intros. right. apply CIH.  rewrite /equiv_r. move=> s.  rewrite -!deriveP. eauto.
-  move: (H0 nil). rewrite !matchbP /matchb /=. 
-  move/eq_iff=>->//.
+- intros. right. apply CIH.  intro. con. move/deriveP2=>HH =>/=. apply/deriveP1. 
+  edestruct X. eauto.
+  move/deriveP2=>HH =>/=. apply/deriveP1. 
+  edestruct X. eauto.
+  apply/eq_iff. con. move/nuP1=>HH. apply/nuP2. 
+  edestruct X. eauto. move/nuP1=>HH. apply/nuP2. edestruct X. eauto.
 Qed.
 
-Theorem equiv_r2 : forall c0 c1, Bisimilarity c0 c1 -> equiv_r c0 c1. 
+Theorem equiv_r2 : forall c0 c1, Bisimilarity c0 c1 -> equiv c0 c1. 
 Proof.
 move=> c0 c1 HC s. 
 elim: s c0 c1 HC.
@@ -641,9 +675,11 @@ suff:    \big[Plus/Empt]_a (Event a _;_ a \ c0) = (upaco2 c_eq r)=
   \big[Plus/Empt]_a (Event a _;_ a \ c1). move=> HH.
  case Hcase:(nu _)=>//. eq_m_left. eq_m_left.
 rewrite !big_shape.
-move: (index_enum _)=>ef. elim: ef=>//.
-move=> a l HQ/=. rewrite !big_cons. apply/c_plus_ctx=>//.
-apply/c_fix=>/=. right. apply/CIH. case: (H1 a)=>//.
+apply/c_fix.
+elim: (index_enum A). done. 
+move=> a l IH /=. con. done. done. 
+elim: (index_enum A)=>/=. done. 
+move=> a l IH. con. right. apply/CIH=>/=. move: (H1 a). case=>//. done.
 Qed.
 
 Theorem soundness : forall c0 c1, c0 =C= c1 -> (forall s, Match s c0 <-> Match s c1).
@@ -658,252 +694,6 @@ Qed.
 
 End Equivalence_Properties.
 
-Section parseTrees.
-
-Inductive upTree : Type := 
-| up_tt : upTree
-| up_singl (a : A) : upTree
-| up_inl : upTree -> upTree
-| up_inr  : upTree -> upTree
-| up_pair  : upTree -> upTree -> upTree
-| up_fold : upTree  -> upTree.
-
-Definition upTree_indDef := [indDef for upTree_rect].
-Canonical upTree_indType := IndType upTree upTree_indDef.
-
-Definition upTree_hasDecEq := [derive hasDecEq for upTree].
-HB.instance Definition _ := upTree_hasDecEq.
-
-
-Inductive typing : upTree -> regex  -> Type := 
-| pt_tt : typing up_tt Eps 
-| pt_singl a : typing (up_singl a) (Event a)
-| pt_inl  r0 r1 p : typing p r0 -> typing (up_inl p) (r0 _+_ r1)
-| pt_inr r0 r1 p : typing p r1 -> typing (up_inr p) (r0 _+_ r1)
-| pt_pair r0 r1 p0 p1  : typing p0 r0 -> typing p1 r1 -> typing (up_pair p0 p1) (r0 _;_ r1)
-| pt_fold r p : typing p (Eps _+_ (r _;_ (Star r))) -> typing (up_fold p) (Star r).
-Hint Constructors typing.
-
-Arguments pt_inl {r0 r1 p}.
-Arguments pt_inr {r0 r1 p}.
-Arguments pt_pair {r0 r1 p0 p1}.
-Arguments pt_fold {r p}.
-
-
-Fixpoint typingb (p : upTree) (r : regex) := 
-match p with
-| up_tt => r == Eps 
-| up_singl a => r == (Event a)
-| up_inl p0 => if r is Plus r0 _ then typingb p0 r0 else false 
-| up_inr p0 => if r is Plus _ r1 then typingb p0 r1 else false 
-| up_pair p0 p1 => if r is Seq r0 r1 then (typingb p0 r0) && (typingb p1 r1) else false 
-| up_fold p => if r is Star r0 then typingb p  (Eps _+_ (r0 _;_ (Star r0))) else false
-end.
-
-Lemma typingP1 : forall p r, typingb p r -> typing p r.
-Proof.
-elim=>//.
-- case=>//. 
-- move=>a.  case=>// s //=. move/eqP=>->. done.
-- move=> u IH r /=. destruct r;ssa.
-- move=> u IH r. destruct r;ssa.
-- move=> u IH u0 IH2 r /=. destruct r;ssa.
-- move=> u IH r /=. destruct r;ssa. 
-Qed.
-
-Lemma typingP2 : forall p r, typing p r -> typingb p r.
-Proof.
-move => p r. elim=>//.
-- move=> a. simpl. done.
-- intros. simpl. ssa.
-Qed.
-
-
-
-Inductive pTree : regex -> Type := 
-| p_tt : pTree Eps 
-| p_singl a : pTree (Event a)
-| p_inl r0 r1 : pTree r0 -> pTree (r0 _+_ r1) 
-| p_inr r0 r1 : pTree r1 -> pTree (r0 _+_ r1) 
-| p_pair r0 r1 : pTree r0 -> pTree r1 -> pTree (r0 _;_ r1)
-| p_fold r : pTree (Eps _+_ (r _;_ (Star r))) -> pTree (Star r).
-Arguments p_inl {r0 r1}.
-Arguments p_inr {r0 r1}.
-Arguments p_pair {r0 r1}.
-Arguments p_fold {r}.
-
-
-Fixpoint to_upTree {r : regex} (p : pTree r) : upTree := 
-match p with 
-| p_tt => up_tt
-| p_singl a => up_singl a 
-| p_inl _ _ p => up_inl (to_upTree p) 
-| p_inr _ _ p => up_inr (to_upTree p)
-| p_pair _ _ p0 p1 => up_pair (to_upTree p0) (to_upTree p1)
-| p_fold _ p' => up_fold (to_upTree p')
-end.
-
-Lemma typing_to_upTree : forall r (x : pTree r), typing (to_upTree x) r.
-Proof.
-move=> r. elim=>//=;eauto.
-Qed.
-
-
-Fixpoint to_pTree {p : upTree} {r : regex} (H : typing p r) : pTree r := 
-match H in typing p r return pTree r  with 
-| pt_tt => p_tt
-| pt_singl a => p_singl a 
-| pt_inl _ _ _ p => p_inl (to_pTree p) 
-| pt_inr _ _ _ p => p_inr (to_pTree p)
-| pt_pair _ _ _ _ p0 p1 => p_pair (to_pTree p0) (to_pTree p1)
-| pt_fold _ _ p' => p_fold (to_pTree p')
-end.
-
-
-Fixpoint flatten {r : regex} (T : pTree r) : seq A := 
-match T with 
-| p_tt => nil 
-| p_singl a => (a :: nil )
-| p_inl _ _ T' => flatten T'
-| p_inr _ _ T' => flatten T'
-| p_pair _ _ T0 T1 => (flatten T0) ++ (flatten T1)
-| p_fold _ T' => flatten T' 
-end.
-
-Fixpoint uflatten (T : upTree) : seq A := 
-match T with 
-| up_tt => nil 
-| up_singl a => (a :: nil )
-| up_inl T' => uflatten T'
-| up_inr T' => uflatten T'
-| up_pair T0 T1 => (uflatten T0) ++ (uflatten T1)
-| up_fold T' => uflatten T' 
-end.
-
-Lemma uflatten_to_upTree : forall r (x : pTree r),  uflatten (to_upTree x) = flatten x.
-Proof.
-move=> r. elim=>//=.
-move=> r0 r1 p Hf p0 Hf1. rewrite Hf Hf1 //.
-Qed.
-
-Lemma flatten_to_pTree : forall r (x : upTree) (H: typing x r), flatten (to_pTree H) = uflatten x.
-Proof.
-move=> r x. elim=>//=;eauto;intros.
-rewrite H H0. done.
-Qed.
-
-
-
-Definition genF (l : seq upTree) :=
-  (up_tt::(map up_singl (index_enum A)))++
-  (map up_inl l)++
-  (map up_inr l)++
-  (map (fun p => up_pair p.1 p.2) (compose l l pair))++
-  (map up_fold l).
-
-Fixpoint gen_upTree (n : nat) := 
-if n is n'.+1 then let l:=(gen_upTree n') in l++(genF l) else nil.
-
-Lemma in_gen_upTree_plus : forall (i n : nat) T, T \in gen_upTree n -> T \in gen_upTree (i + n).
-Proof.
-elim=>//.
-move=> n IH n0 T Hin /=. rewrite mem_cat IH //.
-Qed.
-
-Lemma in_gen_upTree_le : forall (n n' : nat) T, n <= n' -> T \in gen_upTree n -> T \in gen_upTree n'.
-Proof.
-intros.
-have : exists n'', n' = n + n''. clear H0. elim:  n n' H=>//. move=> n'  _. exists n'.    done. 
-move=> n IH n' Hl. destruct n'. done.
-have : n <= n' by lia. move/IH. case. move=> x Hin. exists x. rewrite Hin //.  
-case=> x Heq. subst. rewrite addnC. apply/in_gen_upTree_plus. done.
-Qed.
-
-Lemma in_gen_upTree : forall (T : upTree), exists n, T \in gen_upTree n.
-Proof.
-elim=>//.
-- exists 1. rewrite /= /genF //= !inE.
-- exists 1. rewrite /= /genF //= !inE. apply/orP. right. rewrite mem_cat. apply/orP. left.
-  apply/map_f. apply/mem_index_enum.
-- move=> u [] x Hin. exists x.+1. rewrite /= mem_cat /genF /= !inE.
-  apply/orP. right. apply/orP. right.
-  rewrite !mem_cat. apply/orP. right.
-  apply/orP. left. apply/map_f. done.
-- move=> u [] x Hin. exists x.+1. rewrite /= mem_cat /genF /= !inE.
-  apply/orP. right. apply/orP. right.
-  rewrite !mem_cat. apply/orP. right.
-  apply/orP. right.  apply/orP. left. apply/map_f. done.
-- move=> u [] x Hin u' [] x' Hin'. exists (x + x').+1.
-  rewrite /= mem_cat /genF /=. rewrite !inE. apply/orP. right.
-  rewrite !mem_cat. apply/orP. right. apply/orP. right.
-  apply/orP. right. apply/orP. right. apply/orP. left. 
-  apply/mapP. econ.  apply/mem_compose. apply/in_gen_upTree_le. 
-  2: {  apply/Hin. } lia. 
-  apply/in_gen_upTree_le. 2 : { apply/Hin'. } lia. done.
-- move=> u [] x Hin. exists x.+1. rewrite /= !mem_cat /genF /= !inE.
-  apply/orP. right. apply/orP. right. apply/orP. right.
-  apply/orP. right. apply/orP. right. apply/map_f. done.
-Qed.
-
-
-
-Lemma exists_pTree : forall r s, Match s r -> exists (T : pTree r), flatten T = s.
-Proof.
-move => r s. elim=>//;eauto.
-- exists p_tt. done.
-- move=> x. exists (p_singl x). done.
-- move=> s1 c1 s2 c2 HM [] x Hf HM2 [] x' Hf2. 
-  exists (p_pair x x')=>/=. f_equal=>//.
-- move=> s1 c1 c2 HM [] x Hf. exists (p_inl x). done.
-- move=> s1 c1 c2 HM [] x Hf. exists (p_inr x). done.
-- move => c. exists (p_fold (p_inl p_tt)). done.
-- move=> c s1 s2 HM [] x Hf HM2 [] x' Hf'. exists (p_fold (p_inr (p_pair x x')))=>/=. 
-  f_equal=>//.
-Qed.
-
-Lemma has_sig : forall (A : eqType) (f : A -> bool) (l :seq A), has f l -> { a | f a}.
-Proof.
-move => A' f. elim=>//.
-move=> a l H. rewrite /=. destruct (f a) eqn:Heqn. move=>_.  econ. eauto.
-simpl. eauto.
-Defined.
-
-Lemma Match_exists_n : forall s r, Match s r -> exists n, has (fun x => (typingb x r) && (uflatten x == s)) (gen_upTree n).  
-Proof.
-move=> s r HM. case: (exists_pTree r s HM)=> x Hf.
-case:(in_gen_upTree (to_upTree x))=> x0 Hin. exists x0.
-apply/hasP. exists (to_upTree x). done. apply/andP. con. apply/typingP2. apply/typing_to_upTree.
-rewrite uflatten_to_upTree. apply/eqP=>//.
-Qed.
-
-(*We use Constructive Epsilon library*)
-Lemma Match_sig_n : forall s r, Match s r -> { n | has (fun x => (typingb x r) && (uflatten x == s)) (gen_upTree n)}.  
-Proof.
-move=> s r HM.
-apply: constructive_indefinite_ground_description. instantiate (1 := id). instantiate (1:= id). done.
-move=> x. case Hcase: (has _ _)=>//. con. done. right. done.
-apply/Match_exists_n. done.
-Qed.
-
-Lemma Match_pTree : forall r s, Match s r -> { T : pTree r |  flatten T = s}.
-Proof.
-move => r s HM.
-move: (Match_sig_n s r HM)=>[]n. move/has_sig=>[] x.
-case Hcase: (typingb _ _)=>//=.
-move/typingP1 : Hcase=>Ht.
-move/eqP=>Hu. exists (to_pTree Ht). rewrite flatten_to_pTree. done.
-Qed.
-
-End parseTrees.
-Arguments p_inl {r0 r1}.
-Arguments p_inr {r0 r1}.
-Arguments p_pair {r0 r1}.
-Arguments p_fold {r}.
-
-Arguments pt_inl {r0 r1 p}.
-Arguments pt_inr {r0 r1 p}.
-Arguments pt_pair {r0 r1 p0 p1}.
-Arguments pt_fold {r p}.
 
 Section DSL.
 
@@ -989,7 +779,8 @@ CoInductive dsl_co : regex -> regex -> Type :=
 | Co_build A B : (dsl dsl_co) A B -> dsl_co A B.
 Arguments Co_build {A B}.
 
-(*Inductive star (A : Type) := 
+
+Inductive star (A : Type) := 
 fold_s : (unit + (A * (star A))) -> star A.
 Arguments fold_s {A}.
 Definition unfold_s (A : Type) : star A -> (unit + (A * (star A))) :=
@@ -1007,99 +798,53 @@ match r with
 | Plus r0 r1 => (as_type r0) + (as_type r1)
 | Seq r0 r1 => (as_type r0) * (as_type r1)
 | Star r0 => star (as_type r0)
-end.*)
+end. 
+Notation "c0 <T= c1" := ((as_type c0) -> (as_type c1))(at level 63).
+Notation "c0 <O= c1" := ((as_type c0) -> option (as_type c1))(at level 63).
 
-
-(*Fixpoint to_as_type {r : regex} (p : pTree r) : (as_type r) := 
-match p in pTree r return as_type r with 
-| p_tt => tt
-| p_singl a => build_single _ a
-| p_inl _ _ p0 => inl (to_as_type p0)
-| p_inr _ _ p1 => inr (to_as_type p1)
-| p_pair _ _ p0 p1 => pair (to_as_type p0) (to_as_type p1)
-| p_fold _ p0 => fold_s (to_as_type p0)
-end.
-
-Fixpoint from_as_type {r : regex} (p: as_type r) : pTree r := 
-match r as r' return match r withpTree r' with 
-| Eps => p_tt
-| Empt => match p with end
-| Event a => p_singl a
-| Plus p0 p1 => match p with | inl p0 => p_inl _ _ (from_as_type p0) | inr p1 => p_inr _ _ (from_as_type p1) end 
-| Seq p0 p1 => match p with | pair p0 p1 => p_pair _ _ (from_as_type p0) (from_as_type p1) end
-| Star p => match p with | fold_s p0 => p_fold _ (from_as_type p0) end 
-end.
-match p return pTree r with
-| tt => p_tt
-| build_single  =>  p_singl _
-| inl p0 =>  p_inl _ _ (from_as_type p0)
-| inr p1 =>  p_inr _ _ (from_as_type p1 )
-|pair p0 p1 =>  p_pair _ _ (from_as_type p0) (from_as_type p1)
-| fold_s p0 => p_fold _ (from_as_type p0)
-end.*)
-
-(*Notation "c0 <T= c1" := ((pTree c0) -> (pTree c1))(at level 63).
-Notation "c0 <O= c1" := ((pTree c0) -> option (pTree c1))(at level 63).*)
-
-(*Set Implicit Arguments.
-Set Maximal Implicit Insertion.*)
-(*Print pair.
-
-Print pTree.
-
-Check pTree_ind.
-
-Print p_tt.
-Check @p_inl.
-
-Check pTree_rect.
-Require Import Coq.Program.Equality.
-*)
-
-
-(*(A' _+_ B) _+_ C <T= A' _+_ (B _+_ C).*)
-Definition shuffle_i  : upTree -> option upTree := 
-fun  T => 
-match T with
-| up_inl (up_inl T') => Some (up_inl T')
-| up_inl (up_inr T') => Some (up_inr (up_inl T'))
-| up_inr T' => Some (up_inr (up_inr T'))
-| _ => None
-end.
-
-Definition shuffleinv_i  :  A _+_ (B _+_ C)  <T= (A _+_ B) _+_ C :=
+Set Implicit Arguments.
+Set Maximal Implicit Insertion.
+Definition shuffle_i A B C : (A _+_ B) _+_ C <T= A _+_ (B _+_ C) :=
 fun  T => 
 match T with 
-| up_inl T' => up_inl (up_inl T')
-| p_inr (up_inl T') => up_inl (p_inr T')
-| p_inr (p_inr T') => (p_inr T')
+| inl (inl T') => inl T'
+| inl (inr T') => inr (inl T')
+| inr T' => inr (inr T')
 end.
 
-Definition retag_i  : A _+_ B <T= B _+_ A :=
+Definition shuffleinv_i A B C :  A _+_ (B _+_ C)  <T= (A _+_ B) _+_ C :=
+fun  T => 
+match T with 
+| inl T' => inl (inl T')
+| inr (inl T') => inl (inr T')
+| inr (inr T') => (inr T')
+end.
+
+Definition retag_i A B : A _+_ B <T= B _+_ A :=
 fun T => 
 match T with 
-| p_inl T' => p_inr T' 
-| p_inr T' => p_inl T'
+| inl T' => inr T' 
+| inr T' => inl T'
 end. 
 
 Definition untagL_i A : Empt _+_ A <T= A :=
 fun T => 
 match T with 
-| p_inl T' => match T' with end 
-| p_inr T' => T' 
+| inl T' => match T' with end 
+| inr T' => T' 
 end.
 
 Definition untagLinv_i {A} : A <T= Empt _+_ A :=
-fun T => p_inr T.
+fun T => inr T.
 
 Definition untag_i A : A _+_ A <T= A :=
 fun T =>
 match T with 
-| p_inl T' => T'
-| p_inr T' => T'
+| inl T' => T'
+| inr T' => T'
 end.
 
-Definition tagL_i {A B} :  A <T= (A _+_ B ) := p_inl.
+Definition tagL_i {A B} :  A <T= (A _+_ B ) := inl.
 
 Definition assoc_i A B C : ((A _;_ B) _;_ C)<T=  (A _;_ (B _;_ C)) := 
 fun T => let: ((T0,T1),T2) := T in (T0,(T1,T2)).
@@ -1122,53 +867,53 @@ Definition abortLinv_i A : Empt <T=   (Empt _;_ A) := fun T => match T with end.
 Definition distL_i A B C : (A _;_ (B _+_ C)) <T= ((A _;_ B) _+_ (A _;_ C)) := 
 fun T => let: (T0,T1) := T in 
 match T1 with 
-| p_inl T' => p_inl (T0,T')
-| p_inr T' => p_inr (T0,T')
+| inl T' => inl (T0,T')
+| inr T' => inr (T0,T')
 end.
 Definition distLinv_i A B C :  ((A _;_ B) _+_ (A _;_ C)) <T= (A _;_ (B _+_ C)) :=
 fun T => 
 match T with 
-| p_inl (T0,T1) => (T0,p_inl T1)
-| p_inr (T0,T1) => (T0,p_inr T1)
+| inl (T0,T1) => (T0,inl T1)
+| inr (T0,T1) => (T0,inr T1)
 end.
 
 Definition distR_i A B C : ((A _+_ B) _;_ C) <T=  ((A _;_ C) _+_ (B _;_ C)) :=
 fun T => let: (T0,T1) := T in 
 match T0 with 
-| p_inl T' => p_inl (T',T1)
-| p_inr T' => p_inr (T',T1)
+| inl T' => inl (T',T1)
+| inr T' => inr (T',T1)
 end.
 Definition distRinv_i A B C : ((A _;_ C) _+_ (B _;_ C))  <T= ((A _+_ B) _;_ C) :=
 fun T => 
 match T with 
-| p_inl (T0,T1) => (p_inl T0,T1)
-| p_inr (T0,T1) => (p_inr T0,T1)
+| inl (T0,T1) => (inl T0,T1)
+| inr (T0,T1) => (inr T0,T1)
 end.
 
 Definition wrap_i A : (Eps _+_ (A _;_ Star A)) <T= (Star A) := fold_s.
 (*fun T => 
 match T with
-| p_inl _ => nil 
-| p_inr (T0,T1) => cons T0 T1
+| inl _ => nil 
+| inr (T0,T1) => cons T0 T1
 end.*)
 Definition wrapinv_i A : (Star A) <T= (Eps _+_ (A _;_ Star A)) := unfold_s.
 (*fun T => 
 match T with 
-| nil => p_inl tt
-| cons a T' => p_inr (a,T')
+| nil => inl tt
+| cons a T' => inr (a,T')
 end.*)
 Fixpoint drop_i A :  (Star (Eps _+_ A)) <T= (Star A) :=
 fix drop_i T := 
 match unfold_s T with
-| p_inl _ => fold_s (p_inl tt)
-| p_inr (a,T') => match a with | p_inl tt => fold_s (p_inl tt) | p_inr a' => fold_s (p_inr (a',drop_i T')) end
+| inl _ => fold_s (inl tt)
+| inr (a,T') => match a with | inl tt => fold_s (inl tt) | inr a' => fold_s (inr (a',drop_i T')) end
 end.
 
 Definition dropinv_i A : (Star A) <T= (Star (Eps _+_ A)) :=
 fix dropinv_i T := 
 match unfold_s T with 
-| p_inl _ => fold_s (p_inl tt)
-| p_inr (a,T') => fold_s (p_inr (p_inr a,dropinv_i T'))
+| inl _ => fold_s (inl tt)
+| inr (a,T') => fold_s (inr (inr a,dropinv_i T'))
 end.
 
 Definition cid_i {c} : c <T= c := fun x => x.
@@ -1180,8 +925,8 @@ fun T => let: (T0,T1) := T in (f0 T0, f1 T1).
 Definition cstar_i A B (f : A <T= B) : (Star A)  <T= (Star B) := 
 fix cstar_i T := 
 match unfold_s T with 
-| p_inl _ => fold_s (p_inl tt)
-| p_inr (a,T') => fold_s (p_inr (f a,(cstar_i T')))
+| inl _ => fold_s (inl tt)
+| inr (a,T') => fold_s (inr (f a,(cstar_i T')))
 end.
 
 Definition ctrans_i A B C (f : A <T=B) (f' :B <T=C) :  A <T=C :=
@@ -1190,8 +935,8 @@ f' \o f.
 Definition cplus_i A B A' B' (f :  A <T=A' ) (f' :  B <T=B' ) : A _+_ B <T=A' _+_ B' :=
 fun T => 
 match T with 
-| p_inl T' => p_inl (f T')
-| p_inr T' => p_inr (f' T')
+| inl T' => inl (f T')
+| inr T' => inr (f' T')
 end.
 
 
@@ -1244,8 +989,8 @@ fun T => let: (T0,T1) := T in if (f0 T0, f1 T1) is (Some T0',Some T1') then Some
 Definition cstar_o A B (f : A <O= B) : (Star A)  <O= (Star B) := 
 fix cstar_i T := 
 match unfold_s T with 
-| p_inl _ => Some (fold_s (p_inl tt))
-| p_inr (a,T') => if (f a,cstar_i T') is (Some b,Some T') then Some (fold_s (p_inr (b,(T')))) else None
+| inl _ => Some (fold_s (inl tt))
+| inr (a,T') => if (f a,cstar_i T') is (Some b,Some T') then Some (fold_s (inr (b,(T')))) else None
 end.
 (*fix cstar_o T := 
 match T with 
@@ -1261,8 +1006,8 @@ Definition ctrans_o {c0 c1 c2} (f : c0 <O=c1) (f' :c1 <O=c2) :  c0 <O=c2 :=
 Definition cplus_o {c0 c1 c0' c1'} (f :  c0 <O=c0' ) (f' :  c1 <O=c1' ) : c0 _+_ c1 <O=c0' _+_ c1' :=
 fun T => 
 match T with 
-| p_inl T' => omap p_inl (f T')
-| p_inr T' => omap p_inr (f' T')
+| inl T' => omap inl (f T')
+| inr T' => omap inr (f' T')
 end.
 
 Definition guard_o {a c0 c1} (f : c0 <O= c1) : ((Event a) _;_ c0) <O= ((Event a) _;_ c1) := 
@@ -1357,30 +1102,30 @@ move=> r IH r0 IH2. move=> Hor. destruct (nu r) eqn:Heqn. eauto. eauto.
 move => r IH r0 IH2. move/andP. case. intros. eauto.
 Qed.
 
-Definition nu_pTree (r : regex) (H : nu r) : (pTree r).
+Definition nu_as_type (r : regex) (H : nu r) : (as_type r).
 move: (to_Nu _ H). clear H.
 elim=>//.
-move => c c' Hnu T. apply/p_inl. done.
-move=> c c' Hnu T. apply/p_inr. done.
+move => c c' Hnu T. apply/inl. done.
+move=> c c' Hnu T. apply/inr. done.
 move=> c. apply/fold_s. left. con.
 Defined.
 
 (*We use a unfolding rule that let's Coq produce an induction principle we can use*)
-Inductive typing : forall r, pTree r -> Type := 
+Inductive typing : forall r, as_type r -> Type := 
 | T0 : typing Eps tt
 | T1 (a : A)  : typing (Event a) (build_single _ a)
 | T2 a : typing Empt a
-| T3 r0 r1 T : typing r0 T -> typing (Plus r0 r1) (p_inl T)
-| T4 r0 r1 T : typing r1 T -> typing (Plus r0 r1) (p_inr T)
+| T3 r0 r1 T : typing r0 T -> typing (Plus r0 r1) (inl T)
+| T4 r0 r1 T : typing r1 T -> typing (Plus r0 r1) (inr T)
 | T5 r0 r1 T0 T1 : typing r0 T0 -> typing r1 T1 -> typing (Seq r0 r1) (T0, T1)
-| T6 c T : typing Eps T -> typing (Star c) (fold_s (p_inl T))
-| T7 c T : typing (c _;_ (Star c)) T -> typing (Star c) (fold_s (p_inr T)).
+| T6 c T : typing Eps T -> typing (Star c) (fold_s (inl T))
+| T7 c T : typing (c _;_ (Star c)) T -> typing (Star c) (fold_s (inr T)).
 
 Hint Constructors typing.
 
 Definition normalize (r : regex) : r <T= (o r) _+_ \big[Plus/Empt]_(i <- l) <
 
-Lemma all_types : forall (r : regex) (T : pTree r), typing r T. 
+Lemma all_types : forall (r : regex) (T : as_type r), typing r T. 
 Proof.
 elim=>//;eauto. case=>//. 
 move=> s. case. done. 
@@ -1403,58 +1148,59 @@ dependent destruction p.
 apply/eq_rect.
 apply/T1.
 Search _ (_==_
+
 move/eqP. econ.
 rewrite (eqP p).
-rewrite /pTree /=.   case0> inv T.
+rewrite /as_type /=.   case0> inv T.
 Fixpoint reg_size {r : regex} := 
-fun T => let f := pTree in 
-match r as r' return pTree r' -> nat with 
+fun T => let f := as_type in 
+match r as r' return as_type r' -> nat with 
 | Eps => fun _ => 0
 | Empt => fun T => match T with end
 | Event _ => fun _ => 1
 | Plus r0 r1 => fun T => match T with 
-                     | p_inl T' => @reg_size r0 T'
-                     | p_inr T' => @reg_size r1 T'
+                     | inl T' => @reg_size r0 T'
+                     | inr T' => @reg_size r1 T'
                      end
 | Seq r0 r1 => fun T => let: (T0,T1) := T in (@reg_size r0 T0) + (@reg_size r1 T1)
 | Star r0 => fun T => match unfold_s T with 
-                    | p_inl _ => 0 
-                    | p_inr (T0,T1) => (@reg_size r0 T0) + (@reg_size (Star r0) T1)
+                    | inl _ => 0 
+                    | inr (T0,T1) => (@reg_size r0 T0) + (@reg_size (Star r0) T1)
                   end
 end T.
 
 
-Fixpoint flatten (n : nat) (r : regex) {struct n} : pTree r -> option (seq A) := 
+Fixpoint flatten (n : nat) (r : regex) {struct n} : as_type r -> option (seq A) := 
 if n is n'.+1 then
-match r as r' return pTree r' -> option (seq A) with 
+match r as r' return as_type r' -> option (seq A) with 
 | Eps =>  fun _ => Some nil 
 | Empt => fun T => match T with end 
 | Event a => fun _ => Some (a::nil)
-| Plus r0 r1 => fun T => match T with | p_inl T' => flatten n' r0 T' | p_inr T' => flatten n' r1 T' end
+| Plus r0 r1 => fun T => match T with | inl T' => flatten n' r0 T' | inr T' => flatten n' r1 T' end
 | Seq r0 r1 => fun T => let: (T0,T1) := T in obind (fun l => obind (fun l' => Some (l++l')) (flatten n' r1 T1)) (flatten n' r0 T0)
 | Star r0 => fun T => match unfold_s T with 
-                   | p_inl _ => Some nil
-                   | p_inr (t,T') => obind (fun l => obind (fun l' => Some (l ++ l')) (flatten n' (Star r0) T')) (flatten n' r0 t)  
+                   | inl _ => Some nil
+                   | inr (t,T') => obind (fun l => obind (fun l' => Some (l ++ l')) (flatten n' (Star r0) T')) (flatten n' r0 t)  
                   end 
 end
 else fun _ => None.
 
 Fixpoint tree_size {r : regex} := 
-fun T => let f := pTree in 
-match r as r' return pTree r' -> nat with 
+fun T => let f := as_type in 
+match r as r' return as_type r' -> nat with 
 | Eps => fun _ => 0
 | Empt => fun T => match T with end
 | Event _ => fun _ => 1
 | Plus r0 r1 => fun T => match T with 
-                     | p_inl T' => @reg_size r0 T'
-                     | p_inr T' => @reg_size r1 T'
+                     | inl T' => @reg_size r0 T'
+                     | inr T' => @reg_size r1 T'
                      end
 | Seq r0 r1 => fun T => let: (T0,T1) := T in (@reg_size r0 T0) + (@reg_size r1 T1)
 | Star r0 => fun L => foldr (fun x acc => (@reg_size r0 x) + acc) 0  L 
 end T.
 
 
-Definition tree_of_match (s : trace) (r : regex) (H : matchb s r) : (pTree r).
+Definition tree_of_match (s : trace) (r : regex) (H : matchb s r) : (as_type r).
 rewrite /matchb in H.
 elim : s r H.
 -  case=>//=.
@@ -1475,8 +1221,8 @@ match r with
 | Star r0 => Forall (fun x => as_prop r0)
 end. 
 
-Fixpoint tree_of_match (s : trace) (r : regex) (H : Match s r) : option (pTree r) := 
-match H in Match s r return option (pTree r) with 
+Fixpoint tree_of_match (s : trace) (r : regex) (H : Match s r) : option (as_type r) := 
+match H in Match s r return option (as_type r) with 
 | MEps => Some tt
 | _ => None
 end.
@@ -1567,7 +1313,7 @@ Unset Printing Implicit Defensive.*)
 
 Fixpoint interp (r0 r1 : regex)
            (d : dsl2 dsl_co r0 r1)  (f : forall x y, dsl_co x y -> x <O= y ) :  r0 <O= r1 :=
-match d in dsl2 _ r0 r1 return (pTree r0) -> option (pTree r1) with 
+match d in dsl2 _ r0 r1 return (as_type r0) -> option (as_type r1) with 
 | @cid2 _ A => (@cid_o A)
 | @shuffle2 _ A B C => (@shuffle_o A B C)
 | @shuffleinv2 _ A B C => (@shuffleinv_o A B C)
@@ -1616,22 +1362,22 @@ Proof.
 move => r0 r1 r2 Hf d d' T T' /= + Hsome. rewrite /= /ctrans_o /obind /oapp /=. rewrite Hsome //.
 Qed.
 
-Lemma pTree_eq : forall (A0 : regex), (fix pTree (r : regex) : Type := match r with
+Lemma as_type_eq : forall (A0 : regex), (fix as_type (r : regex) : Type := match r with
                                            | Eps => unit
                                            | Empt => void
                                            | Event a => {a' : A & a' == a}
-                                           | r0 _+_ r1 => (pTree r0 + pTree r1)%type
-                                           | r0 _;_ r1 => (pTree r0 * pTree r1)%type
-                                           | Star r0 => seq (pTree r0)
-                                           end) A0 = pTree A0.
+                                           | r0 _+_ r1 => (as_type r0 + as_type r1)%type
+                                           | r0 _;_ r1 => (as_type r0 * as_type r1)%type
+                                           | Star r0 => seq (as_type r0)
+                                           end) A0 = as_type A0.
 Proof. done. Qed.
 
-Lemma reg_size1 : forall a (T : pTree (Event a)), @reg_size (Event a) T = 1.
+Lemma reg_size1 : forall a (T : as_type (Event a)), @reg_size (Event a) T = 1.
 Proof.
 move=> a T. rewrite /reg_size //.
 Qed.
 
-Lemma interp_ineq : forall A B (d : dsl2 dsl_co A B) (T : pTree A) (T' : pTree B) (f : forall x y, dsl_co x y -> x <O= y), (forall x y (dco : dsl_co x y) (T0 : pTree x) (T1 : pTree y) , f x y dco T0 = Some T1 -> reg_size T1 <= reg_size T0) ->  
+Lemma interp_ineq : forall A B (d : dsl2 dsl_co A B) (T : as_type A) (T' : as_type B) (f : forall x y, dsl_co x y -> x <O= y), (forall x y (dco : dsl_co x y) (T0 : as_type x) (T1 : as_type y) , f x y dco T0 = Some T1 -> reg_size T1 <= reg_size T0) ->  
                                                                                                                     interp d f T = Some T' -> reg_size T' <= reg_size T.
 Proof.
 move=> A' B d T T' f Hf.  
@@ -1658,7 +1404,7 @@ move=> A' B d T T' f Hf.
    suff: reg_size a1 <= reg_size a0. lia.  eauto. done.
 Qed.
 Check interp_wrap.
-Lemma interp_wrap_ineq : forall n A B (d : dsl_co A B) (T : pTree A) (T' : pTree B),  interp_wrap n d T = Some T' -> reg_size T' <= reg_size T.
+Lemma interp_wrap_ineq : forall n A B (d : dsl_co A B) (T : as_type A) (T' : as_type B),  interp_wrap n d T = Some T' -> reg_size T' <= reg_size T.
 Proof.
 elim.
 - move=> A0 B [] //=.
@@ -1667,7 +1413,7 @@ elim.
 Qed.
 
 
-Lemma interp_some : forall A B (f : forall x y, dsl_co x y -> x <O= y) (d : dsl2 dsl_co A B) (T : pTree A) , (forall x y (dco : dsl_co x y) (T0 : pTree x), f x y dco T0) ->  
+Lemma interp_some : forall A B (f : forall x y, dsl_co x y -> x <O= y) (d : dsl2 dsl_co A B) (T : as_type A) , (forall x y (dco : dsl_co x y) (T0 : as_type x), f x y dco T0) ->  
                                                                                                                     interp d f T.
 Proof.
 move=> A' B f. 
@@ -1692,7 +1438,7 @@ move=> A' B f.
 Qed.
 
 
-(*Lemma interp_ineq : forall A B (d : dsl2 dsl_co A B) (T : pTree A) (T' : pTree B) n, interp d (interp_wrap n) T = Some T' -> reg_size T' <= reg_size T.
+(*Lemma interp_ineq : forall A B (d : dsl2 dsl_co A B) (T : as_type A) (T' : as_type B) n, interp d (interp_wrap n) T = Some T' -> reg_size T' <= reg_size T.
 Proof.
 move=> A' B. 
 - elim=>//.
@@ -1718,7 +1464,7 @@ move=> A' B.
 - move=> n IH d T T'. rewrite /=. 
 *)
 
-(*Lemma interp_ineq : forall A B n (d : dsl2 dsl_co A B) (T : pTree A) (T' : pTree B), interp d (interp_wrap n) T = Some T' -> reg_size T' <= reg_size T.
+(*Lemma interp_ineq : forall A B n (d : dsl2 dsl_co A B) (T : as_type A) (T' : as_type B), interp d (interp_wrap n) T = Some T' -> reg_size T' <= reg_size T.
 Proof.
 move=> A' B. elim=>//.
 - move=> d T T'. 
@@ -1768,13 +1514,13 @@ destruct T,T';ssa. destruct a;ssa.
 rewrite interp_wrap0.
 
 d T T' n Hsome.
- pTree A1
+ as_type A1
   Hsize : reg_size A1 T < n.+1
-  T' : pTree B0
+  T' : as_type B0
   Heq : interp d (interp_wrap n) T = Some T'
 *)
 
-(*Lemma interp_wrap_some : forall n r0 r1 (d : dsl_co r0 r1) (T : pTree r0), reg_size T < n -> { T' | interp_wrap n d T = Some T'}.
+(*Lemma interp_wrap_some : forall n r0 r1 (d : dsl_co r0 r1) (T : as_type r0), reg_size T < n -> { T' | interp_wrap n d T = Some T'}.
 Proof.
 elim.
 - move=> r0 r1 d T // Hsize.  
@@ -1797,7 +1543,7 @@ elim.
    have: (interp_wrap n r a1). by eauto. case: (interp_wrap _ _ _)=>//.
 Qed.*)
 
-Lemma interp_wrap_some : forall n r0 r1 (d : dsl_co r0 r1) (T : pTree r0), reg_size T < n -> interp_wrap n d T.
+Lemma interp_wrap_some : forall n r0 r1 (d : dsl_co r0 r1) (T : as_type r0), reg_size T < n -> interp_wrap n d T.
 Proof.
 elim.
 - move=> r0 r1 d T // Hsize.  
@@ -1819,58 +1565,19 @@ elim.
    have: (interp_wrap n r a1). by eauto. case: (interp_wrap _ _ _)=>//.
 Qed.
 
-Lemma interp_wrap_sig : forall n r0 r1 (d : dsl_co r0 r1) (T : pTree r0), reg_size T < n -> { T' | interp_wrap n d T = Some T'}.
+Lemma interp_wrap_sig : forall n r0 r1 (d : dsl_co r0 r1) (T : as_type r0), reg_size T < n -> { T' | interp_wrap n d T = Some T'}.
 Proof.
 move=> n r0 r1 d T Hsize.
 move: (interp_wrap_some  n d T Hsize). case Hcase: (interp_wrap n d T)=>// [T'] _. econ. eauto.
 Qed.
 
-Lemma size_proof : forall (r : regex) (T : pTree r), leq ((reg_size T)) (reg_size T). done. Defined.
+Lemma size_proof : forall (r : regex) (T : as_type r), leq ((reg_size T)) (reg_size T). done. Defined.
 
 Definition interp_total (r0 r1 : regex) (d : dsl_co r0 r1) := 
 fun T =>
 match interp_wrap_sig (reg_size T).+1 d T (size_proof r0 T) with
 | exist T' _ => T'
 end.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 Definition dsl_2_fix := cfix (ctrans shuffle (cfix (cplus (guard (var_dsl 1)) (guard (var_dsl 0))))).
@@ -1916,7 +1623,7 @@ match d with
 
 
 Check shuffle_i.
-Fixpoint interp (d : dsl2) : (pTree (from d)) -> (pTree (to d)) :=
+Fixpoint interp (d : dsl2) : (as_type (from d)) -> (as_type (to d)) :=
 fun T => 
 match d with 
 | shuffle2 => shuffle_i
@@ -2143,9 +1850,9 @@ end. *)
 (*Definition shuffle_Type (A B C : Type) : ((A + B) + C) -> (A + (B + C)) :=
 fun  T => 
 match T with 
-| p_inl (p_inl T') => p_inl T'
-| p_inl (p_inr T') => p_inr (p_inl T')
-| p_inr T' => p_inr (inr T')
+| inl (inl T') => inl T'
+| inl (inr T') => inr (inl T')
+| inr T' => inr (inr T')
 end.*)
 
 
@@ -2430,17 +2137,17 @@ Print addn. Print addn_rec. Print Nat.add.
 Fixpoint dsl_type (d : dsl) := 
 match d with 
 | shuffle =>  
-fun r => match r in regex*regex*regex return _ => with (r0,r1,r2) => pTree ((r0 _+_ r1) _+_ r2) ->  pTree (r0 _+_ (r1 _+_ r2)) end
-| shuffleinv => fun r => let: (r0,r1,r2) := r in  pTree (r0 _+_ (r1 _+_ r2))  -> pTree ((r0 _+_ r1) _+_ r2) 
-| retag => fun r => let: (r0,r1):= r in  pTree (r0 _+_ r1)  -> pTree (r1 _+_ r0)
+fun r => match r in regex*regex*regex return _ => with (r0,r1,r2) => as_type ((r0 _+_ r1) _+_ r2) ->  as_type (r0 _+_ (r1 _+_ r2)) end
+| shuffleinv => fun r => let: (r0,r1,r2) := r in  as_type (r0 _+_ (r1 _+_ r2))  -> as_type ((r0 _+_ r1) _+_ r2) 
+| retag => fun r => let: (r0,r1):= r in  as_type (r0 _+_ r1)  -> as_type (r1 _+_ r0)
 | _ =>  fun _ =>  A
 end. 
 
 Fixpoint dsl_type (d : dsl) : (dsl_in d)  -> Type := 
 match d with 
-| shuffle => fun r => match r in regex*regex*regex return _ => with (r0,r1,r2) => pTree ((r0 _+_ r1) _+_ r2) ->  pTree (r0 _+_ (r1 _+_ r2)) end
-| shuffleinv => fun r => let: (r0,r1,r2) := r in  pTree (r0 _+_ (r1 _+_ r2))  -> pTree ((r0 _+_ r1) _+_ r2) 
-| retag => fun r => let: (r0,r1):= r in  pTree (r0 _+_ r1)  -> pTree (r1 _+_ r0)
+| shuffle => fun r => match r in regex*regex*regex return _ => with (r0,r1,r2) => as_type ((r0 _+_ r1) _+_ r2) ->  as_type (r0 _+_ (r1 _+_ r2)) end
+| shuffleinv => fun r => let: (r0,r1,r2) := r in  as_type (r0 _+_ (r1 _+_ r2))  -> as_type ((r0 _+_ r1) _+_ r2) 
+| retag => fun r => let: (r0,r1):= r in  as_type (r0 _+_ r1)  -> as_type (r1 _+_ r0)
 | _ =>  fun _ =>  A
 end. 
 
@@ -2472,9 +2179,9 @@ end.
 
 Fixpoint dsl_type' (d : dsl) : (dsl_in' d Type) := 
 match d with 
-| shuffle => fun r0 r1 r2 =>  pTree ((r0 _+_ r1) _+_ r2) ->  pTree (r0 _+_ (r1 _+_ r2))
-| shuffleinv => fun r0 r1 r2 =>  pTree (r0 _+_ (r1 _+_ r2))  -> pTree ((r0 _+_ r1) _+_ r2) 
-| retag => fun r0 r1 => pTree (r0 _+_ r1)  -> pTree (r1 _+_ r0)
+| shuffle => fun r0 r1 r2 =>  as_type ((r0 _+_ r1) _+_ r2) ->  as_type (r0 _+_ (r1 _+_ r2))
+| shuffleinv => fun r0 r1 r2 =>  as_type (r0 _+_ (r1 _+_ r2))  -> as_type ((r0 _+_ r1) _+_ r2) 
+| retag => fun r0 r1 => as_type (r0 _+_ r1)  -> as_type (r1 _+_ r0)
 | _ =>  fun _ =>  A
 end. 
 
@@ -2486,11 +2193,11 @@ Print plus. Print Nat.add.
 
 Check interp.
 
-Definition my_fix (l0 l1 : seq (A * regex))  (f : pTree r0 -> pTree r1) : 
-  (pTree (\big[Plus/Empt]_(i <- l0) ((Event i.1) _;_ i.2))) ->
-  (pTree (\big[Plus/Empt]_(i <- l1) ((Event i.1) _;_ i.2))) := 
- pTree ()
--> pTree r1  := 
+Definition my_fix (l0 l1 : seq (A * regex))  (f : as_type r0 -> as_type r1) : 
+  (as_type (\big[Plus/Empt]_(i <- l0) ((Event i.1) _;_ i.2))) ->
+  (as_type (\big[Plus/Empt]_(i <- l1) ((Event i.1) _;_ i.2))) := 
+ as_type ()
+-> as_type r1  := 
 fun T => 
 
 Check dsl_type.
