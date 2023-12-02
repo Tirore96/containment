@@ -106,4 +106,130 @@ Being indexed by types, such as (p_inl r0 r1 p) they are not space effecient. Wi
 Instead have extrinsic parse trees and intrinsic dsl.
 A main lemma is then forall (d : dsl r0 r1), with (interp p ) : upTree -> upTree, 
 then typing p r0 -> typing (interp d p) r1  
+Being extrinsic, interpreted dsls receving unexpected parse trees map to up_bot which is not typable
 
+Interpretation:
+A coinductive seed that is continously matched on is ineffecient because we might need log2 n (n being number of operations), to fetch relevant gallina function. It is fine as a spec, but we need something faster.
+Does type indices in dsl affect performance?
+Define interpretation of extrinsic dsl as [fix p] =  [p] : (pTree -> pTree) -> pTree -> pTree |- 
+[fix. trans shuffle 0] : 
+[shuffle] : ?
+[0] : =
+[trans shuffle 0] = f : (nat -> pTree -> pTree) -> pTree -> pTree 
+
+f f
+
+f f' T = T
+
+Declaring variables Parameters is important for deleting them from code extraction.
+
+
+They use equi-recursion in the bit coding case
+
+Implementation:
+This paper has zero-cost coercions
+https://www.microsoft.com/en-us/research/wp-content/uploads/2016/07/coercible.pdf?from=https://research.microsoft.com/en-us/um/people/simonpj/papers/ext-f/coercible.pdf&type=exact
+
+Haskell bitlibrary:
+https://hackage.haskell.org/package/bitvec
+
+
+
+Extra work:
+Consider implementing unfolding interpretation anyways and see code extraction and evaluate.
+Maybe not interesting as unfolding is expensive for large nested fixpoints
+
+
+Summary:
+We want to synthesize coercions.
+Therefore no coinductive syntax for dsl (cannot be synthesised)
+binders generated with autosubst disallows dsl with regex indices, so extrinsic dsl (coercion system)
+Therefore extrinsic parse trees (interpreter does not have access to input/output regex types)
+
+We want to synthesize effecient coercions.
+Interpretation with unfolding is ineffecient, pattern matching and unfolding is repeated.
+Interpretation without unfolding is challenging, one approach that could handle nested fixpoint interpeted
+effeciently is:
+
+interp : coerce r0 r1 -> r0 -> r1
+
+interp : dsl (pT -> pT) -> pT -> pT
+
+[.] : (pT -> pT) -> pT -> pT
+f = interp [p]
+f : (pT -> pT) -> pT -> pT
+fix f : pT -> pT
+
+f = inter p
+fix f
+interp [fix f. p]
+
+interp : dsl -> 
+        (forall p, (nat -> forall p', |p'| < |p| -> pT) -> pT) ->
+         (forall p, (nat -> forall p', |p'| < |p| -> pT) -> pT) 
+
+
+
+This is complicated because we work with open terms
+
+For now, we keep unfolding interpretation
+Write the function graph, do structural recursion on graph
+
+
+
+Discussion with Fritz:
+- Unfolding interpretation is ineffecient
+- Bitcoding is equi-recursive
+- sum rule not necessary
+- Programming languages with coercive subtyping?
+- Rules like drop take linear time
+
+
+
+Discussion notes:
+- star ctx and eps eliminiation rules are fixpoints themselves,
+  cannot be coded using our fix rule, because it is "obviously terminating"
+  Fix rule + two "hardcoded" fixpoints is enough to derive r = o(r) + sigma ....
+  Think more about these rules, realizing they are fixpoints themselves,
+  does this change the way they can be presented?
+
+- Two notions of guarded
+ * full_unf d <> cfix ...
+ * variable occurs only inside guard (*allows decreasing measure*)
+ Maybe the second notion could replace the first,
+ but that would mean changing the proof of full_unf_idemp
+
+- Type deriven interpretation vs untyped
+ * untyped reduces number of parameters
+   complicates inductive definition of domain
+   nested call in transitivity, domain of this call
+   has two restrictions
+   ** size of T may not increase
+   ** for well typed dsl and input parse tree, the
+      domain 
+
+- untyped interpretation:
+  Trying to define inductive domain loosely in the transitivity case
+  This does not work, the purpose of T in inductive domain
+  is to resolve +, following T, will let the dsl
+  bottom out in a base rule eventually
+  
+  Defining the inductive domain to permissively, means it can never be derived,
+  and the function never called
+
+
+- Not gonna do it, but it would be interesting to do a type driven interpretation,
+  mapping typing derivations to typing derivations.
+  More cases in the computation graph could be omitted: But then 
+  coercions map type derivations to type derivations, meaning we could easily just have
+  intrinsically typed parse trees, but since the dsl is still extrinisically typed 
+  maybe INEQ judgments need to be added in the computation graph? sounds messy
+
+- It seems bragga method does not work with nested 
+  structural recursion on parse tree. 
+  With the proof (H: D_dom (Star c) T) 
+  we now structurally recurse on T,
+  actually, the pattern matches just need to be on D_dom syntax
+  rather than parse tree. Of course we cannot, because that would be Prop -> Set,
+  or what, since we go to Prop -> Type maybe fine?
+  
