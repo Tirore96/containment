@@ -1942,6 +1942,181 @@ match d with
 end.
 
 
+Inductive D_dom : dsl -> nat -> Prop := 
+| D_base d f n : interp_base (full_unf d) = Some f -> D_dom d n
+| D_trans d d0 d1 n : full_unf d = ctrans d0 d1 -> 
+                    D_dom d0 n -> D_dom d1 n ->  D_dom d n
+(*| D_trans d d0 d1 T : full_unf d = ctrans d0 d1 -> 
+                    D_dom d0  T -> (forall T',  D_dom d1 T') -> D_dom d T*)
+| D_plus d d0 d1 n : full_unf d = (cplus d0 d1) ->  D_dom d0 n -> D_dom d1 n  -> D_dom d n
+| D_seq d d0 d1 n  : full_unf d = (cseq d0 d1) ->  D_dom d0 n -> D_dom d1 n  -> D_dom d n
+| D_star d d0 n : full_unf d = cstar d0 -> D_dom d0 n -> D_dom d n
+| D_guard d d0 n n' : full_unf d =  guard d0 -> n = n'.+1 ->   D_dom d0 n' -> D_dom d n.
+Hint Constructors D_dom.
+Check D_trans.
+Definition proj_trans0  d d0 d1 n (Heq : full_unf d = ctrans d0 d1) (D : D_dom d n) : D_dom d0 n.
+Proof. refine(
+match D in D_dom d' n return full_unf d' = ctrans d0 d1 -> D_dom d0 n with 
+| D_trans _ _ _ _ Heq Hd Hle => fun HQ => _
+| _ => fun HQ => _
+end Heq).
+all: try solve [rewrite e in HQ; inv HQ].
+rewrite HQ in e; inv e.
+rewrite Heq in HQ; inv HQ. 
+Defined.
+
+Definition proj_trans1  d d0 d1 n (Heq : full_unf d = ctrans d0 d1) (D : D_dom d n)  : D_dom d1 n.
+Proof. refine(
+match D in D_dom d' n return full_unf d' = ctrans d0 d1 ->   D_dom d1 n  with 
+| D_trans _ _ _ _ Heq Hd Hle => fun HQ => _
+| _ => fun HQ => _
+end Heq).
+all: try solve [rewrite e in HQ; inv HQ].
+rewrite HQ in e; inv e.
+rewrite Heq in HQ; inv HQ.  
+Defined.
+
+Definition proj_plus0  d d0 d1 n (Heq : full_unf d = cplus d0 d1) (D : D_dom d n) : D_dom d0 n.
+Proof. refine(
+match D in D_dom d' n return full_unf d' = cplus d0 d1 -> D_dom d0 n with 
+| D_plus _ _ _ _ Heq Hd Hd' => fun HQ => _
+| _ => fun HQ => _
+end Heq).
+all: try solve [rewrite e in HQ; inv HQ].
+rewrite HQ in e; inv e.
+rewrite Heq in HQ; inv HQ. 
+Defined.
+
+Definition proj_plus1  d d0 d1 n (Heq : full_unf d = cplus d0 d1) (D : D_dom d n) : D_dom d1 n.
+Proof. refine(
+match D in D_dom d' n return full_unf d' = cplus d0 d1 -> D_dom d1 n with 
+| D_plus _ _ _ _ Heq Hd Hd' => fun HQ => _
+| _ => fun HQ => _
+end Heq).
+all: try solve [rewrite e in HQ; inv HQ].
+rewrite HQ in e; inv e.
+rewrite Heq in HQ; inv HQ. 
+Defined.
+Check D_seq.
+Definition proj_seq0  d d0 d1 n (Heq : full_unf d = cseq d0 d1) (D : D_dom d n) : D_dom d0 n.
+Proof. refine(
+match D in D_dom d' n return full_unf d' = cseq d0 d1 -> D_dom d0 n with 
+| D_seq _ _ _ _ Heq Hd Hd' => fun HQ => _
+| _ => fun HQ => _
+end Heq).
+all: try solve [rewrite e in HQ; inv HQ].
+rewrite HQ in e; inv e.
+rewrite Heq in HQ; inv HQ. 
+Defined.
+
+Definition proj_seq1  d d0 d1 n (Heq : full_unf d = cseq d0 d1) (D : D_dom d n) : D_dom d1 n.
+Proof. refine(
+match D in D_dom d' n return full_unf d' = cseq d0 d1 -> D_dom d1 n with 
+| D_seq _ _ _ _ Heq Hd Hd' => fun HQ => _
+| _ => fun HQ => _
+end Heq).
+all: try solve [rewrite e in HQ; inv HQ].
+rewrite HQ in e; inv e.
+rewrite Heq in HQ; inv HQ. 
+Defined.
+
+Definition proj_star  d d0 n (Heq : full_unf d = cstar d0) (D : D_dom d n) : D_dom d0 n.
+Proof. refine(
+match D in D_dom d' n return full_unf d' = cstar d0 -> D_dom d0 n with 
+| D_star _ _ _ Heq Hd => fun HQ => _
+| _ => fun HQ => _
+end Heq).
+all: try solve [rewrite e in HQ; inv HQ].
+rewrite HQ in e; inv e.
+rewrite Heq in HQ; inv HQ. 
+Defined.
+
+
+Definition proj_guard  d d0 n n' (Heq : full_unf d = guard d0) (Hn : n = n'.+1) (D : D_dom d n) : D_dom d0 n'.
+Proof. refine(
+match D in D_dom d' n return full_unf d' = guard d0 -> n = n'.+1 -> D_dom d0 n' with 
+| D_guard _ _ _ _ Heq Hneq Hd => fun HQ Hn => _
+| _ => fun HQ Hn => _
+end Heq Hn).
+all: try solve [rewrite e in HQ; inv HQ].
+rewrite HQ in e; inv e.
+rewrite Heq in HQ; inv HQ. inv Hn. 
+Defined.
+
+
+Fixpoint interp {n} d (D : D_dom d n)  {struct D} :  upTree -> option upTree := 
+match full_unf d as d' return full_unf d = d' -> (upTree -> option upTree) with
+| ctrans d0 d1 => fun HQ T => 
+                  if @interp _ d0 (proj_trans0 HQ D) T is Some T' 
+                     then @interp _ d1 (proj_trans1 HQ D) T'
+                     else None 
+| cplus d0 d1 => fun HQ T=> 
+                  match T with 
+                 | up_inl T' => omap up_inl (@interp _ d0 (proj_plus0 HQ D) T')
+                 | up_inr T' => omap up_inr (@interp _ d1 (proj_plus1 HQ D) T')
+                 | _ => None 
+                end
+| cseq  d0 d1  => fun HQ T=> 
+                   match T with 
+                   | up_pair T0 T1 => if (@interp _ d0 (proj_seq0 HQ D) T0, @interp _ d1 (proj_seq1 HQ D) T1)
+                                         is (Some T',Some T'') then Some (up_pair T' T'') else None
+                   | _ => None 
+                 end
+| cstar d0 => fun HQ T => (fix cstar_i T' {struct T'} := 
+                   match T' with 
+                      | up_fold T0 => match T0 with 
+                                     | up_inl up_tt => Some (up_fold (up_inl up_tt))
+                                     | up_inr (up_pair T1 T2) => if (@interp _ d0 (proj_star HQ D) T1, cstar_i T2) 
+                                                                     is (Some T',Some T'') then
+                                                                  Some ( up_fold (up_inr (up_pair T' T''))) else None
+                                     | _ => None
+                                     end
+                      | _ => None
+                      end) T
+| guard  d0 => fun HQ T => match n as n0 return n = n0 -> option upTree with 
+                        | n'.+1 => fun Hn => match T with
+                                         | up_pair (up_singl a) T0 => 
+                                             if @interp _ d0 (proj_guard HQ Hn D) T0 is Some T' then Some (up_pair (up_singl a) T') 
+                                             else None 
+                                                 
+                                         | _ => None 
+                                         end 
+                        | _ => fun _ => None
+                       end Logic.eq_refl
+| _ => fun HQ T => if interp_base d is Some f then Some (f T) else None
+end Logic.eq_refl .
+
+
+Fixpoint interp_aux d (T : upTree)  {struct d} :  option upTree := 
+match full_unf d with
+| ctrans d0 d1 => if interp_aux d0 T f is Some T' then interp_aux d T' f else None 
+| cplus d0 d1 => match T with 
+                 | up_inl T' => interp_aux d0 T' f
+                 | up_inr T' => interp_aux d1 T' f
+                 | _ => None
+                end
+| cseq  d0 d1  => match T with 
+                   | up_pair T0 T1 => if (interp_aux d0 T0 f,interp_aux d1 T1 f) is (Some T',Some T'') then Some (up_pair T' T'') else None
+                   | _ => None 
+                 end
+| cstar d0 =>  (fix cstar_i T' {struct T'} := 
+                   match T' with 
+                      | up_fold T0 => match T0 with 
+                                     | up_inl up_tt => Some (up_fold (up_inl up_tt))
+                                     | up_inr (up_pair T1 T2) => if (interp_aux d0 T1 f, cstar_i T2) is (Some T',Some T'') then
+                                                                 Some ( up_fold (up_inr (up_pair T' T''))) else None
+                                     | _ => None
+                                     end
+                      | _ => None
+                      end) T
+| guard  d0 =>  match T with
+               | up_pair (up_singl a) T0 => if f d0 T0 is Some T' then Some (up_pair (up_singl a) T') else None 
+               | _ => None 
+               end                                                                                              
+| _ => if interp_base d is Some f then Some (f T) else None
+end.
+
+
 Definition eRel (a' a : upTree) := event_count a' < event_count a.
 
 Definition not_plus (T : upTree ) :=  match T with | up_inl _ | up_inr _ => false | _ => true end.
@@ -2146,10 +2321,49 @@ match T as T' in T = T' -> _  with
 
 (*Fixpoint interp (r0 r1 : regex) (d : dsl) (T : upTree)  (HI : INEQ r0 r1 d) (HT : typing T r0) {struct T} :  { T' | G_interp d T T' /\ typing T r1}.*)
 
-Lemma D_dom_not_fix : forall d d0 T, full_unf d = cfix d0 -> ~D_dom d T.
+(*Lemma D_dom_not_fix : forall d d0 T, full_unf d = cfix d0 -> ~D_dom d T.
 Proof.
 intros. intro. inv H0;subst. all: try solve [rewrite H // in H1]. 
-Qed.
+Qed.*)
+
+
+Fixpoint repeat_int (d : dsl) (T : upTree) (D : D_dom d) := 
+interp d T (repeat_int 
+
+Fixpoint interp d (T : upTree) {struct T} :  upTree.
+Proof. refine (
+match full_unf d as d' return  full_unf d = d' -> { T' | G_interp d T T'}  with 
+| ctrans d0 d1 => fun Heq => match interp d0 T (proj_trans0 Heq D) with 
+                          | exist T'' _ => exist (interp d1 T'' (proj_trans1 Heq D)) _
+                         end 
+| cplus d0 d1 => fun Heq => (match T as T' return T = T' ->  { T' | G_interp d T T'}  with 
+                           | up_inl T0 => fun HT => exist (up_inl (interp d0 T0 _)) _
+                           | up_inr T1 => fun HT => exist (up_inr (interp d1 T1 _)) _ 
+                           | _ => fun _ => T 
+                         end) Logic.eq_refl
+| cseq  d0 d1  => fun Heq => match T with up_pair T0 T1 => up_pair (interp d0 T0 _) (interp d1 T1 _) | _ => T end 
+| cstar d0 => fun Heq  => (fix cstar_i T' := 
+                      match T' with 
+                      | up_fold T0 => match T0 with 
+                                     | up_inl up_tt => up_fold (up_inl up_tt)
+                                     | up_inr (up_pair T1 T2) => up_fold (up_inr (up_pair (interp d0 T1 _) 
+                                                                                         (cstar_i T2)))
+                                     | _ => up_bot 
+                                     end
+                      | _ => up_bot
+                      end) T
+| guard  d0 =>
+
+ fun D  => guard_i (fun T => interp d0 T _) T
+| _ => fun D => if interp_base d is Some f then f T else T
+end D Logic.eq_refl).
+move: (D_dom_unf D). rewrite Heq. move=>HH. inv HH. inv H. apply/H1.
+apply/
+ intros. inv 
+admit.
+subst.
+move/D_dom_unf: D. rewrite Heq. intros. inv D. inv H0.
+
 
 Fixpoint interp d (T : upTree) (D: D_dom d T) {struct D} : { T' | G_interp d T T'}.
 Proof. refine (
@@ -2313,15 +2527,15 @@ Qed.
 
 
 
-Definition guard_i (f : fType) : fType := 
+(*Definition guard_i (f : fType) : fType := 
 fun T => 
 match T with 
 | up_pair (up_singl a) T' => up_pair (up_singl a) (f T') 
 | _ => up_bot 
-end.
+end.*)
 
 
-Fixpoint interp d (T : upTree) (D: D_dom d T) {struct D} :  { T' | G_interp d T T'}.
+Fixpoint interp d (T : upTree) : upTree.
 Proof. refine (
 match full_unf d as d' return  full_unf d = d' -> { T' | G_interp d T T'}  with 
 | ctrans d0 d1 => fun Heq => match interp d0 T (proj_trans0 Heq D) with 

@@ -232,4 +232,9 @@ Discussion notes:
   actually, the pattern matches just need to be on D_dom syntax
   rather than parse tree. Of course we cannot, because that would be Prop -> Set,
   or what, since we go to Prop -> Type maybe fine?
+
   
+- Solution: Define inductive predicate in terms of dsl and a fuel size n.
+  Crucially, fuel is an upper bound of number of recursive calls to 
+  a guard term. Unlike computation graph approach, we have simple
+  definition for transitivity, D_dom c0 n -> D_dom c1 n -> D_dom (trans c0 c1) n
