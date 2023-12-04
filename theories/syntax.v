@@ -6,7 +6,7 @@ From deriving Require Import deriving.
 Require Import Paco.paco.
 Require Import Coq.btauto.Btauto.
 Require Import ConstructiveEpsilon.
-
+From Coq.Logic Require Import Eqdep_dec.
 From Containment Require Import  utils dsl dsl_theory.
 Set Implicit Arguments.
 Set Maximal Implicit Insertion.
@@ -1161,6 +1161,11 @@ case Hcase: (typingb _ _)=>//=.
 move/typingP1 : Hcase=>Ht.
 move/eqP=>Hu. exists x. con. apply/typingP2=>//. apply/eqP. done.
 Qed.
+
+Lemma pTree_Match : forall r T, typing T r -> Match (uflatten T) r.  
+Proof.
+move => r T. elim;ssa. inv H0. inv H3. inv H3. con. done. done.
+Qed.
 End parseTrees.
 (*Arguments p_inl {r0 r1}.
 Arguments p_inr {r0 r1}.
@@ -1234,7 +1239,7 @@ Inductive c_ineq : regex -> regex -> dsl -> Prop :=
 | rule_cseq c0 c0' c1 c1' pf p0 p1 : full_unf pf = cseq p0 p1 ->  c0 <R=c0' ~> p0 -> c1 <R=c1' ~> p1 ->  c0 _;_ c1 <R=c0' _;_ c1' ~> pf
 | rule_cstar c0 c1 pf p : full_unf pf = cstar p ->  c0 <R=c1 ~> p -> Star c0 <R= Star c1 ~> pf  (*new context rule*) 
 (*| rule_cfix r r' (p  : dsl) : r <R= r' ~> p[d (cfix p) .: var_dsl] ->  r <R= r' ~> (cfix p) (*guarded p otherwise unsound*)*)
-| rule_test a r r' pf p : full_unf pf = guard p -> P r r' p -> (Event a) _;_ r <R= (Event a) _;_ r' ~> pf
+| rule_guard a r r' pf p : full_unf pf = guard p -> P r r' p -> (Event a) _;_ r <R= (Event a) _;_ r' ~> pf
  where "c1 <R= c2 ~> p" := (c_ineq c1 c2 p).
 End Containment.
 Hint Constructors c_ineq.
@@ -1402,6 +1407,7 @@ Require Import Coq.Program.Equality.
 *)
 
 Notation "c0 <T= c1 ~> p" := (forall s, typing s c0 -> typing (p s) c1)(at level 63).
+Definition flat_pred c0 f := forall s, typing s c0 -> uflatten (f s) = uflatten s.
 
 Definition fType :=  upTree -> upTree. 
 Ltac inve H := inversion_clear H;subst;eauto.
@@ -1428,6 +1434,10 @@ end.
 Lemma shuffle_i_t  : forall A B C,(A _+_ B) _+_ C <T= A _+_ (B _+_ C) ~> shuffle_i.
 Proof. lt. Qed.
 
+Lemma shuffle_i_flat :  forall A B C, flat_pred ((A _+_ B) _+_ C) shuffle_i.
+Proof. lt. Qed.
+
+
 
 (* A _+_ (B _+_ C)  <T= (A _+_ B) _+_ C*)
 Definition shuffleinv_i  : fType :=
@@ -1441,6 +1451,9 @@ end.
 Lemma shuffleinv_i_t : forall A B C,   A _+_ (B _+_ C)  <T= (A _+_ B) _+_ C ~> shuffleinv_i.
 Proof. lt. Qed.
 
+Lemma shuffleinv_i_flat : forall A B C,   flat_pred (A _+_ (B _+_ C))  shuffleinv_i.
+Proof. lt. Qed.
+
 
 (* A _+_ B <T= B _+_ A *)
 Definition retag_i :  fType  :=
@@ -1451,6 +1464,8 @@ match T with
 | _ => up_bot
 end. 
 Lemma retag_i_t : forall A B,  A _+_ B <T= B _+_ A  ~> retag_i.
+Proof. lt. Qed.
+Lemma retag_i_flat : forall A B,  flat_pred (A _+_ B) retag_i.
 Proof. lt. Qed.
 
 (*Empt _+_ A <T= A*)
@@ -1463,11 +1478,14 @@ match T with
 end.
 Lemma untagL_i_t : forall A, Empt _+_ A <T= A ~> untagL_i.
 Proof. lt. Qed.
-
+Lemma untagL_i_flat : forall A, flat_pred (Empt _+_ A) untagL_i.
+Proof. lt. Qed.
 (* A <T= Empt _+_ A*)
 Definition untagLinv_i :  fType :=
 fun T => up_inr T.
 Lemma untagLinv_i_t : forall A,  A <T= Empt _+_ A ~> untagLinv_i.
+Proof. lt. Qed.
+Lemma untagLinv_i_flat : forall A,  flat_pred A untagLinv_i.
 Proof. lt. Qed.
 
 (*A _+_ A <T= A*)
@@ -1481,9 +1499,14 @@ end.
 Lemma untag_i_t : forall A, A _+_ A <T= A ~> untag_i.
 Proof. lt. Qed.
 
+Lemma untag_i_flat : forall A, flat_pred (A _+_ A) untag_i.
+Proof. lt. Qed.
+
 (* A <T= (A _+_ B ) *)
 Definition tagL_i : fType  := up_inl.
 Lemma tagL_i_t : forall A B,  A <T= (A _+_ B ) ~>tagL_i.
+Proof. lt. Qed.
+Lemma tagL_i_flat : forall A,  flat_pred A tagL_i.
 Proof. lt. Qed.
 
 (* ((A _;_ B) _;_ C)<T=  (A _;_ (B _;_ C))*)
@@ -1495,6 +1518,9 @@ match T with
 end.
 Lemma assoc_i_t : forall A B C, ((A _;_ B) _;_ C)<T=  (A _;_ (B _;_ C)) ~> assoc_i.
 Proof. lt. Qed.
+Lemma assoc_i_flat : forall A B C, flat_pred ((A _;_ B) _;_ C) assoc_i.
+Proof. intros. intro. intro. inv H. simpl. inv H3. simpl. rewrite catA //.
+Qed.
 
 (*(A _;_ (B _;_ C)) <T=  ((A _;_ B) _;_ C)*)
 Definition associnv_i : fType  :=
@@ -1505,6 +1531,9 @@ match T with
 end.
 Lemma associnv_i_t : forall A B C, (A _;_ (B _;_ C)) <T=  ((A _;_ B) _;_ C) ~> associnv_i.
 Proof. lt. Qed.
+Lemma associnv_i_flat : forall A B C, flat_pred (A _;_ (B _;_ C)) associnv_i.
+Proof. intros. intro. intros. inv H. inv H4. inv H4. simpl. rewrite catA //.
+Qed.
 
 (* (A _;_ Eps)<T=  (Eps _;_ A) *)
 Definition swap_i : fType := 
@@ -1515,6 +1544,9 @@ match T with
 end.
 Lemma swap_i_t : forall A,  (A _;_ Eps)<T=  (Eps _;_ A) ~> swap_i.
 Proof. lt. Qed.
+Lemma swap_i_flat : forall A, flat_pred (A _;_ Eps) swap_i.
+Proof. intros. intro. intros. inv H. inv H. inv H4. simpl. rewrite cats0 //.
+Qed.
 
 (* (Eps _;_ A) <T= (A _;_ Eps)*)
 Definition swapinv_i : fType := 
@@ -1525,6 +1557,9 @@ match T with
 end.
 Lemma swapinv_i_t : forall A, (Eps _;_ A) <T= (A _;_ Eps) ~> swapinv_i.
 Proof. lt. Qed.
+Lemma swapinv_i_flat : forall A, flat_pred (Eps _;_ A) swapinv_i.
+Proof. intros. intro. intros. inv H. inv H. inv H3. simpl. rewrite cats0 //.
+Qed.
 
 (* (Eps _;_ A)<T=  A*)
 Definition proj_i : fType := 
@@ -1535,11 +1570,15 @@ match T with
 end.
 Lemma proj_i_t : forall A, (Eps _;_ A)<T=  A ~> proj_i.
 Proof. lt. Qed.
+Lemma proj_i_flat : forall A, flat_pred (Eps _;_ A) proj_i.
+Proof. lt. Qed.
 
 (* A <T= (Eps _;_ A)*)
 Definition projinv_i : fType := 
 fun T => up_pair up_tt T.
 Lemma projinv_i_t : forall A,  A <T= (Eps _;_ A) ~> projinv_i.
+Proof. lt. Qed.
+Lemma projinv_i_flat : forall A,  flat_pred A projinv_i.
 Proof. lt. Qed.
 
 (*Does this make sense, the domain is empty*)
@@ -1547,6 +1586,8 @@ Proof. lt. Qed.
 Definition abortR_i : fType := 
 fun _ => up_bot.
 Lemma abortR_i_t : forall A, (A _;_ Empt) <T=  Empt ~> abortR_i.
+Proof. lt. Qed.
+Lemma abortR_i_flat : forall A, flat_pred (A _;_ Empt) abortR_i.
 Proof. lt. Qed.
 (*match T with 
 | up_pair T' up_bot => up_bot
@@ -1557,6 +1598,8 @@ end. *)
 Definition abortRinv_i : fType  := fun _ => up_bot.
 Lemma abortRinv_i_t : forall A, Empt  <T=  (A _;_ Empt) ~> abortRinv_i.
 Proof. lt. Qed.
+Lemma abortRinv_i_flat : flat_pred Empt abortRinv_i.
+Proof. lt. Qed.
 (*fun T => 
 match T with end.*)
 
@@ -1564,11 +1607,15 @@ match T with end.*)
 Definition abortL_i : fType := fun _ => up_bot.
 Lemma abortL_i_t : forall A,  (Empt _;_ A) <T=  Empt ~> abortL_i.
 Proof. lt. Qed.
+Lemma abortL_i_flat : forall A, flat_pred (Empt _;_ A) abortL_i.
+Proof. lt. Qed.
 (*fun T => match T.1 with end.*)
 
 (* Empt <T=   (Empt _;_ A) *)
 Definition abortLinv_i : fType := fun _ => up_bot.
 Lemma abortLinv_i_t : forall A, Empt <T=   (Empt _;_ A) ~>abortLinv_i.
+Proof. lt. Qed.
+Lemma abortLinv_i_flat :  flat_pred Empt abortLinv_i.
 Proof. lt. Qed.
 (*fun T => match T with end.*)
 
@@ -1582,6 +1629,8 @@ match T with
 end.
 Lemma distL_i_t : forall A B C, (A _;_ (B _+_ C)) <T= ((A _;_ B) _+_ (A _;_ C)) ~>distL_i.
 Proof. lt. Qed.
+Lemma distL_i_flat : forall A B C, flat_pred (A _;_ (B _+_ C)) distL_i.
+Proof. lt. Qed.
 
 (* ((A _;_ B) _+_ (A _;_ C)) <T= (A _;_ (B _+_ C))*)
 Definition distLinv_i : fType :=
@@ -1592,6 +1641,8 @@ match T with
 | _ => up_bot
 end.
 Lemma distLinv_i_t : forall A B C, ((A _;_ B) _+_ (A _;_ C)) <T= (A _;_ (B _+_ C)) ~>distLinv_i.
+Proof. lt. Qed.
+Lemma distLinv_i_flat : forall A B C, flat_pred ((A _;_ B) _+_ (A _;_ C)) distLinv_i.
 Proof. lt. Qed.
 
 
@@ -1604,6 +1655,8 @@ match T with
 | _ => up_bot
 end.
 Lemma distR_i_t : forall A B C, ((A _+_ B) _;_ C) <T=  ((A _;_ C) _+_ (B _;_ C)) ~>distR_i.
+Proof. lt. Qed.
+Lemma distR_i_flat : forall A B C, flat_pred ((A _+_ B) _;_ C)distR_i.
 Proof. lt. Qed.
 (*let: (T0,T1) := T in 
 match T0 with 
@@ -1621,10 +1674,14 @@ match T with
 end.
 Lemma distRinv_i_t : forall A B C,  ((A _;_ C) _+_ (B _;_ C))  <T= ((A _+_ B) _;_ C) ~>distRinv_i.
 Proof. lt. Qed.
+Lemma distRinv_i_flat : forall A B C,  flat_pred ((A _;_ C) _+_ (B _;_ C)) distRinv_i.
+Proof. lt. Qed.
 
 (*(Eps _+_ (A _;_ Star A)) <T= (Star A)*)
 Definition wrap_i : fType  := up_fold.
 Lemma wrap_i_t : forall A,(Eps _+_ (A _;_ Star A)) <T= (Star A) ~>wrap_i.
+Proof. lt. Qed.
+Lemma wrap_i_flat : forall A, flat_pred (Eps _+_ (A _;_ Star A)) wrap_i.
 Proof. lt. Qed.
 (*fun T => 
 match T with
@@ -1641,6 +1698,8 @@ match T with
 | _ => up_bot
 end.
 Lemma wrapinv_i_t : forall A, (Star A) <T= (Eps _+_ (A _;_ Star A)) ~>wrapinv_i.
+Proof. lt. Qed.
+Lemma wrapinv_i_flat : forall A, flat_pred (Star A) wrapinv_i.
 Proof. lt. Qed.
 
 (*fun T => 
@@ -1680,6 +1739,18 @@ case=>//=.
 move=> n IH. case=>//=. lt. lt. lt. lt. lt. lt. 
 move=> u Hsize r0 Ht.  inv Ht. inv H1. inv H2.  eauto. inv H2. inv H4. inv H3. apply/IH. ssa. done.
 con. con. con. done. apply/IH. ssa. lia. done.
+Qed.
+
+Lemma drop_i_flat : forall A, flat_pred (Star (Eps _+_ A)) drop_i.
+Proof.
+move=> r T. 
+move Heq: (upTree_size T) => n. move: Heq.
+wlog: n T / upTree_size T <= n. move=> H Heq. apply:H. 2:eauto. lia. move=> + _.
+elim: n T.
+case=>//=.
+move=> n IH. case=>//=. lt. lt. lt. lt.  
+move=> u Hsize Ht. inv Ht. inv H1. inv H2. inv H2. inv H4. inv H3. simpl. apply:IH. ssa. ssa.
+simpl. f_equal. ssa. apply:IH. lia. ssa.
 Qed.
 
 (*Lemma test_drop_i_input : forall a, typing 
@@ -1740,6 +1811,17 @@ move=> n IH. case=>//=. lt. lt. lt. lt. lt. lt.
 move=> u Hsize r0 Ht.  inv Ht. inv H1. inv H2.  eauto. inv H2. con. con. con. con. done. apply/IH. ssa. lia. eauto.
 Qed.
 
+Lemma dropinv_i_flat : forall A, flat_pred (Star A)  dropinv_i.
+Proof.
+move=> r T. 
+move Heq: (upTree_size T) => n. move: Heq.
+wlog: n T / upTree_size T <= n. move=> H Heq. apply:H. 2:eauto. lia. move=> + _.
+elim: n T.
+case=>//=.
+move=> n IH. case=>//=. lt. lt. lt. lt.  
+move=> u Hsize Ht. inv Ht. inv H1. inv H2. inv H2. 
+simpl. f_equal. ssa. apply:IH. lia. ssa.
+Qed.
 (*match unfold_s T with 
 | up_inl _ => fold_s (up_inl tt)
 | up_inr (a,T') => fold_s (up_inr (up_inr a,dropinv_i T'))
@@ -1748,6 +1830,8 @@ end.*)
 (* A <T= A *)
 Definition cid_i : fType := fun x => x.
 Lemma cid_i_t : forall A, A <T= A ~>cid_i.
+Proof. lt. Qed.
+Lemma cid_i_flat : forall A, flat_pred A cid_i.
 Proof. lt. Qed.
 
 
@@ -1760,6 +1844,10 @@ match T with
 end. 
 Lemma cseq_i_t : forall A A' B B' f0 f1, A <T=  A' ~> f0 -> B <T= B' ~> f1 -> (A _;_ B) <T= (A' _;_ B') ~> (cseq_i f0 f1).
 Proof. lt. Qed.
+Lemma cseq_i_flat : forall A B f0 f1, flat_pred A f0 -> flat_pred B f1 -> flat_pred (A _;_ B) (cseq_i f0 f1).
+Proof. intros. intro. intros. inv H1. simpl. f_equal; eauto.
+Qed.
+
 (*let: (T0,T1) := T in (f0 T0, f1 T1).*)
 
 (* (f : A <T= B) : (Star A)  <T= (Star B) *)
@@ -1777,6 +1865,9 @@ Definition ctrans_i (f f' : fType) :  fType :=
 f' \o f.
 Lemma ctrans_i_t : forall A B C f f', A <T=B ~> f ->  B <T=C ~>f' ->  A <T=C ~> (ctrans_i f f').
 Proof. lt. Qed.
+Lemma ctrans_i_flat : forall A B f f', flat_pred A f -> A <T= B ~> f ->  flat_pred B f' ->  flat_pred A (ctrans_i f f').
+Proof. intros. intro. intros. rewrite /ctrans_i /=. rewrite H1 //. rewrite H//. apply:H0. done.
+Qed.
 
 (* (f :  A <T=A' ) (f' :  B <T=B' ) : A _+_ B <T=A' _+_ B'*)
 Definition cplus_i (f f' :  fType)  : fType :=
@@ -1787,6 +1878,8 @@ match T with
 | _ => up_bot
 end.
 Lemma cplus_i_t : forall A A' B B' f f', A <T=A' ~> f -> B <T=B'  ~> f'  -> A _+_ B <T=A' _+_ B' ~> (cplus_i f f').
+Proof. lt. Qed.
+Lemma cplus_i_flat : forall A  B f f', flat_pred A f -> flat_pred B f'  -> flat_pred (A _+_ B) (cplus_i f f').
 Proof. lt. Qed.
 
 
@@ -1869,11 +1962,19 @@ match T with
 end.
 Lemma guard_i_t : forall a A B f, A <T= B ~> f  -> ((Event a) _;_ A) <T= ((Event a) _;_ B) ~> (guard_i f).
 Proof. lt. Qed.
+Lemma guard_i_flat : forall a A B f, flat_pred A f  -> A <T= B ~>f -> flat_pred ((Event a) _;_ A) (guard_i f).
+Proof. intros. intro. intros. inv H1. inv H5. simpl. f_equal. apply:H. done.
+Qed.
 
 Hint Resolve shuffle_i_t shuffleinv_i_t retag_i_t untagL_i_t untagLinv_i_t untag_i_t
              tagL_i_t assoc_i_t associnv_i_t swap_i_t swapinv_i_t proj_i_t projinv_i_t abortR_i_t
              abortRinv_i_t abortL_i_t abortLinv_i_t distL_i_t distLinv_i_t distR_i_t distRinv_i_t
              wrap_i_t wrapinv_i_t drop_i_t dropinv_i_t cid_i_t ctrans_i_t cplus_i_t cseq_i_t (*cstar_i_t*) guard_i_t.
+
+Hint Resolve shuffle_i_flat shuffleinv_i_flat retag_i_flat untagL_i_flat untagLinv_i_flat untag_i_flat
+             tagL_i_flat assoc_i_flat associnv_i_flat swap_i_flat swapinv_i_flat proj_i_flat projinv_i_flat abortR_i_flat
+             abortRinv_i_flat abortL_i_flat abortLinv_i_flat distL_i_flat distLinv_i_flat distR_i_flat distRinv_i_flat
+             wrap_i_flat wrapinv_i_flat drop_i_flat dropinv_i_flat cid_i_flat ctrans_i_flat cplus_i_flat cseq_i_flat (*cstar_i_flat*) guard_i_flat.
 
 (*Definition opt_fType := upTree -> option upTree.*)
 
@@ -2240,14 +2341,14 @@ Proof.
 intros.  unlock interpl. simpl. erewrite Heq. unlock interpl in H. rewrite H.  done.
 Qed.
 
-Lemma interp_trans_eq_none : forall n d0 d1 d Heq T (D0: D_dom d0 n) (D1 : D_dom d1 n), interp D0 T = None  -> 
+(*Lemma interp_trans_eq_none : forall n d0 d1 d Heq T (D0: D_dom d0 n) (D1 : D_dom d1 n), interp D0 T = None  -> 
 interp (D_trans d Heq D0 D1) T = None.
 Proof.
 intros. simpl. erewrite Heq. simpl. rewrite H.  done.
-Qed.
+Qed.*)
 
-Lemma interp_base_eq : forall d f n T (Heq : interp_base (full_unf d) = Some f), interp (D_base d n Heq) T = Some (f T).
-Proof. intros.
+Lemma interp_base_eq : forall d f n T (Heq : interp_base (full_unf d) = Some f), interpl (D_base d n Heq) T = Some (f T).
+Proof. intros. unlock interpl.
 simpl. destruct (full_unf d) eqn:Heqn. 
 all: try solve [rewrite Heq //| ssa].
 Qed.
@@ -2358,9 +2459,9 @@ Qed.
 
 
 Lemma interp_plus_l : forall n d d0 d1 T (Heq : full_unf d = cplus d0 d1)  (D0 : D_dom d0 n) ( D1 : D_dom d1 n), 
-    interp (D_plus d Heq D0 D1) (up_inl T) = omap up_inl (interp D0 T).
+    interpl (D_plus d Heq D0 D1) (up_inl T) = omap up_inl (interpl D0 T).
 Proof.
-intros. simpl. erewrite Heq.  done.
+intros. unlock interpl. simpl. erewrite Heq.  done.
 Qed.
 
 Definition not_plus (T : upTree ) :=  match T with | up_inl _ | up_inr _ => false | _ => true end.
@@ -2370,31 +2471,31 @@ Definition not_guard (T : upTree) := match T with | up_pair (up_singl _) _ => fa
 
 
 Lemma interp_plus_r : forall n d d0 d1 T (Heq : full_unf d = cplus d0 d1)  (D0 : D_dom d0 n) ( D1 : D_dom d1 n), 
-    interp (D_plus d Heq D0 D1) (up_inr T) = omap up_inr (interp D1 T).
+    interpl (D_plus d Heq D0 D1) (up_inr T) = omap up_inr (interpl D1 T).
 Proof.
-intros. simpl. erewrite Heq.  done.
+intros. unlock interpl. simpl. erewrite Heq.  done.
 Qed.
 
 Lemma interp_plus_up_bot : forall n d d0 d1 T (Heq : full_unf d = cplus d0 d1)  (D0 : D_dom d0 n) ( D1 : D_dom d1 n), 
     not_plus T ->
-    interp (D_plus d Heq D0 D1) T = Some up_bot. 
+    interpl (D_plus d Heq D0 D1) T = Some up_bot. 
 Proof.
-intros. simpl. erewrite Heq. destruct T;ssa. 
+intros. unlock interpl. simpl. erewrite Heq. destruct T;ssa. 
 Qed.
 
 Lemma interp_seq_none : forall n d d0 d1 T0 T1(Heq : full_unf d = cseq d0 d1)  (D0 : D_dom d0 n) ( D1 : D_dom d1 n), 
-    interp D0 T0 = None -> 
-    interp (D_seq d Heq D0 D1) (up_pair T0 T1) = None. 
+    interpl D0 T0 = None -> 
+    interpl (D_seq d Heq D0 D1) (up_pair T0 T1) = None. 
 Proof.
-intros. simpl.  erewrite Heq. rewrite H. done.
+intros. unlock interpl. simpl.  erewrite Heq. unlock interpl in H. rewrite H. done.
 Qed.
 
 Lemma interp_seq_some : forall n d d0 d1 T0 T1 T0' (Heq : full_unf d = cseq d0 d1)  (D0 : D_dom d0 n) ( D1 : D_dom d1 n), 
-    interp D0 T0 = Some T0' -> 
-    interp (D_seq d Heq D0 D1) (up_pair T0 T1) = omap (fun T1' => up_pair T0' T1') (interp D1 T1).
+    interpl D0 T0 = Some T0' -> 
+    interpl (D_seq d Heq D0 D1) (up_pair T0 T1) = omap (fun T1' => up_pair T0' T1') (interpl D1 T1).
 Proof.
-intros. simpl.  erewrite Heq. 
-rewrite H. done. (*erewrite did not work here but rewrite did, why?*)
+intros. unlock interpl. simpl.  erewrite Heq. 
+unlock interpl in H. rewrite H. done. (*erewrite did not work here but rewrite did, why?*)
 Qed.
 
 Definition not_seq T := if T is up_pair T0 T1 then false else true.
@@ -2402,9 +2503,9 @@ Definition not_seq T := if T is up_pair T0 T1 then false else true.
 
 Lemma interp_seq_bot : forall n d d0 d1 T  (Heq : full_unf d = cseq d0 d1)  (D0 : D_dom d0 n) ( D1 : D_dom d1 n), 
     not_seq T ->
-    interp (D_seq d Heq D0 D1) T = Some up_bot.
+    interpl (D_seq d Heq D0 D1) T = Some up_bot.
 Proof.
-intros. simpl. erewrite Heq. 
+intros. unlock interpl. simpl. erewrite Heq. 
 destruct T;ssa. 
 Qed.
 
@@ -2439,17 +2540,17 @@ case;ssa. case: u;ssa. case : u;ssa. case: u;ssa.
 Qed.
 
 Lemma interp_star_some_tt : forall n d d' (Heq : full_unf d = cstar d') (D: D_dom d' n),
-    interp (D_star d Heq D) (up_fold (up_inl up_tt)) = Some (up_fold (up_inl up_tt)).
+    interpl (D_star d Heq D) (up_fold (up_inl up_tt)) = Some (up_fold (up_inl up_tt)).
 Proof.
-intros. simpl.  erewrite Heq. done.
+intros. unlock interpl. simpl.  erewrite Heq. done.
 Qed.
 
 Lemma interp_star_some_pair : forall n d d' T0 T0' T1 (Heq : full_unf d = cstar d') (D: D_dom d' n),
-    interp D T0 = Some T0' ->
-    interp (D_star d Heq D) (up_fold (up_inr (up_pair T0 T1))) = 
-      omap (fun T1' => up_fold (up_inr (up_pair T0' T1'))) (interp (D_star d Heq D) T1).
+    interpl D T0 = Some T0' ->
+    interpl (D_star d Heq D) (up_fold (up_inr (up_pair T0 T1))) = 
+      omap (fun T1' => up_fold (up_inr (up_pair T0' T1'))) (interpl (D_star d Heq D) T1).
 Proof.
-intros. simpl.  erewrite Heq. rewrite H. done.
+intros. unlock interpl. simpl.  erewrite Heq. unlock interpl in H. rewrite H. done.
 Qed.
 
 Lemma dec_dsl : forall (x y: dsl), x = y \/ x <> y.
@@ -2461,7 +2562,7 @@ Lemma dec_nat : forall (x y: nat), x = y \/ x <> y.
 Proof. intros. case: (eqVneq x y);auto. move/eqP. auto.
 Qed.
 
-From Coq.Logic Require Import Eqdep_dec.
+
 
 Lemma dsl_refl : forall (x : dsl) (H: x = x), H = @Logic.eq_refl dsl x.
 Proof.
@@ -2473,10 +2574,10 @@ Proof.
 intros. apply: eq_proofs_unicity. apply:dec_nat.
 Qed.
 Lemma interp_star_none_pair : forall n d d' T0 T1 (Heq : full_unf d = cstar d') (D: D_dom d' n),
-    interp D T0 = None ->
-    interp (D_star d Heq D) (up_fold (up_inr (up_pair T0 T1))) = None.
+    interpl D T0 = None ->
+    interpl (D_star d Heq D) (up_fold (up_inr (up_pair T0 T1))) = None.
 Proof.
-intros. simpl. 
+intros. unlock interpl. simpl. 
 (*move: Heq.*)
  (*erewrite Heq. *) 
 move: (@Logic.eq_refl _ (full_unf _)). (*The match is applied on an eq_refl, say H, proof, generalize H *)
@@ -2484,14 +2585,14 @@ rewrite {2 3} Heq. move=>Heq2.  (*Rewrite RHS of H and scrutinee of the match *)
 move: (eq_proofs_unicity dec_dsl Heq Heq2). (*make proof not depend on Heq*)
 move=>->. 
 move: Heq2. rewrite Heq. move=>H2. 
-rewrite (dsl_refl H2).  rewrite H //.
+rewrite (dsl_refl H2). unlock interpl in H. rewrite H //.
 Qed.
 
 (*Size induction with upTree*)
 Lemma interp_star_up_bot : forall n d d' T  (Heq : full_unf d = cstar d') (D: D_dom d' n), not_star T ->
-    interp (D_star d Heq D) T = Some up_bot.
+    interpl (D_star d Heq D) T = Some up_bot.
 Proof.
-intros. simpl.  erewrite Heq. move: H. 
+intros. unlock interpl. simpl.  erewrite Heq. move: H. 
 move Heqn: (upTree_size T) => n'. move: Heqn. 
 wlog: T n' / upTree_size T <= n'.
 move=>HH Hsize Hnot.  apply:HH. 2: eauto. lia. done. clear Heq.
@@ -2513,10 +2614,10 @@ Qed.
 
 
 Lemma interp_guard_some : forall n n' a d d' T T'  (Heq : full_unf d = guard d') (Heqn: n = n'.+1) (D: D_dom d' n'), 
-    interp D T = Some T' ->
-    interp (D_guard d Heq Heqn D) (up_pair (up_singl a) T) = Some (up_pair (up_singl a) T').
+    interpl D T = Some T' ->
+    interpl (D_guard d Heq Heqn D) (up_pair (up_singl a) T) = Some (up_pair (up_singl a) T').
 Proof.
-intros. simpl. 
+intros. unlock interpl. simpl. 
 move: (@Logic.eq_refl _ (full_unf _)). (*The match is applied on an eq_refl, say H, proof, generalize H *)
 rewrite {2 3} Heq. move=>Heq2.  (*Rewrite RHS of H and scrutinee of the match *)
 move: (eq_proofs_unicity dec_dsl Heq Heq2). (*make proof not depend on Heq*)
@@ -2530,14 +2631,14 @@ rewrite (nat_refl Heqn2).  clear Heqn. clear Heqn2.
 move: {1  3 4 }Heq2. rewrite Heq /=. (*Avoid touching equality proof in D_guard*)
 move=>Heq0.
 rewrite (dsl_refl Heq0).  clear Heq0. clear Heq.
-rewrite H //.
+unlock interpl in H. rewrite H //.
 Qed.
 
 Lemma interp_guard_none : forall n n' a d d' T  (Heq : full_unf d = guard d') (Heqn: n = n'.+1) (D: D_dom d' n'), 
-    interp D T = None ->
-    interp (D_guard d Heq Heqn D) (up_pair (up_singl a) T) = None.  
+    interpl D T = None ->
+    interpl (D_guard d Heq Heqn D) (up_pair (up_singl a) T) = None.  
 Proof.
-intros. simpl. 
+intros. unlock interpl. simpl. 
 move: (@Logic.eq_refl _ (full_unf _)). (*The match is applied on an eq_refl, say H, proof, generalize H *)
 rewrite {2 3} Heq. move=>Heq2.  (*Rewrite RHS of H and scrutinee of the match *)
 move: (eq_proofs_unicity dec_dsl Heq Heq2). (*make proof not depend on Heq*)
@@ -2551,13 +2652,13 @@ rewrite (nat_refl Heqn2).  clear Heqn. clear Heqn2.
 move: {1  3 4 }Heq2. rewrite Heq /=. (*Avoid touching equality proof in D_guard*)
 move=>Heq0. 
 rewrite (dsl_refl Heq0).  clear Heq0. clear Heq.
-rewrite H //.
+unlock interpl in H. rewrite H //.
 Qed.
 
 Lemma interp_guard_up_bot : forall n n' d d' T  (Heq : full_unf d = guard d') (Heqn: n = n'.+1) (D: D_dom d' n'), not_guard T ->
-    interp (D_guard d Heq Heqn D) T = Some up_bot. 
+    interpl (D_guard d Heq Heqn D) T = Some up_bot. 
 Proof.
-intros. simpl. 
+intros. unlock interpl. simpl. 
 move: (@Logic.eq_refl _ (full_unf _)). (*The match is applied on an eq_refl, say H, proof, generalize H *)
 rewrite {2 3} Heq. move=>Heq2.  (*Rewrite RHS of H and scrutinee of the match *)
 move: (eq_proofs_unicity dec_dsl Heq Heq2). (*make proof not depend on Heq*)
@@ -2574,9 +2675,9 @@ rewrite (dsl_refl Heq0).  clear Heq0. clear Heq.
 case:T H;ssa. case:u H;ssa.
 Qed.
 
-Lemma interp_stop_pair : forall n d d0 a T1 (Heq: full_unf d = guard d0) (Heqn: n = 0) (D: D_dom d n), interp (D_stop d Heq Heqn) (up_pair (up_singl a) T1) = None.
+Lemma interp_stop_pair : forall n d d0 a T1 (Heq: full_unf d = guard d0) (Heqn: n = 0) (D: D_dom d n), interpl (D_stop d Heq Heqn) (up_pair (up_singl a) T1) = None.
 Proof.
-intros. simpl. 
+intros. unlock interpl. simpl. 
 move: (@Logic.eq_refl dsl _).
 rewrite {2 3} Heq. move=>Heq2.  (*Rewrite RHS of H and scrutinee of the match *)
 move: (eq_proofs_unicity dec_dsl Heq Heq2). (*make proof not depend on Heq*)
@@ -2586,9 +2687,9 @@ rewrite {2 3} Heqn //.
 Qed.
 
 Lemma interp_stop_up_bot : forall n d d0 T (Heq: full_unf d = guard d0) (Heqn: n = 0) (D: D_dom d n), not_guard T ->
- interp (D_stop d Heq Heqn) T = Some up_bot.
+ interpl (D_stop d Heq Heqn) T = Some up_bot.
 Proof.
-intros. simpl. 
+intros. unlock interpl. simpl. 
 move: (@Logic.eq_refl dsl _).
 rewrite {2 3} Heq. move=>Heq2.  (*Rewrite RHS of H and scrutinee of the match *)
 move: (eq_proofs_unicity dec_dsl Heq Heq2). (*make proof not depend on Heq*)
@@ -2597,31 +2698,31 @@ move: (@Logic.eq_refl nat _).
 rewrite {2 3} Heqn //. move=>_. case: T H;ssa. case: u H;ssa.
 Qed.
  
-
-Lemma interp_size : forall n d T T' (D: D_dom d n), interp D T = Some T' -> event_size T' <= event_size T.
+(*No explosion in interp definition because we use the lock*)
+Lemma interp_size : forall n d T T' (D: D_dom d n), interpl D T = Some T' -> event_size T' <= event_size T.
 Proof.
 refine (fix loop n d T T' D {struct D} := _).
 destruct D.
--  rewrite interp_base_eq. case;intros;subst.
-   apply/interp_base_size. eauto.
-- case Heq: (interp D1 T) => [ T'' | ]. 
+- rewrite interp_base_eq. case;intros;subst.
+  apply/interp_base_size. eauto.
+- case Heq: (interpl D1 T) => [ T'' | ]. 
   erewrite interp_trans_eq_some. 2: eauto. move=>Heq2.
   move: (loop n d0 T T'' D1 Heq)=>Hint1. 
   move: (loop n d1 _ _ D2 Heq2). lia.
   rewrite interp_trans_eq_none //.
 - case: (plus_caseP T). 
  * move=> T0. rewrite interp_plus_l.
-   case Heq: (interp _ _)=>//= [ T'']. case;intros;subst.
+   case Heq: (interpl _ _)=>//= [ T'']. case;intros;subst.
    move: (loop _ _ _ _ D1 Heq)=>//.
  * move=> T0. rewrite interp_plus_r.
-   case Heq: (interp _ _)=>//= [ T'']. case;intros;subst.
+   case Heq: (interpl _ _)=>//= [ T'']. case;intros;subst.
    move: (loop _ _ _ _ D2 Heq)=>//.
- * move=> T0 Hnot. rewrite interp_plus_up_bot //. case. move=><- /=. lia.
+ * move=> T0 Hnot. rewrite interp_plus_up_bot //. case. move=><- /=. lia. 
 - case: (seq_caseP T). 
  * move=> T0 T1. 
-   case Heq: (interp D1 T0) =>// [T0' | ].
+   case Heq: (interpl D1 T0) =>// [T0' | ].
    erewrite interp_seq_some. 2 : eauto. simpl.
-   case Heq2: (interp D2 T1) =>//= [ T1']. case;intros;subst.
+   case Heq2: (interpl D2 T1) =>//= [ T1']. case;intros;subst.
    simpl.
    move: (loop _ _ _ _ _ Heq) (loop _ _ _ _ _ Heq2). lia.
    rewrite interp_seq_none //.
@@ -2635,9 +2736,9 @@ destruct D.
  * move=> n0 IH T T'. case: (star_caseP T)=>//.
   ** move=> Hsize. rewrite interp_star_some_tt. case;intros;subst. done.
   ** move=> T0 T1. 
-     case Heq: (interp D T0) =>// [T0' | ].
+     case Heq: (interpl D T0) =>// [T0' | ].
      erewrite interp_star_some_pair. 2: eauto. 
-     case Heq2: ((interp (D_star d e D) T1))=>// [ T1'].
+     case Heq2: ((interpl (D_star d e D) T1))=>// [ T1'].
      move=> Hsize. simpl. case;intros;subst. simpl.
      move: (loop _ _ _ _ _ Heq). intros.
      suff: event_size T1' <= event_size T1. lia.
@@ -2646,7 +2747,7 @@ destruct D.
   ** move=> T0 Hnot Hsize. rewrite interp_star_up_bot //. case;intros;subst. simpl. lia.
 - case: (guard_caseP T). 
  * move=>a T0.
-   case Heq: (interp D T0) =>// [T0' | ].
+   case Heq: (interpl D T0) =>// [T0' | ].
    erewrite interp_guard_some. 2: eauto. simpl. case;intros;subst. simpl. 
    move: (loop _ _ _ _ _ Heq). lia.
  * rewrite interp_guard_none //.
@@ -2663,45 +2764,319 @@ Qed.
 
 
 (*Require Import Program.Equality.*)
-Lemma interp_fuel : forall n (d : dsl) (D: D_dom d n)  (T : upTree), event_size T <= n -> interp D T.
+Lemma interp_fuel : forall n (d : dsl) (D: D_dom d n)  (T : upTree), event_size T <= n -> interpl D T.
 Proof.
 refine (fix loop n d D {struct D} := _).
 destruct D. 
 - move => T _. rewrite interp_base_eq //.
 - move=> T Hsize. 
   move: (loop n d0 D1 T Hsize)=>Hi.
-  case Heq : (interp D1 T) Hi=>// [ T0] _.
+  case Heq : (interpl D1 T) Hi=>// [ T0] _.
   erewrite interp_trans_eq_some. 2: eauto.
   move:  ((interp_size _ _ Heq)). move=> Hsize2.
   have: event_size T0 <= n by lia. move=> Hsize3.
   exact: (loop n d1 D2 T0 Hsize3).
 - move=> T. case: (plus_caseP T).
  * move=> T0 Hsize. rewrite interp_plus_l /=.
-   simpl in Hsize. move: (loop _ _ D1 _ Hsize). case: (interp _ _)=>//.
+   simpl in Hsize. move: (loop _ _ D1 _ Hsize). case: (interpl _ _)=>//.
  * move=> T0 Hsize. rewrite interp_plus_r /=.
-   simpl in Hsize. move: (loop _ _ D2 _ Hsize). case: (interp _ _)=>//. 
+   simpl in Hsize. move: (loop _ _ D2 _ Hsize). case: (interpl _ _)=>//. 
  * move=> T0 Hnot Hsize. rewrite interp_plus_up_bot //=.
 - move=> T. case: (seq_caseP T).
  * move=> T0 T1 Hsize. simpl in Hsize.
-   have: event_size T0 <= n
+   have: event_size T0 <= n. lia. move=>Ht0.
+   have: event_size T1 <= n. lia. move=>Ht1.
+   move: (loop _ _ D1 _ Ht0) (loop _ _ D2 _ Ht1).
+   case Heq: (interpl D1 T0) =>// [ T2 ] _.
+   case Heq2: (interpl D2 T1) =>// [ T3 ] _.
+   erewrite interp_seq_some;eauto. rewrite Heq2 //.
+ * move=> T0 Hnot Hsize. rewrite interp_seq_bot //=. 
+- move=> T. move Heqn: (upTree_size T) => n'. move: Heqn. 
+  wlog: T n' / upTree_size T <= n'.
+  move=>HH Hsize Hint.  apply:HH. 2: eauto. lia. done. move=>+_. 
+  elim: n' T.
+ * move=> T. case: (star_caseP T)=>//. move=> T0 Hnot Hsize.
+   rewrite interp_star_up_bot //. 
+ * move=> n0 IH T. case: (star_caseP T)=>//.
+  ** move=> Hsize. rewrite interp_star_some_tt //. 
+  ** move=> T0 T1. 
+     case Heq: (interpl D T0) =>// [T0' | ].
+     erewrite interp_star_some_pair. 2: eauto. 
+     case Heq2: ((interpl (D_star d e D) T1))=>// [ ]. 
+     simpl. intros.
+     have: upTree_size T1 <= n0.  lia. intro.
+     have: event_size T1 <= n. lia. intro.
+     move: (IH T1 H1 H2). rewrite Heq2 //. 
+     simpl. intros.
+     have: event_size T0 <= n. lia. intros.
+     move: (loop n d0 D T0 H1). rewrite Heq //. 
+  ** move=> T0 Hnot Hsize. rewrite interp_star_up_bot //. 
+- move=> T. case: (guard_caseP T). 
+ * move=>a T0.
+   case Heq: (interpl D T0) =>// [T0' | ].
+   erewrite interp_guard_some. 2: eauto. done. 
+ * move=>/= Hsize.  have: event_size T0 <= n' by lia. intro.
+   move: (loop n' d0 D T0 H). rewrite Heq //. 
+ * move=> T0 Hnot. rewrite interp_guard_up_bot //.
+- move=> T. case: (guard_caseP T). 
+ * move=>a T0 /= Hsize. subst. lia. 
+ * move=> T0 Hnot Hsize. rewrite interp_stop_up_bot //=. 
+   subst. apply: D_stop. eauto. done.
+Qed.
+Check typing.
+Check interpl.
+Search invPred.
+Definition interp_wrap p  (H: invPred  p ) (T : upTree): option upTree := interpl (any_fuel (event_size T) H) T.
 
- erewrite interp_seq_some.
-   simpl in Hsize. move: (loop _ _ D1 _ Hsize). case: (interp _ _)=>//.
- * move=> T0 Hsize. rewrite interp_plus_r /=.
-   simpl in Hsize. move: (loop _ _ D2 _ Hsize). case: (interp _ _)=>//. 
- * move=> T0 Hnot Hsize. rewrite interp_plus_up_bot //=.
 
-move/loop. 
-Check interp_size.
-apply/loop.
-  apply: interp_size.
-erewrite interp_trans. 2: {  apply/Heq. }  apply/loop.
-simpl. rewrite Heq.
-have : interp (D_trans d e D1 
-simpl. intros. erewrite e. simpl.
-rewrite e.
- simpl.
+Lemma INEQ_unf : forall c0 c1 d, INEQ c0 c1 d -> INEQ c0 c1 (full_unf d).
+Proof.
+move=>c0 c1 d. sunfold. elim;eauto;intros.
+all: try solve [rewrite H; pfold; con=>//].
+rewrite H. pfold. econ. done. 
+pfold_reverse=>//. 
+pfold_reverse=>//. 
 
+rewrite H. pfold. apply:rule_cplus. done.
+pfold_reverse=>//. 
+pfold_reverse=>//. 
+
+
+rewrite H. pfold. apply:rule_cseq. done.
+pfold_reverse=>//. 
+pfold_reverse=>//. 
+
+
+rewrite H. pfold. apply:rule_cstar. done.
+pfold_reverse=>//. 
+
+rewrite H. inv H0.
+pfold. 
+apply:rule_guard. done. left. done.
+Qed.
+
+
+
+(*invPred is derived from INEQ, but delay this to have conclusion not depend on proof, disallowing unfolding INEQ*)
+Lemma interp_typing : forall d n  (D: D_dom d n) T T' c0 c1, interpl D T = Some T' ->  event_size T <= n -> INEQ c0 c1 d -> typing T c0 ->  typing T' c1.
+Proof.
+refine (fix loop d n D {struct D} := _).
+destruct D.
+- move=> T T' c0 c1. rewrite interp_base_eq. case=>Hf. subst.
+  move=>_ Hineq. move: Hineq e. sunfold. case.
+  all: try solve[intros; rewrite e in e0; inv e0;  eauto].
+- move=> T T' c0 c1.
+  case Heq: (interpl D1 T) => [T'' |].
+  erewrite interp_trans_eq_some. 2: eauto.
+  move=> Hint Hsize.
+  move/INEQ_unf. rewrite e.
+  sunfold=>HH. inv HH. move=> Ht.
+  have: event_size T'' <= event_size T.
+  move: (interp_size _ _  Heq). lia. move=>Hle0.
+  have: event_size T' <= event_size T''.
+  move: (interp_size _ _  Hint). lia. move=>Hle1.
+  have: event_size T'' <= n. lia. move=>Hle2. inv H.
+  punfold_reverse H1. 
+  move: (loop _ _ _ _ _ _ _ Hint Hle2 H1)=>Htype. apply: Htype.
+  punfold_reverse H0. 
+  rewrite interp_trans_eq_none //.
+- move=> T T' c0 c1. 
+  case: (plus_caseP T).
+ * move=> T0. rewrite interp_plus_l.
+   case Heq: (interpl D1 T0)=>//= [T1]. case. move=>HT';subst.
+   move=>Hsize /INEQ_unf Hineq Ht. rewrite e in Hineq. punfold Hineq. inv Hineq.
+   inv Ht. con. inv H. punfold_reverse H0. 
+ * move=> T0. rewrite interp_plus_r.
+   case Heq: (interpl D2 T0)=>//= [T1]. case. move=>HT';subst.
+   move=>Hsize /INEQ_unf Hineq Ht. rewrite e in Hineq. punfold Hineq. inv Hineq.
+   inv Ht. con. inv H. punfold_reverse H1. 
+ * move=> T0 Hnot _ _ /INEQ_unf. rewrite e. move=>Hineq.  
+   punfold Hineq. inv Hineq. move=>Htype. inv Htype.
+- move=> T T' c0 c1. 
+  case: (seq_caseP T).
+ * move=> T0 T1. 
+   case Heq: (interpl D1 T0)=>//= [T0' |]. 
+   erewrite interp_seq_some. 2:eauto. 
+   case Heq2: (interpl D2 T1)=>//= [T1' ]. case. move=>Ht';subst.
+   move=>Hsize.  move/INEQ_unf. rewrite e. move=>Hineq. punfold Hineq. inv Hineq.
+   inv H.
+   move=>Htype. inv Htype. con.
+   have: event_size T0 <= n by lia. move=>Hle0.
+   punfold_reverse H0.
+   have: event_size T1 <= n by lia. move=>Hle1. 
+   punfold_reverse H1.
+   rewrite interp_seq_none //.
+ * move=> T0 Hnot _ _ /INEQ_unf Hineq. rewrite e in Hineq.  punfold Hineq. inv Hineq.
+   inv H. move=>Htype. inv Htype.
+- move=> T. move Heqn: (upTree_size T) => n'. move: Heqn. 
+  wlog: T n' / upTree_size T <= n'.
+  move=>HH Hsize Hint.  apply:HH. 2: eauto. lia. move=>+_. 
+  elim: n' T.
+ * move=> T. case: (star_caseP T)=>//. move=> T0 Hnot Hsize.
+   move=> T' c0 c1 _ _ /INEQ_unf. rewrite e=>Hineq. punfold Hineq. inv Hineq. inv H.
+   move=>Htype. inv Htype.
+ * move=> n0 IH T. case: (star_caseP T)=>//.
+  ** move=> Hsize T' c0 c1. rewrite interp_star_some_tt //. 
+     case. move=>Ht';subst. move=>Hsize2. move/INEQ_unf. rewrite e=>Hineq. punfold Hineq. inv Hineq.
+     inv H. move=>Htype. inv Htype. inv H3. eauto. 
+  ** move=> T0 T1. 
+     case Heq: (interpl D T0) =>// [T0' | ].
+     erewrite interp_star_some_pair. 2: eauto. 
+     case Heq2: ((interpl (D_star d e D) T1))=>// [ T1']. 
+     simpl.
+     move=>Hupsize. 
+
+     move=>T' c0 c1 [] Ht';subst. move=>Hsize.
+     have: event_size T0 <= n by lia. move=>Hle0.
+     have: event_size T1 <= n by lia. move=>Hle1.
+     move/INEQ_unf. rewrite e=>Hineq. punfold Hineq. inv Hineq. inv H.
+     move=>Htype. inv Htype. inv H3. inv H4. punfold_reverse H0. punfold_reverse Hineq. 
+     con. con. con. eauto.  
+     apply: IH. 2:eauto. lia. lia. 2:eauto.
+     pfold. apply:rule_cstar. eauto. pfold_reverse.
+  ** move=> _ T' c0 c1. rewrite interp_star_none_pair //.
+  ** move=> T0 Hnot Hsize T' c0 c1 _ _ /INEQ_unf Hineq. rewrite e in Hineq. punfold Hineq. inv Hineq.
+     inv H. move=> Htype. inv Htype. inv H3. inv H4. inv H4. 
+- move=> T. case: (guard_caseP T). 
+ * move=>a T0.
+   case Heq: (interpl D T0) =>// [T0' | ].
+   erewrite interp_guard_some. 2: eauto. 
+   move=> T' c0 c1 [] Ht';subst. move=>Hsize /INEQ_unf. rewrite e. move=>Hineq. punfold Hineq. inv Hineq.
+   inv H. inv H0. move=>Htype. inv Htype. con. done. eauto.
+ * move=> T' c0 c1. rewrite interp_guard_none //.
+ * move=> T0 Hnot T' c0 c1 _ _ /INEQ_unf. rewrite e. move=>Hineq.
+   punfold Hineq. inv Hineq. inv H. inv H0. move=>Htype. inv Htype. inv H5.
+- move=> T. subst. case: (guard_caseP T). 
+ * move=>a T0 T' c0 c1 /=. rewrite interp_stop_pair //. eauto. 
+ * move=> T0 Hnot T' c0 c1 _ _ /INEQ_unf. rewrite e. sunfold=>Hineq. inv Hineq. inv H0.
+   move=>Htype. inv Htype. inv H5.
+Qed.
+
+
+
+
+Lemma interp_flatten : forall d n  (D: D_dom d n) T T' c0 c1, interpl D T = Some T' ->  event_size T <= n -> INEQ c0 c1 d -> typing T c0 ->  uflatten T = uflatten T'. 
+Proof.
+refine (fix loop d n D {struct D} := _).
+destruct D.
+- move=> T T' c0 c1. rewrite interp_base_eq. case=>Hf. subst.
+  move=>_ Hineq. move: Hineq e. sunfold. case.
+  all: try solve[intros; rewrite e in e0; inv e0;  eauto]. 
+  intros; rewrite e in e0; inv e0. Check shuffle_i_flat. 
+  erewrite shuffle_i_flat.
+
+- move=> T T' c0 c1.
+  case Heq: (interpl D1 T) => [T'' |].
+  erewrite interp_trans_eq_some. 2: eauto.
+  move=> Hint Hsize.
+  move/INEQ_unf. rewrite e.
+  sunfold=>HH. inv HH. move=> Ht.
+  have: event_size T'' <= event_size T.
+  move: (interp_size _ _  Heq). lia. move=>Hle0.
+  have: event_size T' <= event_size T''.
+  move: (interp_size _ _  Hint). lia. move=>Hle1.
+  have: event_size T'' <= n. lia. move=>Hle2. inv H.
+  punfold_reverse H1. 
+  move: (loop _ _ _ _ _ _ _ Hint Hle2 H1)=>Htype. apply: Htype.
+  punfold_reverse H0. 
+  rewrite interp_trans_eq_none //.
+- move=> T T' c0 c1. 
+  case: (plus_caseP T).
+ * move=> T0. rewrite interp_plus_l.
+   case Heq: (interpl D1 T0)=>//= [T1]. case. move=>HT';subst.
+   move=>Hsize /INEQ_unf Hineq Ht. rewrite e in Hineq. punfold Hineq. inv Hineq.
+   inv Ht. con. inv H. punfold_reverse H0. 
+ * move=> T0. rewrite interp_plus_r.
+   case Heq: (interpl D2 T0)=>//= [T1]. case. move=>HT';subst.
+   move=>Hsize /INEQ_unf Hineq Ht. rewrite e in Hineq. punfold Hineq. inv Hineq.
+   inv Ht. con. inv H. punfold_reverse H1. 
+ * move=> T0 Hnot _ _ /INEQ_unf. rewrite e. move=>Hineq.  
+   punfold Hineq. inv Hineq. move=>Htype. inv Htype.
+- move=> T T' c0 c1. 
+  case: (seq_caseP T).
+ * move=> T0 T1. 
+   case Heq: (interpl D1 T0)=>//= [T0' |]. 
+   erewrite interp_seq_some. 2:eauto. 
+   case Heq2: (interpl D2 T1)=>//= [T1' ]. case. move=>Ht';subst.
+   move=>Hsize.  move/INEQ_unf. rewrite e. move=>Hineq. punfold Hineq. inv Hineq.
+   inv H.
+   move=>Htype. inv Htype. con.
+   have: event_size T0 <= n by lia. move=>Hle0.
+   punfold_reverse H0.
+   have: event_size T1 <= n by lia. move=>Hle1. 
+   punfold_reverse H1.
+   rewrite interp_seq_none //.
+ * move=> T0 Hnot _ _ /INEQ_unf Hineq. rewrite e in Hineq.  punfold Hineq. inv Hineq.
+   inv H. move=>Htype. inv Htype.
+- move=> T. move Heqn: (upTree_size T) => n'. move: Heqn. 
+  wlog: T n' / upTree_size T <= n'.
+  move=>HH Hsize Hint.  apply:HH. 2: eauto. lia. move=>+_. 
+  elim: n' T.
+ * move=> T. case: (star_caseP T)=>//. move=> T0 Hnot Hsize.
+   move=> T' c0 c1 _ _ /INEQ_unf. rewrite e=>Hineq. punfold Hineq. inv Hineq. inv H.
+   move=>Htype. inv Htype.
+ * move=> n0 IH T. case: (star_caseP T)=>//.
+  ** move=> Hsize T' c0 c1. rewrite interp_star_some_tt //. 
+     case. move=>Ht';subst. move=>Hsize2. move/INEQ_unf. rewrite e=>Hineq. punfold Hineq. inv Hineq.
+     inv H. move=>Htype. inv Htype. inv H3. eauto. 
+  ** move=> T0 T1. 
+     case Heq: (interpl D T0) =>// [T0' | ].
+     erewrite interp_star_some_pair. 2: eauto. 
+     case Heq2: ((interpl (D_star d e D) T1))=>// [ T1']. 
+     simpl.
+     move=>Hupsize. 
+
+     move=>T' c0 c1 [] Ht';subst. move=>Hsize.
+     have: event_size T0 <= n by lia. move=>Hle0.
+     have: event_size T1 <= n by lia. move=>Hle1.
+     move/INEQ_unf. rewrite e=>Hineq. punfold Hineq. inv Hineq. inv H.
+     move=>Htype. inv Htype. inv H3. inv H4. punfold_reverse H0. punfold_reverse Hineq. 
+     con. con. con. eauto.  
+     apply: IH. 2:eauto. lia. lia. 2:eauto.
+     pfold. apply:rule_cstar. eauto. pfold_reverse.
+  ** move=> _ T' c0 c1. rewrite interp_star_none_pair //.
+  ** move=> T0 Hnot Hsize T' c0 c1 _ _ /INEQ_unf Hineq. rewrite e in Hineq. punfold Hineq. inv Hineq.
+     inv H. move=> Htype. inv Htype. inv H3. inv H4. inv H4. 
+- move=> T. case: (guard_caseP T). 
+ * move=>a T0.
+   case Heq: (interpl D T0) =>// [T0' | ].
+   erewrite interp_guard_some. 2: eauto. 
+   move=> T' c0 c1 [] Ht';subst. move=>Hsize /INEQ_unf. rewrite e. move=>Hineq. punfold Hineq. inv Hineq.
+   inv H. inv H0. move=>Htype. inv Htype. con. done. eauto.
+ * move=> T' c0 c1. rewrite interp_guard_none //.
+ * move=> T0 Hnot T' c0 c1 _ _ /INEQ_unf. rewrite e. move=>Hineq.
+   punfold Hineq. inv Hineq. inv H. inv H0. move=>Htype. inv Htype. inv H5.
+- move=> T. subst. case: (guard_caseP T). 
+ * move=>a T0 T' c0 c1 /=. rewrite interp_stop_pair //. eauto. 
+ * move=> T0 Hnot T' c0 c1 _ _ /INEQ_unf. rewrite e. sunfold=>Hineq. inv Hineq. inv H0.
+   move=>Htype. inv Htype. inv H5.
+Qed.
+
+
+(*Maybe be state this with informative proofs as well*)
+Lemma interp_spec : forall c0 c1 d T, INEQ c0 c1 d -> typing T c0 ->  exists (n : nat) (D: D_dom d n) T', interpl D T = Some T' /\ typing T' c1.  
+Proof.
+move=> c0 c1 d T Hineq Ht. exists (event_size T).
+move :  ((any_fuel (event_size T) (to_invPred Hineq)))=>D.
+have: event_size T <= event_size T by lia. move=>Hle.
+move: (interp_fuel D T Hle).
+case Heq:(interpl _ _) =>// [ T'] _.
+move: (interp_ineq D  Heq Hle Hineq Ht)=>Htype.
+exists D,T'. con.
+apply: Heq. apply:Htype.
+Qed.
+
+
+Lemma INEQ_sound : forall c0 c1 d, INEQ c0 c1 d -> (forall s, Match s c0 -> Match s c1).
+Proof.
+move=> c0 c1 d Hineq s Hmatch. 
+case: (exists_pTree Hmatch)=> x /andP [] /typingP1 Htype /eqP Hflat. subst. 
+move: (interp_spec Hineq Htype). move=>[] n [] D [] T' [] Hint Htype2.
+apply: pTree_Match.
+
+Search _ Match.
+
+ exists n (D : D_dom d n), interpl 
 
 Lemma ns_nsa_n_direct : ∀x n D, nsa x n D = ns x D + n.
 Proof.
@@ -4032,8 +4407,8 @@ apply/rule_ctrans=>//. apply/rule_wrapinv=>//.
 apply/rule_ctrans=>//. 2: { apply/rule_wrap=>//. }
 apply/rule_cplus=>//. apply/rule_cid=>//.
 apply/rule_ctrans=>//. apply/rule_assoc=>//.
-(*apply/rule_test=>//. left. pcofix CIH. pfold*)  
-apply/rule_cseq=>//. apply/rule_cid=>//. (*Don't use rule_test yet*) (*apply/rule_test=>//. left=>//. pfold.*)
+(*apply/rule_guard=>//. left. pcofix CIH. pfold*)  
+apply/rule_cseq=>//. apply/rule_cid=>//. (*Don't use rule_guard yet*) (*apply/rule_guard=>//. left=>//. pfold.*)
 
 pfold_reverse. pcofix CIH. pfold. (*pcofix before cfix*)
 (*apply/rule_cfix=>//. simpl=>//. *)
@@ -4075,10 +4450,10 @@ apply/rule_ctrans=>//. apply/rule_wrapinv=>//.
 apply/rule_ctrans=>//. 2: { apply/rule_wrap=>//. }
 apply/rule_cplus=>//. apply/rule_cid=>//.
 apply/rule_ctrans=>//. apply/rule_assoc=>//.
-apply/rule_test=>//. right. apply/CIH.
+apply/rule_guard=>//. right. apply/CIH.
 
 apply/rule_ctrans=>//. apply/rule_assoc=>//.
-apply/rule_test=>//. right.  apply/CIH2.
+apply/rule_guard=>//. right.  apply/CIH2.
 Qed.
 
 
@@ -4266,10 +4641,10 @@ apply/rule_ctrans. apply/rule_wrapinv.
 apply/rule_ctrans. 2: { apply/rule_wrap. }
 apply/rule_cplus. apply/rule_cid.
 apply/rule_ctrans. apply/rule_assoc.
-apply/rule_test. right. instantiate (1:= var_dsl 1). admit. 
+apply/rule_guard. right. instantiate (1:= var_dsl 1). admit. 
 
 apply/rule_ctrans. apply/rule_assoc.
-apply/rule_test. right. instantiate (1:= var_dsl 0).
+apply/rule_guard. right. instantiate (1:= var_dsl 0).
 Unset Printing Notations.
  admit.
 pfold.
