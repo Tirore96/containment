@@ -11,6 +11,27 @@ From Containment Require Import  utils dsl dsl_theory.
 Set Implicit Arguments.
 Set Maximal Implicit Insertion.
 
+(*From Coq.Logic Require Import Eqdep_dec.
+
+
+Module DSL_mod : DecidableSet.
+Definition U := dsl.
+Lemma U_eq : U = dsl.
+Proof. done. Qed.
+Definition eq_dec : forall x y:U, {x = y} + {x <> y}.
+Proof. intros. case: (eqVneq x y). auto. move/eqP. eauto.
+Qed.
+End DSL_mod.
+
+Import DSL_mod.
+Check eq_proofs_unicity_on.
+Module EqDep := Coq.Logic.Eqdep_dec.DecidableEqDepSet DSL_mod. 
+Import EqDep.
+
+Lemma test : DSL_mod.U = dsl.
+Proof. Locate U_eq.
+done.
+*)
 
 Let inE := utils.inE.
 
@@ -1216,6 +1237,13 @@ Inductive c_ineq : regex -> regex -> dsl -> Prop :=
 | rule_test a r r' pf p : full_unf pf = guard p -> P r r' p -> (Event a) _;_ r <R= (Event a) _;_ r' ~> pf
  where "c1 <R= c2 ~> p" := (c_ineq c1 c2 p).
 End Containment.
+Hint Constructors c_ineq.
+Lemma c_ineq_gen_mon: monotone3 c_ineq. 
+Proof.
+unfold monotone3.
+intros. induction IN; eauto. 
+Qed.
+Hint Resolve c_ineq_gen_mon : paco.
 
 Notation "c0 < ( R ) = c1 ~> p" := (c_ineq R c0 c1 p)(at level 63).
 Definition INEQ c0 c1 p := paco3 c_ineq bot3 c0 c1 p.
@@ -1899,6 +1927,52 @@ end.
 | dropinv  => dropinv_i
 | cid => cid_i*)
 
+(*Definition is_base d := 
+match d with 
+| ctrans _ _ | cplus _ _ | cseq _ _ | cstar _ | guard _ | var_dsl _ => false | _ => true 
+end.
+
+
+| shuffle  => Some shuffle_i
+| shuffleinv => Some shuffleinv_i
+
+
+| retag => Some retag_i
+| untagL => Some untagL_i
+| untagLinv => Some untagLinv_i
+| untag => Some untag_i
+| tagL => Some tagL_i
+
+| assoc    => Some assoc_i
+| associnv    => Some associnv_i
+
+| swap  => Some  swap_i
+| swapinv  => Some swapinv_i
+
+| proj  => Some proj_i
+| projinv  => Some projinv_i
+
+| abortR  => Some abortR_i
+| abortRinv  => Some abortRinv_i
+
+| abortL  => Some abortL_i
+| abortLinv => Some abortLinv_i
+
+| distL    => Some distL_i
+| distLinv    => Some distLinv_i
+
+| distR    => Some distR_i
+| distRinv    => Some distRinv_i
+
+| wrap  => Some wrap_i
+| wrapinv  => Some wrapinv_i
+
+| drop  => Some drop_i 
+| dropinv  => Some dropinv_i
+| cid => Some cid_i
+| _ => None
+end.*)
+
 Definition interp_base d := 
 match d with 
 | shuffle  => Some shuffle_i
@@ -1943,7 +2017,7 @@ end.
 
 
 Inductive D_dom : dsl -> nat -> Prop := 
-| D_base d f n : interp_base (full_unf d) = Some f -> D_dom d n
+| D_base d n f :  interp_base (full_unf d) = Some f ->  D_dom d n
 | D_trans d d0 d1 n : full_unf d = ctrans d0 d1 -> 
                     D_dom d0 n -> D_dom d1 n ->  D_dom d n
 (*| D_trans d d0 d1 T : full_unf d = ctrans d0 d1 -> 
@@ -1951,17 +2025,66 @@ Inductive D_dom : dsl -> nat -> Prop :=
 | D_plus d d0 d1 n : full_unf d = (cplus d0 d1) ->  D_dom d0 n -> D_dom d1 n  -> D_dom d n
 | D_seq d d0 d1 n  : full_unf d = (cseq d0 d1) ->  D_dom d0 n -> D_dom d1 n  -> D_dom d n
 | D_star d d0 n : full_unf d = cstar d0 -> D_dom d0 n -> D_dom d n
-| D_guard d d0 n n' : full_unf d =  guard d0 -> n = n'.+1 ->   D_dom d0 n' -> D_dom d n.
+| D_guard d d0 n n' : full_unf d =  guard d0 -> n = n'.+1 ->   D_dom d0 n' -> D_dom d n
+| D_stop d d0 n : full_unf d = guard d0 -> n = 0  -> D_dom d n.
 Hint Constructors D_dom.
+
+(*Definition dsl_inj : forall d d0 d1 (f : dsl -> dsl), d = d0 -> d = d1 -> f d0 = f d1 :=
+fun d d0 d1 f H H0 => (f_equal f (Logic.eq_trans (Logic.eq_sym H) H0)).
+
+Definition trans0_inj := (fun e : dsl => match e with
+                            | ctrans d2 _ => d2
+                            | _ => e
+                             end). 
+
+(*This proof is quite large but the bragga method did the same, lemma true_false in ns.v*)
+Lemma None_Some : forall (A : Type) (a : A), None <> Some a.
+Proof.
+intros. intro. inversion H. 
+Qed.
 Check D_trans.
-Definition proj_trans0  d d0 d1 n (Heq : full_unf d = ctrans d0 d1) (D : D_dom d n) : D_dom d0 n.
+Definition proj_trans0  d d0 d1 n  (D : D_dom d n) :  full_unf d = ctrans d0 d1 -> D_dom d0 n.
+refine(
+match D with
+| D_trans d' d0' d1' n' Heq Hd Hd' => fun HQ => (eq_rect d0' (fun x => D_dom x n') Hd _ ((dsl_inj trans0_inj Heq HQ)))
+| _ => fun HQ => _
+end).
+- case: (None_Some (Logic.eq_trans (f_equal interp_base (Logic.eq_sym HQ)) e)).
+(*- move:)=>/= HH.*)
+(*exact: (eq_rect d0' (fun x => D_dom x n') Hd _ ((dsl_inj trans0_inj Heq HQ))).*)
+move: ((Logic.eq_trans (Logic.eq_sym e) HQ)) =>HH. inversion HH.
+move: ((Logic.eq_trans (Logic.eq_sym e) HQ))=>HH.  inversion HH.
+move: ((Logic.eq_trans (Logic.eq_sym e) HQ))=>HH.  inversion HH.
+move: ((Logic.eq_trans (Logic.eq_sym e) HQ))=>HH.  inversion HH.
+move: ((Logic.eq_trans (Logic.eq_sym e) HQ))=>HH.  inversion HH.
+Defined.*)
+(*'
+move/eqP. rewrite eqE /=.
+Show Proof. Check (introT eqP).
+
+
+=>/=.
+exact: (eq_rect d3 (fun x => D_dom x n0) Hd _ ((dsl_inj trans0_inj Heq HQ))).
+
+simpl.
+ HH).
+
+Check (@eq_rect _ d3 (fun x => D_dom x n0) Hd _ HH).
+apply/Logic.eq_trans. apply: (f_equal interp_base (Logic.eq_sym HQ)). apply: e.
+move: (Logic.eq_trans e (f_equal interp_base HQ)).
+all: try solve [rewrite e in HQ; inv HQ].
+rewrite HQ in e; inv e.
+rewrite Heq in HQ; inv HQ. 
+Defined.*)
+
+Definition proj_trans0  d d0 d1 n (Heq : full_unf d = ctrans d0 d1)  (D : D_dom d n)  : D_dom d0 n.
 Proof. refine(
 match D in D_dom d' n return full_unf d' = ctrans d0 d1 -> D_dom d0 n with 
 | D_trans _ _ _ _ Heq Hd Hle => fun HQ => _
 | _ => fun HQ => _
 end Heq).
 all: try solve [rewrite e in HQ; inv HQ].
-rewrite HQ in e; inv e.
+rewrite HQ //in e. 
 rewrite Heq in HQ; inv HQ. 
 Defined.
 
@@ -1972,7 +2095,7 @@ match D in D_dom d' n return full_unf d' = ctrans d0 d1 ->   D_dom d1 n  with
 | _ => fun HQ => _
 end Heq).
 all: try solve [rewrite e in HQ; inv HQ].
-rewrite HQ in e; inv e.
+rewrite HQ //in e. 
 rewrite Heq in HQ; inv HQ.  
 Defined.
 
@@ -1983,7 +2106,7 @@ match D in D_dom d' n return full_unf d' = cplus d0 d1 -> D_dom d0 n with
 | _ => fun HQ => _
 end Heq).
 all: try solve [rewrite e in HQ; inv HQ].
-rewrite HQ in e; inv e.
+rewrite HQ //in e. 
 rewrite Heq in HQ; inv HQ. 
 Defined.
 
@@ -1994,10 +2117,10 @@ match D in D_dom d' n return full_unf d' = cplus d0 d1 -> D_dom d1 n with
 | _ => fun HQ => _
 end Heq).
 all: try solve [rewrite e in HQ; inv HQ].
-rewrite HQ in e; inv e.
+rewrite HQ //in e. 
 rewrite Heq in HQ; inv HQ. 
 Defined.
-Check D_seq.
+
 Definition proj_seq0  d d0 d1 n (Heq : full_unf d = cseq d0 d1) (D : D_dom d n) : D_dom d0 n.
 Proof. refine(
 match D in D_dom d' n return full_unf d' = cseq d0 d1 -> D_dom d0 n with 
@@ -2005,7 +2128,7 @@ match D in D_dom d' n return full_unf d' = cseq d0 d1 -> D_dom d0 n with
 | _ => fun HQ => _
 end Heq).
 all: try solve [rewrite e in HQ; inv HQ].
-rewrite HQ in e; inv e.
+rewrite HQ //in e. 
 rewrite Heq in HQ; inv HQ. 
 Defined.
 
@@ -2016,7 +2139,7 @@ match D in D_dom d' n return full_unf d' = cseq d0 d1 -> D_dom d1 n with
 | _ => fun HQ => _
 end Heq).
 all: try solve [rewrite e in HQ; inv HQ].
-rewrite HQ in e; inv e.
+rewrite HQ //in e. 
 rewrite Heq in HQ; inv HQ. 
 Defined.
 
@@ -2027,7 +2150,7 @@ match D in D_dom d' n return full_unf d' = cstar d0 -> D_dom d0 n with
 | _ => fun HQ => _
 end Heq).
 all: try solve [rewrite e in HQ; inv HQ].
-rewrite HQ in e; inv e.
+rewrite HQ //in e. 
 rewrite Heq in HQ; inv HQ. 
 Defined.
 
@@ -2039,11 +2162,11 @@ match D in D_dom d' n return full_unf d' = guard d0 -> n = n'.+1 -> D_dom d0 n' 
 | _ => fun HQ Hn => _
 end Heq Hn).
 all: try solve [rewrite e in HQ; inv HQ].
-rewrite HQ in e; inv e.
+rewrite HQ //in e. 
 rewrite Heq in HQ; inv HQ. inv Hn. 
 Defined.
 
-
+(*Only return None when computation fuel runs out*)
 Fixpoint interp {n} d (D : D_dom d n)  {struct D} :  upTree -> option upTree := 
 match full_unf d as d' return full_unf d = d' -> (upTree -> option upTree) with
 | ctrans d0 d1 => fun HQ T => 
@@ -2054,13 +2177,16 @@ match full_unf d as d' return full_unf d = d' -> (upTree -> option upTree) with
                   match T with 
                  | up_inl T' => omap up_inl (@interp _ d0 (proj_plus0 HQ D) T')
                  | up_inr T' => omap up_inr (@interp _ d1 (proj_plus1 HQ D) T')
-                 | _ => None 
+                 | _ => Some up_bot
                 end
 | cseq  d0 d1  => fun HQ T=> 
                    match T with 
-                   | up_pair T0 T1 => if (@interp _ d0 (proj_seq0 HQ D) T0, @interp _ d1 (proj_seq1 HQ D) T1)
-                                         is (Some T',Some T'') then Some (up_pair T' T'') else None
-                   | _ => None 
+                   | up_pair T0 T1 => if (@interp _ d0 (proj_seq0 HQ D) T0) is Some T0'
+                                     then if @interp _ d1 (proj_seq1 HQ D) T1 is Some T1'
+                                                     then (Some (up_pair T0' T1'))
+                                                     else None (*propegate missing fuel error as None rather than Some up_bot for typing error*)
+                                     else None
+                   | _ => Some up_bot (*error due to typing so return Some up_bot*)
                  end
 | cstar d0 => fun HQ T => (fix cstar_i T' {struct T'} := 
                    match T' with 
@@ -2069,22 +2195,533 @@ match full_unf d as d' return full_unf d = d' -> (upTree -> option upTree) with
                                      | up_inr (up_pair T1 T2) => if (@interp _ d0 (proj_star HQ D) T1, cstar_i T2) 
                                                                      is (Some T',Some T'') then
                                                                   Some ( up_fold (up_inr (up_pair T' T''))) else None
-                                     | _ => None
+                                     | _ => Some up_bot
                                      end
-                      | _ => None
+                      | _ => Some up_bot
                       end) T
-| guard  d0 => fun HQ T => match n as n0 return n = n0 -> option upTree with 
-                        | n'.+1 => fun Hn => match T with
-                                         | up_pair (up_singl a) T0 => 
-                                             if @interp _ d0 (proj_guard HQ Hn D) T0 is Some T' then Some (up_pair (up_singl a) T') 
-                                             else None 
-                                                 
-                                         | _ => None 
-                                         end 
-                        | _ => fun _ => None
-                       end Logic.eq_refl
-| _ => fun HQ T => if interp_base d is Some f then Some (f T) else None
-end Logic.eq_refl .
+| guard  d0 => fun HQ T => match T with (*Prioritize returning Some up_bot over non when fuel is lacking*)
+                       | up_pair (up_singl a) T0 =>
+                           match n as n0 return n = n0 -> option upTree with 
+                           | n'.+1 => fun Hn => if @interp _ d0 (proj_guard HQ Hn D) T0 is Some T' 
+                                                    then Some (up_pair (up_singl a) T') 
+                                                    else None                                         
+                           | _ => fun _ => None
+                           end Logic.eq_refl                                                                            
+                       | _ => Some up_bot
+                       end                         
+| _ => fun HQ T => if interp_base (full_unf d) is Some f then Some (f T) else None
+end Logic.eq_refl.
+
+(*Locked version to not expand definition*)
+Definition interpl {n} d (D : D_dom d n) T  : option upTree := 
+locked (@interp n d D T).
+
+
+Fixpoint event_size p := 
+match p with 
+| up_tt =>  0
+| up_bot => 0
+| up_singl _ => 1
+| up_inl p0 => (event_size p0)
+| up_inr p0 => (event_size p0)
+| up_pair p0 p1=> ((event_size p0) + (event_size p1))
+| up_fold p0 => (event_size p0)
+end.
+
+Lemma interp_trans_eq_some : forall n d0 d1 d Heq T T' (D0: D_dom d0 n) (D1 : D_dom d1 n), interpl D0 T = Some T'  -> 
+interpl (D_trans d Heq D0 D1) T = interpl  D1 T'.
+Proof.
+intros. unlock interpl. simpl. erewrite Heq. simpl.  unlock interpl in H. rewrite H.  done.
+Qed.
+
+Lemma interp_trans_eq_none : forall n d0 d1 d Heq T (D0: D_dom d0 n) (D1 : D_dom d1 n), interpl D0 T = None  -> 
+interpl (D_trans d Heq D0 D1) T = None.
+Proof.
+intros.  unlock interpl. simpl. erewrite Heq. unlock interpl in H. rewrite H.  done.
+Qed.
+
+Lemma interp_trans_eq_none : forall n d0 d1 d Heq T (D0: D_dom d0 n) (D1 : D_dom d1 n), interp D0 T = None  -> 
+interp (D_trans d Heq D0 D1) T = None.
+Proof.
+intros. simpl. erewrite Heq. simpl. rewrite H.  done.
+Qed.
+
+Lemma interp_base_eq : forall d f n T (Heq : interp_base (full_unf d) = Some f), interp (D_base d n Heq) T = Some (f T).
+Proof. intros.
+simpl. destruct (full_unf d) eqn:Heqn. 
+all: try solve [rewrite Heq //| ssa].
+Qed.
+
+Lemma interp_base_size : forall d f T, interp_base d = Some f -> event_size (f T) <= event_size T.
+Proof.
+case=>//=;intros.
+all: try solve [inv H; case: T;ssa; case: u;ssa].
+inv H. case: T;ssa. case: u;ssa. lia.
+inv H. case: T;ssa. case: u0;ssa. lia.
+inv H. case: T;ssa. case: u0;ssa. lia.
+inv H. case: T;ssa. case: u;ssa. lia.
+inv H. case: T;ssa. case: u0;ssa. 
+inv H. clear H.
+
+move Heq: (upTree_size T) => n. move: Heq. suff: upTree_size T <= n -> event_size (drop_i T) <= event_size T.
+move=>HH H2. apply/HH. subst. lia.
+move=> Heq.
+move: n T Heq. elim=>//=.
+case=>//=.
+move=> n IH. case=>//=. case=>//=. case=>//=. case=>//=. case=>//=.
+case=>//=. intros.  rewrite add0n. apply/IH.  lia.
+intros. suff: event_size (drop_i u0) <= event_size u0. lia.
+apply/IH. lia.
+
+inv H. clear H.
+move Heq: (upTree_size T) => n. move: Heq. suff: upTree_size T <= n -> event_size (dropinv_i T) <= event_size T.
+move=>HH H2. apply/HH. subst. lia.
+move=> Heq.
+move: n T Heq. elim=>//=.
+case=>//=.
+move=> n IH. case=>//=. case=>//=. case=>//=. case=>//=. 
+intros. suff: event_size (dropinv_i u0) <= event_size u0. lia.
+apply/IH. lia.
+Qed.
+
+Inductive invPred_gen (R : dsl -> Prop) : dsl -> Prop := 
+  | ip_shuffle pf : full_unf pf = shuffle -> invPred_gen R pf
+  | ip_shuffleinv pf : full_unf pf =shuffleinv  ->  invPred_gen R pf
+  | ip_retag pf : full_unf pf =retag  ->  invPred_gen R pf
+  | ip_untagL pf : full_unf pf = untagL ->  invPred_gen R pf
+  | ip_untagLinv pf : full_unf pf = untagLinv ->  invPred_gen R pf
+  | ip_untag pf : full_unf pf = untag ->  invPred_gen R pf
+  | ip_tagL pf : full_unf pf =tagL ->  invPred_gen R pf
+  | ip_assoc pf : full_unf pf =assoc  ->  invPred_gen R pf
+  | ip_associnv pf : full_unf pf =associnv  ->  invPred_gen R pf
+  | ip_swap pf : full_unf pf =swap ->  invPred_gen R pf
+  | ip_swapinv pf : full_unf pf = swapinv ->  invPred_gen R pf
+  | ip_proj pf : full_unf pf = proj ->  invPred_gen R pf
+  | ip_projinv pf : full_unf pf =projinv   ->  invPred_gen R pf
+  | ip_abortR pf : full_unf pf = abortR  ->  invPred_gen R pf
+  | ip_abortRinv pf : full_unf pf = abortRinv  ->  invPred_gen R pf
+  | ip_abortL pf : full_unf pf =  abortL ->  invPred_gen R pf
+  | ip_abortLinv pf : full_unf pf = abortLinv  ->  invPred_gen R pf
+  | ip_distL pf : full_unf pf = distL  ->  invPred_gen R pf
+  | ip_distLinv pf : full_unf pf = distLinv  ->  invPred_gen R pf
+  | ip_distR pf : full_unf pf =  distR ->  invPred_gen R pf
+  | ip_distRinv pf : full_unf pf =distRinv   ->  invPred_gen R pf
+  | ip_wrap pf : full_unf pf =  wrap ->  invPred_gen R pf
+  | ip_wrapinv pf : full_unf pf = wrapinv  ->  invPred_gen R pf
+  | ip_drop pf : full_unf pf = drop  ->  invPred_gen R pf
+  | ip_dropinv pf : full_unf pf = dropinv  ->  invPred_gen R pf
+  | ip_cid pf : full_unf pf = cid  ->  invPred_gen R pf
+  | ip_ctrans p0 p1 pf  : full_unf pf = ctrans p0 p1 -> invPred_gen R p0 -> invPred_gen R p1  -> invPred_gen R pf
+  | ip_cplus p0 p1 pf : full_unf pf =  (cplus p0 p1) ->  invPred_gen R p0 -> invPred_gen R p1  -> invPred_gen R pf
+  | ip_cseq p0 p1 pf : full_unf pf = (cseq p0 p1)  ->  invPred_gen R p0 -> invPred_gen R p1 -> invPred_gen R pf
+  | ip_cstar p pf : full_unf pf = (cstar p)  ->  invPred_gen R p -> invPred_gen R pf
+(*  | cfix : dsl -> dsl*)
+  | ip_guard p pf : full_unf pf = guard p -> R p -> invPred_gen R pf.
+Hint Constructors invPred_gen.
+
+Lemma invPred_gen_mon : monotone1 invPred_gen.
+Proof.
+move=> x r r'. elim=>//;eauto.
+Qed.
+Hint Resolve invPred_gen_mon : paco.
+
+Definition invPred g := paco1  invPred_gen bot1 g.
+
+(*Lemma invPred_unf : forall R p, invPred_gen R (full_unf p) -> invPred_gen R p.
+Proof.
+move=> R p. move Heq: (full_unf _)=>ef Hinv.
+elim: Hinv Heq.
+- move=> pf Heq0 Heq1. subst.*) 
+
+Lemma to_invPred : forall r0 r1 p, r0 <C= r1 ~> p -> invPred p.
+Proof.
+pcofix CIH. move => r0 r1 p. sunfold. elim=>//.
+all: try solve[intros; subst; pfold; con; rewrite H //;eauto].
+- move=> c0 c1 c2 pf p0 p1 Hunf HC Hp Hc' HP2. pfold. apply: ip_ctrans. eauto. pfold_reverse. pfold_reverse.
+- move=> c0 c0' c1 c1' pf p0 p1 Hf Hineq Hinv Hineq2 Hinv2. pfold. apply: ip_cplus. eauto. pfold_reverse. pfold_reverse.
+- move=> c0 c0' c1 c1' pf p0 p1 Heq HC0 Hinv0 HC1 Hinv1. pfold. apply: ip_cseq. eauto. pfold_reverse. pfold_reverse.
+- move=> c0 c1 pf p0 Heq HC Hinv. pfold. apply: ip_cstar. eauto. pfold_reverse.
+- move=> _ r2 r' pf p0 Heq [] // Hin. pfold. apply: ip_guard. eauto. eauto.
+Qed.
+
+
+Lemma any_fuel : forall n d, invPred d ->  D_dom d n.
+Proof.
+elim. move=> d. 
+sunfold. elim;eauto;intros.
+all: try solve [ apply: D_base; rewrite H //].  
+move=> n IH d.
+sunfold. elim;eauto;intros.
+all: try solve [ apply: D_base; rewrite H //].  
+case: H0=>// H0. apply: D_guard. eauto. eauto. eauto.
+Qed.
+
+
+Lemma interp_plus_l : forall n d d0 d1 T (Heq : full_unf d = cplus d0 d1)  (D0 : D_dom d0 n) ( D1 : D_dom d1 n), 
+    interp (D_plus d Heq D0 D1) (up_inl T) = omap up_inl (interp D0 T).
+Proof.
+intros. simpl. erewrite Heq.  done.
+Qed.
+
+Definition not_plus (T : upTree ) :=  match T with | up_inl _ | up_inr _ => false | _ => true end.
+Definition not_pair (T : upTree ) :=  match T with | up_pair _ _ => false | _ => true end.
+Definition not_star (T : upTree ) :=  match T with |  (up_fold (up_inl up_tt)) | (up_fold (up_inr (up_pair _ _))) => false | _ => true end.
+Definition not_guard (T : upTree) := match T with | up_pair (up_singl _) _ => false | _ => true end.
+
+
+Lemma interp_plus_r : forall n d d0 d1 T (Heq : full_unf d = cplus d0 d1)  (D0 : D_dom d0 n) ( D1 : D_dom d1 n), 
+    interp (D_plus d Heq D0 D1) (up_inr T) = omap up_inr (interp D1 T).
+Proof.
+intros. simpl. erewrite Heq.  done.
+Qed.
+
+Lemma interp_plus_up_bot : forall n d d0 d1 T (Heq : full_unf d = cplus d0 d1)  (D0 : D_dom d0 n) ( D1 : D_dom d1 n), 
+    not_plus T ->
+    interp (D_plus d Heq D0 D1) T = Some up_bot. 
+Proof.
+intros. simpl. erewrite Heq. destruct T;ssa. 
+Qed.
+
+Lemma interp_seq_none : forall n d d0 d1 T0 T1(Heq : full_unf d = cseq d0 d1)  (D0 : D_dom d0 n) ( D1 : D_dom d1 n), 
+    interp D0 T0 = None -> 
+    interp (D_seq d Heq D0 D1) (up_pair T0 T1) = None. 
+Proof.
+intros. simpl.  erewrite Heq. rewrite H. done.
+Qed.
+
+Lemma interp_seq_some : forall n d d0 d1 T0 T1 T0' (Heq : full_unf d = cseq d0 d1)  (D0 : D_dom d0 n) ( D1 : D_dom d1 n), 
+    interp D0 T0 = Some T0' -> 
+    interp (D_seq d Heq D0 D1) (up_pair T0 T1) = omap (fun T1' => up_pair T0' T1') (interp D1 T1).
+Proof.
+intros. simpl.  erewrite Heq. 
+rewrite H. done. (*erewrite did not work here but rewrite did, why?*)
+Qed.
+
+Definition not_seq T := if T is up_pair T0 T1 then false else true.
+
+
+Lemma interp_seq_bot : forall n d d0 d1 T  (Heq : full_unf d = cseq d0 d1)  (D0 : D_dom d0 n) ( D1 : D_dom d1 n), 
+    not_seq T ->
+    interp (D_seq d Heq D0 D1) T = Some up_bot.
+Proof.
+intros. simpl. erewrite Heq. 
+destruct T;ssa. 
+Qed.
+
+
+Inductive plus_case : upTree -> Prop := 
+| pcl T : plus_case (up_inl T)
+| pcr T : plus_case (up_inr T)
+| pcn T : not_plus T ->  plus_case T.
+Hint Constructors plus_case.
+Lemma plus_caseP : forall p, plus_case p.
+Proof.
+case;ssa.
+Qed.
+
+Inductive seq_case : upTree -> Prop := 
+| upcl T0 T1: seq_case (up_pair T0 T1)
+| upcn T : not_seq T ->  seq_case T.
+Hint Constructors seq_case.
+Lemma seq_caseP : forall p, seq_case p.
+Proof.
+case;ssa.
+Qed.
+
+Inductive star_case : upTree -> Prop := 
+| sc0 : star_case (up_fold (up_inl up_tt))
+| sc1 T0 T1 : star_case (up_fold (up_inr (up_pair T0 T1)))
+| sc2 T : not_star T ->  star_case T.
+Hint Constructors star_case.
+Lemma star_caseP : forall p, star_case p.
+Proof.
+case;ssa. case: u;ssa. case : u;ssa. case: u;ssa.
+Qed.
+
+Lemma interp_star_some_tt : forall n d d' (Heq : full_unf d = cstar d') (D: D_dom d' n),
+    interp (D_star d Heq D) (up_fold (up_inl up_tt)) = Some (up_fold (up_inl up_tt)).
+Proof.
+intros. simpl.  erewrite Heq. done.
+Qed.
+
+Lemma interp_star_some_pair : forall n d d' T0 T0' T1 (Heq : full_unf d = cstar d') (D: D_dom d' n),
+    interp D T0 = Some T0' ->
+    interp (D_star d Heq D) (up_fold (up_inr (up_pair T0 T1))) = 
+      omap (fun T1' => up_fold (up_inr (up_pair T0' T1'))) (interp (D_star d Heq D) T1).
+Proof.
+intros. simpl.  erewrite Heq. rewrite H. done.
+Qed.
+
+Lemma dec_dsl : forall (x y: dsl), x = y \/ x <> y.
+Proof. intros. case: (eqVneq x y);auto. move/eqP. auto.
+Qed.
+
+
+Lemma dec_nat : forall (x y: nat), x = y \/ x <> y.
+Proof. intros. case: (eqVneq x y);auto. move/eqP. auto.
+Qed.
+
+From Coq.Logic Require Import Eqdep_dec.
+
+Lemma dsl_refl : forall (x : dsl) (H: x = x), H = @Logic.eq_refl dsl x.
+Proof.
+intros. apply: eq_proofs_unicity. apply:dec_dsl.
+Qed.
+
+Lemma nat_refl : forall (x : nat) (H: x = x), H = @Logic.eq_refl nat x.
+Proof.
+intros. apply: eq_proofs_unicity. apply:dec_nat.
+Qed.
+Lemma interp_star_none_pair : forall n d d' T0 T1 (Heq : full_unf d = cstar d') (D: D_dom d' n),
+    interp D T0 = None ->
+    interp (D_star d Heq D) (up_fold (up_inr (up_pair T0 T1))) = None.
+Proof.
+intros. simpl. 
+(*move: Heq.*)
+ (*erewrite Heq. *) 
+move: (@Logic.eq_refl _ (full_unf _)). (*The match is applied on an eq_refl, say H, proof, generalize H *)
+rewrite {2 3} Heq. move=>Heq2.  (*Rewrite RHS of H and scrutinee of the match *)
+move: (eq_proofs_unicity dec_dsl Heq Heq2). (*make proof not depend on Heq*)
+move=>->. 
+move: Heq2. rewrite Heq. move=>H2. 
+rewrite (dsl_refl H2).  rewrite H //.
+Qed.
+
+(*Size induction with upTree*)
+Lemma interp_star_up_bot : forall n d d' T  (Heq : full_unf d = cstar d') (D: D_dom d' n), not_star T ->
+    interp (D_star d Heq D) T = Some up_bot.
+Proof.
+intros. simpl.  erewrite Heq. move: H. 
+move Heqn: (upTree_size T) => n'. move: Heqn. 
+wlog: T n' / upTree_size T <= n'.
+move=>HH Hsize Hnot.  apply:HH. 2: eauto. lia. done. clear Heq.
+move=>+_.
+elim: n' T.
+case=>//=.
+move=> n0 IH. case=>//=. case=>//=. case=>//=. case=>//=. 
+Qed.
+
+Inductive guard_case : upTree -> Prop := 
+| gc0 a T : guard_case (up_pair (up_singl a) T)
+| gc1 T : not_guard T -> guard_case T.
+Hint Constructors guard_case.
+
+Lemma guard_caseP : forall p, guard_case p.
+Proof.
+case;ssa. case: u;ssa. 
+Qed.
+
+
+Lemma interp_guard_some : forall n n' a d d' T T'  (Heq : full_unf d = guard d') (Heqn: n = n'.+1) (D: D_dom d' n'), 
+    interp D T = Some T' ->
+    interp (D_guard d Heq Heqn D) (up_pair (up_singl a) T) = Some (up_pair (up_singl a) T').
+Proof.
+intros. simpl. 
+move: (@Logic.eq_refl _ (full_unf _)). (*The match is applied on an eq_refl, say H, proof, generalize H *)
+rewrite {2 3} Heq. move=>Heq2.  (*Rewrite RHS of H and scrutinee of the match *)
+move: (eq_proofs_unicity dec_dsl Heq Heq2). (*make proof not depend on Heq*)
+move=>->. 
+move: (@Logic.eq_refl nat _). 
+rewrite {2 3} Heqn. move=>Heqn2.
+move: (eq_proofs_unicity dec_nat Heqn Heqn2). 
+move=>->.
+move: Heqn2. rewrite Heqn. move=>Heqn2.
+rewrite (nat_refl Heqn2).  clear Heqn. clear Heqn2.
+move: {1  3 4 }Heq2. rewrite Heq /=. (*Avoid touching equality proof in D_guard*)
+move=>Heq0.
+rewrite (dsl_refl Heq0).  clear Heq0. clear Heq.
+rewrite H //.
+Qed.
+
+Lemma interp_guard_none : forall n n' a d d' T  (Heq : full_unf d = guard d') (Heqn: n = n'.+1) (D: D_dom d' n'), 
+    interp D T = None ->
+    interp (D_guard d Heq Heqn D) (up_pair (up_singl a) T) = None.  
+Proof.
+intros. simpl. 
+move: (@Logic.eq_refl _ (full_unf _)). (*The match is applied on an eq_refl, say H, proof, generalize H *)
+rewrite {2 3} Heq. move=>Heq2.  (*Rewrite RHS of H and scrutinee of the match *)
+move: (eq_proofs_unicity dec_dsl Heq Heq2). (*make proof not depend on Heq*)
+move=>->. 
+move: (@Logic.eq_refl nat _). 
+rewrite {2 3} Heqn. move=>Heqn2.
+move: (eq_proofs_unicity dec_nat Heqn Heqn2). 
+move=>->.
+move: Heqn2. rewrite Heqn. move=>Heqn2.
+rewrite (nat_refl Heqn2).  clear Heqn. clear Heqn2.
+move: {1  3 4 }Heq2. rewrite Heq /=. (*Avoid touching equality proof in D_guard*)
+move=>Heq0. 
+rewrite (dsl_refl Heq0).  clear Heq0. clear Heq.
+rewrite H //.
+Qed.
+
+Lemma interp_guard_up_bot : forall n n' d d' T  (Heq : full_unf d = guard d') (Heqn: n = n'.+1) (D: D_dom d' n'), not_guard T ->
+    interp (D_guard d Heq Heqn D) T = Some up_bot. 
+Proof.
+intros. simpl. 
+move: (@Logic.eq_refl _ (full_unf _)). (*The match is applied on an eq_refl, say H, proof, generalize H *)
+rewrite {2 3} Heq. move=>Heq2.  (*Rewrite RHS of H and scrutinee of the match *)
+move: (eq_proofs_unicity dec_dsl Heq Heq2). (*make proof not depend on Heq*)
+move=>->. 
+move: (@Logic.eq_refl nat _). 
+rewrite {2 3} Heqn. move=>Heqn2.
+move: (eq_proofs_unicity dec_nat Heqn Heqn2). 
+move=>->.
+move: Heqn2. rewrite Heqn. move=>Heqn2.
+rewrite (nat_refl Heqn2).  clear Heqn. clear Heqn2.
+move: {1  3 4 }Heq2. rewrite Heq /=. (*Avoid touching equality proof in D_guard*)
+move=>Heq0. 
+rewrite (dsl_refl Heq0).  clear Heq0. clear Heq.
+case:T H;ssa. case:u H;ssa.
+Qed.
+
+Lemma interp_stop_pair : forall n d d0 a T1 (Heq: full_unf d = guard d0) (Heqn: n = 0) (D: D_dom d n), interp (D_stop d Heq Heqn) (up_pair (up_singl a) T1) = None.
+Proof.
+intros. simpl. 
+move: (@Logic.eq_refl dsl _).
+rewrite {2 3} Heq. move=>Heq2.  (*Rewrite RHS of H and scrutinee of the match *)
+move: (eq_proofs_unicity dec_dsl Heq Heq2). (*make proof not depend on Heq*)
+move=>->. 
+move: (@Logic.eq_refl nat _). 
+rewrite {2 3} Heqn //. 
+Qed.
+
+Lemma interp_stop_up_bot : forall n d d0 T (Heq: full_unf d = guard d0) (Heqn: n = 0) (D: D_dom d n), not_guard T ->
+ interp (D_stop d Heq Heqn) T = Some up_bot.
+Proof.
+intros. simpl. 
+move: (@Logic.eq_refl dsl _).
+rewrite {2 3} Heq. move=>Heq2.  (*Rewrite RHS of H and scrutinee of the match *)
+move: (eq_proofs_unicity dec_dsl Heq Heq2). (*make proof not depend on Heq*)
+move=>->. 
+move: (@Logic.eq_refl nat _). 
+rewrite {2 3} Heqn //. move=>_. case: T H;ssa. case: u H;ssa.
+Qed.
+ 
+
+Lemma interp_size : forall n d T T' (D: D_dom d n), interp D T = Some T' -> event_size T' <= event_size T.
+Proof.
+refine (fix loop n d T T' D {struct D} := _).
+destruct D.
+-  rewrite interp_base_eq. case;intros;subst.
+   apply/interp_base_size. eauto.
+- case Heq: (interp D1 T) => [ T'' | ]. 
+  erewrite interp_trans_eq_some. 2: eauto. move=>Heq2.
+  move: (loop n d0 T T'' D1 Heq)=>Hint1. 
+  move: (loop n d1 _ _ D2 Heq2). lia.
+  rewrite interp_trans_eq_none //.
+- case: (plus_caseP T). 
+ * move=> T0. rewrite interp_plus_l.
+   case Heq: (interp _ _)=>//= [ T'']. case;intros;subst.
+   move: (loop _ _ _ _ D1 Heq)=>//.
+ * move=> T0. rewrite interp_plus_r.
+   case Heq: (interp _ _)=>//= [ T'']. case;intros;subst.
+   move: (loop _ _ _ _ D2 Heq)=>//.
+ * move=> T0 Hnot. rewrite interp_plus_up_bot //. case. move=><- /=. lia.
+- case: (seq_caseP T). 
+ * move=> T0 T1. 
+   case Heq: (interp D1 T0) =>// [T0' | ].
+   erewrite interp_seq_some. 2 : eauto. simpl.
+   case Heq2: (interp D2 T1) =>//= [ T1']. case;intros;subst.
+   simpl.
+   move: (loop _ _ _ _ _ Heq) (loop _ _ _ _ _ Heq2). lia.
+   rewrite interp_seq_none //.
+   move=> T0 Hnot. rewrite interp_seq_bot //. case;intros;subst. ssa.
+- move Heqn: (upTree_size T) => n'. move: Heqn. 
+  wlog: T n' / upTree_size T <= n'.
+  move=>HH Hsize Hint.  apply:HH. 2: eauto. lia. done. move=>+_.
+  elim: n' T T'.
+ * move=> T. case: (star_caseP T)=>//. move=> T0 Hnot T' Hsize.
+   rewrite interp_star_up_bot //. case;intros;subst. simpl. lia.
+ * move=> n0 IH T T'. case: (star_caseP T)=>//.
+  ** move=> Hsize. rewrite interp_star_some_tt. case;intros;subst. done.
+  ** move=> T0 T1. 
+     case Heq: (interp D T0) =>// [T0' | ].
+     erewrite interp_star_some_pair. 2: eauto. 
+     case Heq2: ((interp (D_star d e D) T1))=>// [ T1'].
+     move=> Hsize. simpl. case;intros;subst. simpl.
+     move: (loop _ _ _ _ _ Heq). intros.
+     suff: event_size T1' <= event_size T1. lia.
+     apply: IH. simpl in Hsize. lia. done.
+     move=> Hsize. rewrite interp_star_none_pair //.
+  ** move=> T0 Hnot Hsize. rewrite interp_star_up_bot //. case;intros;subst. simpl. lia.
+- case: (guard_caseP T). 
+ * move=>a T0.
+   case Heq: (interp D T0) =>// [T0' | ].
+   erewrite interp_guard_some. 2: eauto. simpl. case;intros;subst. simpl. 
+   move: (loop _ _ _ _ _ Heq). lia.
+ * rewrite interp_guard_none //.
+ * move=> T0 Hnot. rewrite interp_guard_up_bot //. case;intros;subst. simpl. lia.
+- case: (guard_caseP T). 
+ * move=>a T0. rewrite interp_stop_pair //. subst.
+   apply:D_stop. eauto. done.
+ * move=> T0 Hnot. rewrite interp_stop_up_bot //. case;intros;subst. simpl. lia.
+   apply:D_stop. eauto. done.
+Qed.
+
+
+
+
+
+(*Require Import Program.Equality.*)
+Lemma interp_fuel : forall n (d : dsl) (D: D_dom d n)  (T : upTree), event_size T <= n -> interp D T.
+Proof.
+refine (fix loop n d D {struct D} := _).
+destruct D. 
+- move => T _. rewrite interp_base_eq //.
+- move=> T Hsize. 
+  move: (loop n d0 D1 T Hsize)=>Hi.
+  case Heq : (interp D1 T) Hi=>// [ T0] _.
+  erewrite interp_trans_eq_some. 2: eauto.
+  move:  ((interp_size _ _ Heq)). move=> Hsize2.
+  have: event_size T0 <= n by lia. move=> Hsize3.
+  exact: (loop n d1 D2 T0 Hsize3).
+- move=> T. case: (plus_caseP T).
+ * move=> T0 Hsize. rewrite interp_plus_l /=.
+   simpl in Hsize. move: (loop _ _ D1 _ Hsize). case: (interp _ _)=>//.
+ * move=> T0 Hsize. rewrite interp_plus_r /=.
+   simpl in Hsize. move: (loop _ _ D2 _ Hsize). case: (interp _ _)=>//. 
+ * move=> T0 Hnot Hsize. rewrite interp_plus_up_bot //=.
+- move=> T. case: (seq_caseP T).
+ * move=> T0 T1 Hsize. simpl in Hsize.
+   have: event_size T0 <= n
+
+ erewrite interp_seq_some.
+   simpl in Hsize. move: (loop _ _ D1 _ Hsize). case: (interp _ _)=>//.
+ * move=> T0 Hsize. rewrite interp_plus_r /=.
+   simpl in Hsize. move: (loop _ _ D2 _ Hsize). case: (interp _ _)=>//. 
+ * move=> T0 Hnot Hsize. rewrite interp_plus_up_bot //=.
+
+move/loop. 
+Check interp_size.
+apply/loop.
+  apply: interp_size.
+erewrite interp_trans. 2: {  apply/Heq. }  apply/loop.
+simpl. rewrite Heq.
+have : interp (D_trans d e D1 
+simpl. intros. erewrite e. simpl.
+rewrite e.
+ simpl.
+
+
+Lemma ns_nsa_n_direct : ∀x n D, nsa x n D = ns x D + n.
+Proof.
+  refine (fix loop x n D { struct D } := _).
+  destruct D as [ x E | x E D ]; simpl.
+  - now rewrite E.
+  - now rewrite loop, E, <- plus_n_Sm.
+Qed.
+move=>n d H. dependent induction H.
+
+
+
+
+
+
+
+
+
+
+
 
 
 Fixpoint interp_aux d (T : upTree)  {struct d} :  option upTree := 
@@ -2119,10 +2756,6 @@ end.
 
 Definition eRel (a' a : upTree) := event_count a' < event_count a.
 
-Definition not_plus (T : upTree ) :=  match T with | up_inl _ | up_inr _ => false | _ => true end.
-Definition not_pair (T : upTree ) :=  match T with | up_pair _ _ => false | _ => true end.
-Definition not_star_rule (T : upTree ) :=  match T with |  (up_fold (up_inl up_tt)) | (up_fold (up_inr (up_pair _ _))) => false | _ => true end.
-Definition not_guard (T : upTree) := match T with | up_pair (up_singl _) _ => false | _ => true end.
 
 Inductive G_interp : dsl -> upTree -> upTree -> Prop := 
 | G_base d f T : interp_base (full_unf d) = Some f -> G_interp d T (f T)
@@ -3049,12 +3682,6 @@ Inductive ineq_gen : forall r0 r1, dsl dsl_co r0 r1 -> Prop :=
 | rule_guard a A B d : P  d -> ineq_gen (@guard _ a A B (Co_build d)).
 End Containment.
 Hint Constructors ineq_gen.
-Lemma c_ineq_gen_mon: monotone3 ineq_gen. 
-Proof.
-unfold monotone3.
-intros. induction IN; eauto. 
-Qed.
-Hint Resolve c_ineq_gen_mon : paco.
 
 Definition INEQ c0 c1 (d : dsl dsl_co c0 c1) := paco3 ineq_gen bot3 c0 c1 d.
 
@@ -3359,85 +3986,6 @@ match p with
 | *)
 
 Check ApplyF1.
-Inductive invPred_gen (R : dsl -> Prop) : dsl -> Prop := 
-  | ip_shuffle pf : full_unf pf = shuffle -> invPred_gen R pf
-  | ip_shuffleinv pf : full_unf pf =shuffleinv  ->  invPred_gen R pf
-  | ip_retag pf : full_unf pf =retag  ->  invPred_gen R pf
-  | ip_untagL pf : full_unf pf = untagL ->  invPred_gen R pf
-  | ip_untagLinv pf : full_unf pf = untagLinv ->  invPred_gen R pf
-  | ip_untag pf : full_unf pf = untag ->  invPred_gen R pf
-  | ip_tagL pf : full_unf pf =tagL ->  invPred_gen R pf
-  | ip_assoc pf : full_unf pf =assoc  ->  invPred_gen R pf
-  | ip_associnv pf : full_unf pf =associnv  ->  invPred_gen R pf
-  | ip_swap pf : full_unf pf =swap ->  invPred_gen R pf
-  | ip_swapinv pf : full_unf pf = swapinv ->  invPred_gen R pf
-  | ip_proj pf : full_unf pf = proj ->  invPred_gen R pf
-  | ip_projinv pf : full_unf pf =projinv   ->  invPred_gen R pf
-  | ip_abortR pf : full_unf pf = abortR  ->  invPred_gen R pf
-  | ip_abortRinv pf : full_unf pf = abortRinv  ->  invPred_gen R pf
-  | ip_abortL pf : full_unf pf =  abortL ->  invPred_gen R pf
-  | ip_abortLinv pf : full_unf pf = abortLinv  ->  invPred_gen R pf
-  | ip_distL pf : full_unf pf = distL  ->  invPred_gen R pf
-  | ip_distLinv pf : full_unf pf = distLinv  ->  invPred_gen R pf
-  | ip_distR pf : full_unf pf =  distR ->  invPred_gen R pf
-  | ip_distRinv pf : full_unf pf =distRinv   ->  invPred_gen R pf
-  | ip_wrap pf : full_unf pf =  wrap ->  invPred_gen R pf
-  | ip_wrapinv pf : full_unf pf = wrapinv  ->  invPred_gen R pf
-  | ip_drop pf : full_unf pf = drop  ->  invPred_gen R pf
-  | ip_dropinv pf : full_unf pf = dropinv  ->  invPred_gen R pf
-  | ip_cid pf : full_unf pf = cid  ->  invPred_gen R pf
-  | ip_ctrans p0 p1 pf  : full_unf pf = ctrans p0 p1 -> invPred_gen R p0 -> invPred_gen R p1  -> invPred_gen R pf
-  | ip_cplus p0 p1 pf : full_unf pf =  (cplus p0 p1) ->  invPred_gen R p0 -> invPred_gen R p1  -> invPred_gen R pf
-  | ip_cseq p0 p1 pf : full_unf pf = (cseq p0 p1)  ->  invPred_gen R p0 -> invPred_gen R p1 -> invPred_gen R pf
-  | ip_cstar p pf : full_unf pf = (cstar p)  ->  invPred_gen R p -> invPred_gen R pf
-(*  | cfix : dsl -> dsl*)
-  | guard p pf : full_unf pf = guard p -> R p -> invPred_gen R pf.
-Hint Constructors invPred_gen.
-
-Lemma invPred_gen_mon : monotone1 invPred_gen.
-Proof.
-move=> x r r'. elim=>//;eauto.
-Qed.
-Hint Resolve invPred_gen_mon : paco.
-
-Definition invPred g := paco1 ( ApplyF1 full_unf \o invPred_gen) bot1 g.
-
-Lemma invPred_unf : forall R p, invPred_gen R (full_unf p) -> invPred_gen R p.
-Proof.
-move=> R p. move Heq: (full_unf _)=>ef Hinv.
-elim: Hinv Heq.
-- move=> pf Heq0 Heq1. subst. 
-
-Lemma to_invPred : forall r0 r1 p, r0 <C= r1 ~> p -> invPred p.
-Proof.
-pcofix CIH. move => r0 r1 p. sunfold. elim=>//.
-all: try solve[intros; subst; pfold; con; rewrite H //;eauto].
-move=> c0 c1 c2 pf p0 p1 Hunf HC Hp Hc' HP2. pfold. con. rewrite Hunf. apply/ip_ctrans.  con. 
-punfold Hp. inv Hp.
-
-con=>//. punfold Hp. inv Hp.
-
-27 : { intros. subst.
-move=>_ _ _ pf.
-
-
-
-(*Variant Unf (R :  dsl -> Prop) : dsl  -> Prop :=
- Unf1_intro a b c :  R a b (full_unf c) -> Unf R a b c.*)
-
-Lemma Unf_mon  : monotone3 Unf. 
-Proof. intro. intros. inv IN. con. eauto. Qed. 
-
-
-Hint Resolve Unf_mon : paco.
-
-
-Derive Inversion_clear Unf_inv with (forall  (R : (regex -> regex -> dsl -> Prop) -> regex -> regex -> dsl -> Prop) (P : regex -> regex -> dsl -> Prop) a b c, 
-                                          (Unf \o R) P a b c) Sort Prop.
-
-
-
-
 
 
 
