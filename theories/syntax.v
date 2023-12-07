@@ -324,6 +324,8 @@ Inductive c_eq : regex -> regex -> Prop :=
  where "c1 =R= c2" := (c_eq c1 c2).
 End Equivalence.
 Hint Constructors c_eq.
+Check c_fix.
+
 
 Section Equivalence_Properties.
 
@@ -338,6 +340,11 @@ Hint Resolve c_eq_gen_mon : paco.
 Notation "c0 = ( R ) = c1" := (c_eq R c0 c1)(at level 63).
 Definition EQ c0 c1 := paco2 c_eq bot2 c0 c1.
 Notation "c0 =C= c1" := (EQ c0 c1)(at level 63).
+
+(*Lemma test a c: (c_eq (c_eq bot2) (Event a _;_ c) (Event a _;_ c)).
+Proof.
+apply:c_fix. *)
+
 
 
 Add Parametric Relation R : regex (@c_eq R)
@@ -631,8 +638,8 @@ Qed.
 
 
 (*Uses c_star_plus!*)
-Lemma star_o : forall R c c', Star (o (c) _+_ c') =(R) = Star c'.
-Proof.
+Lemma star_o : forall R c c', Star ((o c) _+_ c') =(R) = Star c'.
+Proof. 
 move=> R c c'. 
 rewrite /o. case Hcase: (nu c);last by rewrite eqs //. clear Hcase.
 rewrite c_star_plus //.
@@ -662,15 +669,18 @@ elim.
 - move=> r HQ /=. 
   under eq_big_plus. move=> a Hin. rewrite -c_seq_assoc. rewrite {2}HQ. over.
   rewrite factor_seq_r. rewrite {1}HQ.
-  rewrite !star_o /o /= c_unfold //.  (*We need c_star_plus here*)
+  rewrite {1}star_o.
+  rewrite {1}star_o. 
+  rewrite c_unfold. done.
+ (*We need c_star_plus here*)
 Qed.
 
-Lemma big_shape: forall c, \big[Plus/Empt]_a (Event a _;_ a \ c) = \big[Plus/Empt]_(i <- map (fun a => (a,a\c)) (index_enum A)) (Event i.1 _;_  i.2).
+(*Lemma big_shape: forall c, \big[Plus/Empt]_a (Event a _;_ a \ c) = \big[Plus/Empt]_(i <- map (fun a => (a,a\c)) (index_enum A)) (Event i.1 _;_  i.2).
 Proof.
 move=> c. move Heq: (index_enum _)=>ef. clear Heq.
 elim: ef. rewrite !big_nil //.
 move=> a l IH. rewrite !big_cons /=. f_equal. done.
-Qed.
+Qed.*)
 
 
 Lemma bisim_completeness : forall c0 c1, Bisimilarity c0 c1 -> c0 =C= c1.
@@ -682,8 +692,8 @@ rewrite /o H2.
 suff:    \big[Plus/Empt]_a (Event a _;_ a \ c0) = (upaco2 c_eq r)=
   \big[Plus/Empt]_a (Event a _;_ a \ c1). move=> HH.
  case Hcase:(nu _)=>//. eq_m_left. eq_m_left.
-rewrite !big_shape.
-move: (index_enum _)=>ef. elim: ef=>//.
+
+move: (index_enum _)=>ef. elim: ef=>//. rewrite !big_nil //.
 move=> a l HQ/=. rewrite !big_cons. apply/c_plus_ctx=>//.
 apply/c_fix=>/=. right. apply/CIH. case: (H1 a)=>//.
 Qed.
@@ -697,6 +707,164 @@ Theorem completeness : forall c0 c1, (forall s, Match s c0 <-> Match s c1) -> c0
 Proof.
 intros. apply bisim_completeness. apply/equivP=>//.
 Qed.
+
+
+
+
+
+
+(*pgfp(R)(F) := gfp(fun X => F(R union X))
+ pgfp(bot)(F) := gfp(F)
+  X in F(X) so 
+  x in X means x in gfp(F)
+*)
+(*pgfp(bot2)(F)= R*)
+Lemma test : forall c, Star c =C= Star (Star c).
+Proof.
+intros. (* (Star c, (Star (Star c))) in pgfp(bot2)(F)*) 
+pfold. (* (Star c, (Star (Star c))) in F(bot2 union R*)
+apply:c_trans. apply:derive_unfold. apply:c_trans.
+2: { apply:c_sym. apply:derive_unfold. } 
+apply:c_plus_ctx. done. 
+move: (index_enum A) => l. 
+elim: l. rewrite !big_nil. done. 
+intros. rewrite !big_cons. apply:c_plus_ctx;last done.  (*bot2 union gfp(F)*)
+clear H. simpl. 
+apply:c_seq_ctx. done. rewrite c_seq_assoc. apply:c_seq_ctx. done.
+
+pfold_reverse.
+move: c. pcofix C_useless.
+intro. pfold.
+(*
+left. (*move: a c. pcofix CIH. intros.*)
+
+(*2: {  done. }
+sum_reshape. 
+apply c_co_sum. intros.
+simp_premise.*)
+
+pfold. simpl.*)
+(* rewrite c_seq_assoc. apply c_seq_ctx. done. *)
+apply:c_trans. apply:derive_unfold. apply:c_trans.
+2: { apply:c_sym. apply:derive_unfold. } 
+apply:c_plus_ctx. done. 
+move: (index_enum A) => l'. 
+elim: l'. rewrite !big_nil. done. 
+intros. rewrite !big_cons. apply:c_plus_ctx;last done.  
+clear H. 
+apply:c_fix. left. 
+(* apply:c_seq_ctx. done. pfold_reverse. *) 
+(*(a0 \ Star c, 
+   a0 \ (Star c _;_ (Star (Star c)))*)
+move: a0.  (*(r0,r1) \in pgfp(bot2)(F)
+            (forall (a0 : event) (c : regex), 
+            (a0 \ Star c, a0 \ (Star c ; (Star (Star c))) \in R)
+            R subset F(R)
+               (r0,r1) \in pgfp(R)(F)
+
+*)
+pcofix CIH. intros. pfold.
+simpl. rewrite c_plus_idemp.
+(* apply:c_fix.  
+
+left. move: a0 c. pcofix CIH. intros.*)
+
+(*pfold. simpl.*)
+(*apply/CIH.
+
+unfold_tac.
+sum_reshape. 
+apply c_co_sum. intros.
+simp_premise.
+left.*)
+
+
+(*generalize x0. pcofix CIH2. intros.*) (*Coinduction principle*)
+(*pfold. *)
+(*rewrite c_plus_idemp. *)
+rewrite c_seq_assoc. 
+ apply c_seq_ctx. done.
+apply:c_trans. apply:derive_unfold. apply:c_trans.
+2: { apply:c_sym. apply:derive_unfold. } 
+apply:c_plus_ctx. done. 
+move: (index_enum A) => l'. 
+elim: l'. rewrite !big_nil. done. 
+intros. rewrite !big_cons. apply:c_plus_ctx;last done.  
+clear H. apply:c_fix. right.
+apply: CIH.
+
+(*ones := cons 1 ones*)
+Qed. 
+
+
+
+Lemma c_trans1: forall c0 c1 c2 co_eq,
+     c0 = (co_eq)= c1 ->
+       c1 = (co_eq)= c2 -> c0 = (co_eq)= c2.
+Proof. eauto. Qed.
+
+Lemma c_trans2 : forall c0 c1 c2 co_eq,
+       c1 = (co_eq)= c2 ->  c0 = (co_eq)= c1 ->
+       c0 = (co_eq)= c2.
+Proof. eauto. Qed.
+
+Ltac tc1 := apply:c_trans1.
+Ltac tc2 := apply:c_trans2.
+Ltac tcs H := apply:c_sym;apply:H.
+Ltac ap H := apply:H.
+Ltac tr := apply:c_refl.
+Ltac tp := apply:c_plus_ctx.
+
+Lemma test2 : forall a R, Star (Star (Event a)) =(R)= Eps _+_  ((Event a) _;_ (Star (Event a)) _;_ (Star (Star (Event a)))).
+Proof.
+intros. 
+tc1. apply:c_star_ctx. tcs c_unfold.
+tc1. apply:c_star_plus.
+tc1. tcs c_unfold. 
+tp. done. 
+tc1. apply: c_seq_assoc.
+tc2. tcs c_seq_assoc.
+apply:c_seq_ctx.  done.
+apply:c_seq_ctx. done.
+tc1. tcs c_star_plus.
+tc1. apply:c_star_ctx. apply:c_unfold. 
+done.
+Qed.
+
+
+Lemma test3 : forall a, Star (Event a) =C= Star (Star (Event a)).
+Proof.
+intros. pfold.
+tc1.  tcs c_unfold.
+tc2. apply:c_sym. apply:test2.
+apply:c_plus_ctx.  done.
+tc2. tcs c_seq_assoc. 
+apply:c_seq_ctx. done.
+pfold_reverse. pcofix CIH. pfold.
+tc1. tcs c_unfold.
+tc2. apply:c_seq_ctx. apply:c_unfold. tr.
+tc2. tcs c_distr_r.
+tc2. tp. tcs c_seq_neut_l. tr.
+tc2. apply:c_plus_ctx. apply:c_sym. apply:test2. tr.
+tc2. tcs c_plus_assoc.
+tp. done.
+tc2.
+tcs c_plus_idemp.
+tc2. tcs c_seq_assoc.
+apply:c_fix. right. apply/CIH.
+Qed.
+
+
+
+
+
+
+
+
+
+
+
+
 
 End Equivalence_Properties.
 
@@ -1254,6 +1422,221 @@ Hint Resolve c_ineq_gen_mon : paco.
 Notation "c0 < ( R ) = c1 ~> p" := (c_ineq R c0 c1 p)(at level 63).
 Definition INEQ c0 c1 p := paco3 c_ineq bot3 c0 c1 p.
 Notation "c0 <C= c1 ~> p" := (INEQ c0 c1 p)(at level 63).
+
+
+
+
+Section Test.
+  Variable P : regex -> regex -> Prop.
+Inductive c_test : regex -> regex -> Prop :=
+| test_shuffle c0 c1 c2  : c_test ((c0 _+_ c1) _+_ c2) (c0 _+_ (c1 _+_ c2))
+| test_shuffleinv c0 c1 c2 : c_test (c0 _+_ (c1 _+_ c2))  ((c0 _+_ c1) _+_ c2)
+| test_guard a r r' : P r r' ->  c_test ((Event a) _;_ r) ((Event a) _;_ r').
+End Test.
+CoInductive Test : regex -> regex -> Prop := 
+| Test_unfold r0 r1 : c_test Test r0 r1 -> Test r0 r1.
+Definition Ctest := c_test Test.
+Section Syntax.
+  Variable P : Prop.
+Inductive ind_proof : Prop := 
+| p_shuffle : ind_proof
+| p_shuffleinv : ind_proof
+| p_guard : P -> ind_proof.
+End Syntax.
+Arguments p_shuffle{P}.
+Arguments p_shuffleinv{P}.
+Arguments p_guard{P}.
+
+Check ind_proof.
+CoInductive MyProof : Prop := 
+| proof_unfold : ind_proof MyProof -> MyProof.
+
+Definition CMyProof := ind_proof MyProof.
+Section Test2.
+  Variable P : regex -> regex -> MyProof -> Prop.
+Inductive c_test2 : regex -> regex -> CMyProof -> Prop :=
+| test2_shuffle c0 c1 c2  : c_test2 ((c0 _+_ c1) _+_ c2) (c0 _+_ (c1 _+_ c2)) p_shuffle
+| test2_shuffleinv c0 c1 c2 :  c_test2 (c0 _+_ (c1 _+_ c2))  ((c0 _+_ c1) _+_ c2) p_shuffleinv
+| test2_guard a r r' p0 : P r r' p0 ->  c_test2 ((Event a) _;_ r) ((Event a) _;_ r') (p_guard p0).
+End Test2.
+
+CoInductive Test2 : regex -> regex -> MyProof ->  Prop := 
+| Test2_unfold r0 r1 p : c_test2 Test2 r0 r1 p -> Test2 r0 r1 (proof_unfold p).
+Definition Ctest2 := c_test2 Test2.
+(*Definition Test2 c0 c1 := paco3 c_test2 bot3 c0 c1.
+Arguments Test2 [c0] [c1].*)
+
+
+Definition to_CMyProof (r0 r1 : regex) (H: Ctest r0 r1) (f : forall r0 r1, Test r0 r1 -> MyProof) : CMyProof := 
+ match H with 
+  | test_shuffle _  _ _ => p_shuffle 
+  | test_shuffleinv _ _ _ => p_shuffleinv
+  | test_guard a r r' p0 => (p_guard (f _ _ p0))
+end.
+
+CoFixpoint to_MyProof (r0 r1 : regex) (H : Test r0 r1) : MyProof :=
+match H with 
+| Test_unfold x y p0' => proof_unfold (to_CMyProof p0' (@to_MyProof))
+end.
+
+Definition To_CMyProof  (r0 r1 : regex) (H: Ctest r0 r1) := to_CMyProof  H (@to_MyProof).
+(*Definition match_Test r0 r1 (H: Test r0 r1) := 
+match H with 
+| _ => H
+end.*)
+
+Lemma To_CMyProof_eq : forall  (r0 r1 : regex) (H: Ctest r0 r1), To_CMyProof H =  to_CMyProof  H (@to_MyProof).
+Proof. done.
+Qed.
+Arguments To_CMyProof_eq [r0][r1].
+Definition match_MyProof (H: MyProof ) := 
+match H with 
+| proof_unfold p => proof_unfold  p
+end.
+
+Lemma match_eq : forall (p : MyProof), p = match_MyProof p.
+Proof.
+intros. destruct p0. simpl. done.
+Qed.
+
+
+
+Lemma to_MyProof_eq : forall (r0 r1 : regex) (H : Test r0 r1), to_MyProof H = match H with 
+| Test_unfold x y p0' => proof_unfold (To_CMyProof p0')
+end.
+Proof. intros. 
+rewrite (match_eq (to_MyProof H)) /=.  
+destruct H;ssa.
+Qed.
+Arguments to_MyProof_eq [r0][r1].
+
+
+(*Definition do_unfold (P : MyProof) := 
+match P with 
+| proof_unfold P' => P'
+end.*)
+Check to_MyProof_eq.
+Let co_eq := (to_MyProof_eq,To_CMyProof_eq).
+Lemma to_test2 : forall (r0 r1 : regex) (H: Test r0 r1), Test2 r0 r1 (to_MyProof H).
+Proof.
+cofix CIH. 
+intros.  rewrite !co_eq. destruct H.
+con. rewrite co_eq /=. destruct c; simpl. con. con.
+con. apply:CIH.
+Qed.
+
+(*CoInductive NT  : Set:= 
+| N : NT -> NT.*)
+(*| T : NT -> NT.*)
+Inductive T2 : Set :=
+| TT0
+| TT1.
+
+Definition term := seq unit -> T2.
+Require Import Coq.Logic.FunctionalExtensionality.
+
+Section NT.
+Variable P : term -> seq term -> Prop.
+Variant NT_gen : term -> seq term -> Prop := 
+| NT0 f l :(* (forall x, In x l' -> In x l) ->*) In f l -> P (fun x => f (tt::x)) l -> NT_gen f l.
+End NT.
+Definition Regular t l := paco2 NT_gen bot2 t l.
+
+Definition my_f : term := fun _ => TT0.
+(*Definition my_t (f:NT) : NT := N f.
+
+CoFixpoint my_t_fix := my_t my_t_fix.
+
+Definition NT_match t := 
+match t with 
+| N t0 => N t0
+end.
+
+Lemma NT_match_eq t : t = NT_match t.
+Proof. case: t;ssa.
+Qed.
+
+Lemma my_t_eq : my_t_fix = my_t my_t_fix.
+Proof. rewrite {1}(NT_match_eq (my_t_fix)). done. 
+Qed.
+
+Lemma my_t_eq2 :my_t my_t_fix = N (my_t_fix).
+Proof.
+done.
+Qed.
+
+Let co := (my_t_eq,my_t_eq2).*)
+
+Lemma all_regular : forall t, exists l, Regular t l.
+Proof.
+intros. clear co_eq.
+exists (t::nil). 
+move: t. pcofix CIH.
+intros. pfold. con. ssa.
+right.
+have: (fun x : seq unit => t (tt :: x)) = t.
+apply:functional_extensionality. intros. simpl. destruct (t x). destruct (t (tt::x)). done.
+destruct x. simpl.
+done.
+suff: exists l, Regular (N t) l. ssa. exists x. punfold H. inv H. eauto. inv H2. admit.
+move: t.  intros. exists (N t::nil).
+move: t. pcofix CIH.
+intros. pfold. con. ssa. right.
+destruct t
+itnros.
+move: H.
+ econ.
+move: t. pcofix CIH. 
+intros. destruct t. move: t. pcofix CIH.
+intros. pfold. con. admit. right. apply/CIH. 
+Unshelve. repeat con.
+left.
+move: t. pcofix CIH.
+intros. pfold. destruct t. con. admit. right.
+right.
+ ssa. left.
+pfold. case: t.  destruct t. con.
+2: {  right. apply/CIH. } 
+simpl. auto.
+right.
+intros. rewrite co. pfold. destruct t. con.
+
+
+clear co_eq.
+intros. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+match p0 with 
+                                                   | Test_unfold y z p0' => proof_unfold (to_proof p0')
+                                                                                       end
+                         end
+end.                                              
+                          
+end.
+                          |
+p_guard (proof_unfold (to_proof p0'))
+                         end
+|
+
+
+
+
+
+
+
+~> pf (*assoc +*)
+
 
 
 (*Section DSL.
@@ -3115,31 +3498,12 @@ Qed.
 
 
 
-Inductive contains_gen bisim : regex -> regex -> Prop :=
- contains_con c0 c1 (H0: forall e, bisim (e \ c0) (e \ c1) : Prop ) (H1: nu c0 -> nu c1) : contains_gen bisim c0 c1.
 
 
 
-Definition Contains c0 c1 := paco2 contains_gen bot2 c0 c1.
-Hint Unfold  Contains : core.
 
-Lemma contains_gen_mon: monotone2 contains_gen. 
-Proof.
-unfold monotone2. intros.  constructor. inversion IN. intros.
-auto. inversion IN. auto.  
-Qed.
-Hint Resolve contains_gen_mon : paco.
 
-Definition contains (r0 r1 : regex) := forall s, Match s r0 -> Match s r1.
 
-Theorem containsP : forall c0 c1, contains c0 c1 -> Contains c0 c1.
-Proof.
-pcofix CIH. intros. pfold. constructor.
-- intros. right. apply CIH.  move=> s.  rewrite -!deriveP. eauto.
-  move: (H0 nil). rewrite !matchbP /matchb //=. 
-Qed.
-
-Print INEQ.
 
 Lemma unf0 d : mu_height d = 0 -> full_unf d = d. 
 Proof.
@@ -3544,10 +3908,9 @@ Qed.
 Lemma star_o_r : forall R c c', Star c' <(R) =  Star (o (c) _+_ c') ~> (proj_sig (star_o_r_aux R c c')).
 Proof. pp. Qed.
 
-Lemma derive_unfold_coerce : forall R c,{ d | c_ineq R c (o c _+_ \big[Plus/Empt]_(a : A) (Event a _;_ a \ c)) d } *
-                                   { d' |  c_ineq R (o c _+_ \big[Plus/Empt]_(a : A) (Event a _;_ a \ c)) c d'}.
+Lemma derive_unfold_coerce : forall c,{ d | c_ineq bot3 c (o c _+_ \big[Plus/Empt]_(a : A) (Event a _;_ a \ c)) d } *
+                                   { d' |  c_ineq bot3 (o c _+_ \big[Plus/Empt]_(a : A) (Event a _;_ a \ c)) c d'}.
 Proof.
-move=>R. 
 elim;try solve [eauto].
 - con. eauto. rewrite /o /=. econ. lct2. lct2. bt rule_untagL. bt rule_retag. t0.
   lcp1. lcid. lct1.  apply:eq_big_plus_c. intro. intros. bt rule_abortR. apply: plus_empt_l. t0. t0. t0.
@@ -3622,19 +3985,37 @@ Qed.
 
 
 
-Lemma derive_unfold_coerce_l_aux : forall R c, { d | c_ineq R c (o c _+_ \big[Plus/Empt]_(a : A) (Event a _;_ a \ c)) d }. 
+Lemma derive_unfold_coerce_l_aux : forall c, { d | c_ineq bot3  c (o c _+_ \big[Plus/Empt]_(a : A) (Event a _;_ a \ c)) d }. 
 Proof.
-intros. destruct (derive_unfold_coerce R c). done.
+intros. destruct (derive_unfold_coerce c). done.
 Qed.
-Lemma derive_unfold_coerce_l : forall R c, c_ineq R c (o c _+_ \big[Plus/Empt]_(a : A) (Event a _;_ a \ c)) (proj_sig (derive_unfold_coerce_l_aux R c)). 
-Proof. pp. Qed.
+Lemma derive_unfold_coerce_l : forall c R, c_ineq R c (o c _+_ \big[Plus/Empt]_(a : A) (Event a _;_ a \ c)) (proj_sig (derive_unfold_coerce_l_aux c)). 
+Proof. intros. apply/c_ineq_gen_mon. pp. done.
+Qed.
 
-Lemma derive_unfold_coerce_r_aux : forall R c, {d' | c_ineq R (o c _+_ \big[Plus/Empt]_(a : A) (Event a _;_ a \ c)) c d'}.
+Lemma derive_unfold_coerce_r_aux : forall c, {d' | c_ineq bot3 (o c _+_ \big[Plus/Empt]_(a : A) (Event a _;_ a \ c)) c d'}.
 Proof.
-intros. destruct (derive_unfold_coerce R c). done.
+intros. destruct (derive_unfold_coerce c). done.
 Qed.
-Lemma derive_unfold_coerce_r : forall R c, c_ineq R (o c _+_ \big[Plus/Empt]_(a : A) (Event a _;_ a \ c)) c (proj_sig (derive_unfold_coerce_r_aux R c)).
-Proof. pp. Qed.
+Lemma derive_unfold_coerce_r : forall R c, c_ineq R (o c _+_ \big[Plus/Empt]_(a : A) (Event a _;_ a \ c)) c (proj_sig (derive_unfold_coerce_r_aux c)).
+Proof. intros. apply/c_ineq_gen_mon. pp. done.
+Qed.
+
+Definition decomp_l c := proj_sig (derive_unfold_coerce_l_aux c).
+Definition decomp_r c := proj_sig (derive_unfold_coerce_r_aux c).
+
+(*Lemma decomp_l : forall c, INEQ c (o c _+_ \big[Plus/Empt]_(a : A) (Event a _;_ a \ c)) (proj_sig (derive_unfold_coerce_l_aux INEQ c)). 
+Proof. intros. pfold. apply:c_ineq_gen_mon. apply:derive_unfold_coerce_l. eauto.
+Qed.
+
+Lemma decomp_r : forall c, INEQ (o c _+_ \big[Plus/Empt]_(a : A) (Event a _;_ a \ c)) c (proj_sig (derive_unfold_coerce_r_aux INEQ c)). 
+Proof. intros. pfold. apply:c_ineq_gen_mon. apply:derive_unfold_coerce_r. eauto.
+Qed.*)
+
+Definition sum_dsl  (F : A -> dsl) := (\big[cplus/cid]_(a : A) (guard (F a))).
+(*Definition decomp_rec c R := 
+cfix (ctrans (decomp_l R) (sum_dsl (fun a => decomp_rec (a \ c) R)))*)
+
 (*Lemma big_shape: forall c, \big[Plus/Empt]_a (Event a _;_ a \ c) = \big[Plus/Empt]_(i <- map (fun a => (a,a\c)) (index_enum A)) (Event i.1 _;_  i.2).
 Proof.
 move=> c. move Heq: (index_enum _)=>ef. clear Heq.
@@ -3642,7 +4023,7 @@ elim: ef. rewrite !big_nil //.
 move=> a l IH. rewrite !big_cons /=. f_equal. done.
 Qed.*)
 
-Lemma nu_imp_coerce_aux : forall r0 r1 r2 r3 d R, (nu r0 -> nu r1) -> r2 <(R)= r3 ~> d ->  { d' | o (r0) _+_ r2 <(R)= o(r1) _+_ r3 ~> d'}.
+(*Lemma nu_imp_coerce_aux : forall r0 r1 r2 r3 d R, (nu r0 -> nu r1) -> r2 <(R)= r3 ~> d ->  { d' | o (r0) _+_ r2 <(R)= o(r1) _+_ r3 ~> d'}.
 Proof.
 intros. destruct (nu r0) eqn:Heqn. rewrite /o Heqn H //. econ. lcp1. lcid. eauto. t0.
 rewrite /o Heqn.
@@ -3653,8 +4034,1449 @@ lct1. bt rule_untagL. lct2. bt rule_retag. eauto. t0. t0.
 Qed.
 
 Lemma nu_imp_coerce : forall r0 r1 r2 r3 d R (H : (nu r0 -> nu r1)) (H' : r2 <(R)= r3 ~> d),  o (r0) _+_ r2 <(R)= o(r1) _+_ r3 ~> (proj_sig (nu_imp_coerce_aux r0 r1 H H')).
+Proof. pp. Qed.*)
+
+Lemma nu_imp_coerce_aux : forall r0 r1, (nu r0 -> nu r1) -> { d | o r0 <(bot3)= o r1 ~> d }. 
+Proof.
+intros. destruct (nu r0) eqn:Heqn. rewrite /o Heqn H //. econ. lcid. 
+rewrite /o Heqn.
+destruct (nu r1). econ.
+lct2. bt rule_untagL.
+bt rule_tagL. t0.
+eauto.
+Qed.
+
+Lemma nu_imp_coerce : forall r0 r1 (H : nu r0 -> nu r1),  o r0 <(bot3)= o r1 ~> ( proj_sig (nu_imp_coerce_aux r0 r1 H)). 
 Proof. pp. Qed.
 
+
+(*Lemma nu_imp_coerce : forall r0 r1 r2 r3 d R (H : (nu r0 -> nu r1)) (H' : r2 <(R)= r3 ~> d),  o (r0) _+_ r2 <(R)= o(r1) _+_ r3 ~> (proj_sig (nu_imp_coerce_aux r0 r1 H H')).
+Proof. pp. Qed.*)
+Lemma big_plus_coerce : forall (l : seq A) F0 F1 F2 (R : regex -> regex -> dsl -> Prop), (forall a, a \in l -> R (F0 a) (F1 a) (F2 a)) ->
+ (\big[Plus/Empt]_(a <- l) (Event a _;_ F0 a)) <(R)=  (\big[Plus/Empt]_(a <- l) (Event a _;_ F1 a)) ~>  (\big[cplus/cid]_(a <- l) (guard (F2 a))).
+Proof.
+elim;ssa. rewrite !big_nil. eauto.
+rewrite !big_cons. lcp1. eauto. eauto. t0.
+Qed.
+
+Fixpoint pd a r := 
+match r with 
+| Eps => nil 
+| Empt => nil 
+| Event a' => if a == a' then Eps::nil else nil
+| Plus r0 r1 => (pd a r0) ++ (pd a r1)
+| Seq r0 r1 => if nu r0 then (map (fun x => Seq x r1) (pd a r0)) ++ (pd a r1) else (map (fun x => Seq x r1) (pd a r0))
+| Star r0 => map (fun x => x _;_ Star r0) (pd a r0)
+end.
+
+Definition pd_sum a r := \big[Plus/Empt]_(r <- undup (pd a r)) r.
+
+Inductive contains_gen bisim : regex -> regex -> Prop :=
+ contains_con c0 c1 (H0: forall e, bisim (pd_sum e c0) (pd_sum e c1) : Prop ) (H1: nu c0 -> nu c1) : contains_gen bisim c0 c1.
+
+
+
+Definition Contains c0 c1 := paco2 contains_gen bot2 c0 c1.
+Hint Unfold  Contains : core.
+
+Lemma contains_gen_mon: monotone2 contains_gen. 
+Proof.
+unfold monotone2. intros.  constructor. inversion IN. intros.
+auto. inversion IN. auto.  
+Qed.
+Hint Resolve contains_gen_mon : paco.
+
+Definition contains (r0 r1 : regex) := forall s, Match s r0 -> Match s r1.
+
+
+Definition pd_l a l := undup (flatten (map (pd a) l)).
+
+Inductive contains_gen2 bisim : seq regex -> seq regex -> Prop :=
+ contains_con2 l0 l1 (H0: forall e, bisim (pd_l e l0) (pd_l e l1) : Prop ) (H1: has nu l0 -> has nu l1) : contains_gen2 bisim l0 l1.
+
+Definition Contains2 c0 c1 := paco2 contains_gen2 bot2 c0 c1.
+Hint Unfold  Contains2 : core.
+
+Lemma contains_gen2_mon: monotone2 contains_gen2. 
+Proof.
+unfold monotone2. intros.  constructor. inversion IN. intros.
+auto. inversion IN. auto.  
+Qed.
+Hint Resolve contains_gen2_mon : paco.
+
+
+Lemma ACI_map : forall l (f : regex -> regex), 
+\big[Plus/Empt]_(a <- map f l) a = \big[Plus/Empt]_(a <- l) (f a).
+Proof.
+elim;ssa.
+rewrite !big_nil. done.
+rewrite !big_cons. f_equal. done.
+Qed.
+
+Lemma Match_factor_r : forall l s r (F : regex -> regex), Match s (\big[Plus/Empt]_(i <- l) (F i _;_ r)) -> Match s (\big[Plus/Empt]_(i <- l) (F i) _;_ r). 
+Proof.
+elim;ssa. rewrite big_nil in H. inv H.
+move: H0. rewrite !big_cons. intros. inv H0. inv H3. eauto. 
+apply H in H3. inv H3. eauto.
+Qed.
+
+
+Lemma Match_factor_r2 : forall l s r (F : regex -> regex),  Match s (\big[Plus/Empt]_(i <- l) (F i) _;_ r) -> Match s (\big[Plus/Empt]_(i <- l) (F i _;_ r)). 
+Proof.
+elim;ssa. rewrite big_nil in H. inv H. inv H3.
+move: H0. rewrite !big_cons. intros. inv H0. inv H4. eauto. eauto.
+Qed.
+Lemma Match_big_cat : forall l  l' s, Match s (\big[Plus/Empt]_(i <- l ++ l') i)  <->  Match s ((\big[Plus/Empt]_(i <- l) i) _+_  (\big[Plus/Empt]_(i <- l') i)).
+Proof.
+split.
+elim: l l' s. ssa. 
+move=> a l IH l' s.  rewrite /= !big_cons. intros. inv H. eauto.
+apply IH in H2. inv H2. eauto. eauto.
+elim: l l' s. ssa. rewrite big_nil in H.  inv H. inv H2.
+move=> a l IH l' s.  rewrite /= !big_cons. intros. inv H. inv H2. eauto. 
+constructor 5.
+apply:IH. eauto. eauto.
+Qed.
+
+Lemma Match_big_undup : forall l s, Match s (\big[Plus/Empt]_(i <- undup l) i)  <->  Match s ((\big[Plus/Empt]_(i <- l) i)).
+Proof.
+elim;ssa. case_if. rewrite !big_cons. split.
+move/H. eauto. intros. apply/H. inv H1;eauto. 
+clear H1 H.
+elim: l a H0 H4;ssa.  rewrite !inE in H0. de (orP H0). norm_eqs. rewrite big_cons. eauto. 
+rewrite big_cons. eauto. 
+rewrite !big_cons. split. intros. inv H1;eauto. constructor 5. apply/H. done.
+intros. inv H1;eauto. constructor 5. apply/H. done.
+Qed.
+
+
+(*Lemma Match_big_undup_cat : forall l  l' s, Match s (\big[Plus/Empt]_(i <- undup (l ++ l')) i)  <->  Match s ((\big[Plus/Empt]_(i <- undup l) i) _+_  (\big[Plus/Empt]_(i <- undup l') i)).
+Proof.
+elim;ssa. rewrite !big_nil. split. intros. constructor 5. 
+elim: l' H. ssa. 
+ssa. 
+Admitted.*)
+(*move: H0. case_if. ssa. rewrite big_cons. eauto. 
+rewrite !big_cons /=. intros. inv H1. eauto. eauto.
+intros. inv H. inv H2. 
+clear H. elim: l' H2;ssa.
+rewrite !big_cons in H2. 
+case_if.  inv H2.
+inv H2.*)
+
+
+Lemma der_eq : forall e r s, Match s (derive e r) <-> Match s (pd_sum e r).
+Proof.
+intros. rewrite /pd_sum. rewrite Match_big_undup. split.
+elim: r0 s e;ssa.  rewrite big_nil //. rewrite big_nil //.
+move: H. case_if. norm_eqs. rewrite eqxx. rewrite !big_cons big_nil. eauto.
+rewrite eq_sym H big_nil //=.
+inv H1. apply H in H4.
+move: H4. move: (pd e r0)=> l. 
+intros. apply/Match_big_cat. eauto.
+apply H0 in H4. apply/Match_big_cat. eauto.
+destruct (nu _) eqn:Heqn.  
+apply/Match_big_cat.  inv H1.  inv H4. 
+con.
+apply H in H6. 
+rewrite ACI_map. apply Match_factor_r2. eauto. eauto. 
+inv H1.  apply H in H5.
+rewrite ACI_map. apply Match_factor_r2. eauto.
+inv H0. rewrite ACI_map. apply Match_factor_r2. eauto.
+
+rewrite /pd_sum.
+elim: r0 s e;ssa.  rewrite big_nil // in H. rewrite big_nil // in H.
+move: H. case_if. norm_eqs. rewrite eqxx. rewrite !big_cons big_nil. intros. inv H. inv H2. 
+rewrite eq_sym H big_nil //=. apply Match_big_cat in H1. inv H1. eauto. eauto.
+destruct (nu _) eqn:Heqn.  apply Match_big_cat in H1. inv H1. 
+rewrite ACI_map in H4. apply Match_factor_r in H4. inv H4. eauto. eauto.
+rewrite ACI_map in H1. apply Match_factor_r in H1. inv H1. eauto. 
+rewrite ACI_map in H0. apply Match_factor_r in H0. inv H0. eauto.
+Qed.
+
+Lemma deriveP2
+     : forall (c : regex) (e : A) (s : trace),
+       Match (e :: s) c <-> Match s (pd_sum e  c).
+Proof. intros. rewrite -der_eq. apply/deriveP.
+Qed.
+
+Theorem containsP : forall c0 c1, contains c0 c1 -> Contains c0 c1.
+Proof.
+pcofix CIH. intros. pfold. constructor.
+- intros. right. apply CIH.  move=> s.  
+  rewrite -!deriveP2. eauto.
+  move: (H0 nil). rewrite !matchbP /matchb //=. 
+Qed.
+
+Lemma pd_plus : forall l e, undup (pd e (\big[Plus/Empt]_(i <- l) i)) = pd_l e l.
+Proof.
+rewrite /pd_l.
+elim;ssa.
+rewrite big_nil. done.
+rewrite big_cons /=. rewrite !undup_cat.  f_equal;try done. 
+apply/eq_in_filter. intro. ssa.   clear H0.
+move: x. clear H.  elim: l. ssa. rewrite big_nil. done. 
+intros. rewrite !big_cons /=.
+rewrite !mem_cat !negb_or. f_equal. eauto.
+Qed.
+
+
+Lemma nu_has : forall l, nu (\big[Plus/Empt]_(i <- l) i) = has nu l.
+Proof.
+elim;ssa.
+rewrite big_nil. done. rewrite !big_cons /=. f_equal. done.
+Qed.
+
+(*Theorem Contains : forall l l', Contains  (\big[Plus/Empt]_(i <- l) i) (\big[Plus/Empt]_(i <- l') i) -> Contains2 l l'.*)
+
+
+Theorem Contains12 : forall l l', Contains  (\big[Plus/Empt]_(i <- l) i) (\big[Plus/Empt]_(i <- l') i) -> Contains2 l l'.
+Proof.
+pcofix CIH. intros. punfold H0. inv H0. pfold. con. intros.
+right. apply/CIH. 
+destruct (H1 e). rewrite /pd_sum in H. 
+rewrite !pd_plus in H. done. done.
+rewrite !nu_has in H2. done.
+Qed.
+
+Theorem containsP2 : forall c0 c1, contains c0 c1 -> Contains2 (c0::nil) (c1::nil).
+Proof.
+intros. apply/Contains12. apply/containsP. 
+rewrite !big_cons big_nil.
+intro. intro. inv H0. eauto. inv H3.
+Qed.
+
+Fixpoint pi r := 
+match r with 
+| Eps => nil
+| Empt => nil 
+| Event _ => Eps::nil
+| Plus r0 r1 =>  (pi r0) ++ (pi r1) 
+| Seq r0 r1 => (map (fun x => x _;_ r1)(pi r0)) ++ (pi r1) 
+| Star r0 => map (fun x => x _;_ Star r0 )(pi r0)
+end.
+
+Definition pi2 r := r::(pi r).
+
+Ltac lo := match goal with 
+                | [H : is_true (_ || _) |- _] => destruct (orP H);norm_eqs;try solve [ssa]
+                end.
+
+Inductive ACI : regex -> regex -> Prop :=
+| ACI_r c : ACI c c
+(*| ACI_A c0 c1 c2 : ACI ((c0 _;_ c1) _;_ c2) (c0 _;_ (c1 _;_ c2))*)
+| ACI_AP c0 c1 c2 : ACI ((c0 _+_ c1) _+_ c2) (c0 _+_ (c1 _+_ c2))
+(*| ACI_C c0 c1  : ACI (c0 _+_ c1) (c1 _+_ c0)*)
+(*| ACI_I c  : ACI c (c _+_ c)*)
+(*| ACI_sym c0 c1 : ACI c0 c1 -> ACI c1 c0*)
+| ACI_t c0 c1 c2 : ACI c0 c1 -> ACI c1 c2 ->  ACI c0 c2
+| ACI_p c0 c1 c2 c3 : ACI c0 c2 -> ACI c1 c3 ->  ACI (c0 _+_ c1) (c2 _+_ c3).
+(*| ACI_s c0 c1 c2 c3 : ACI c0 c2 -> ACI c1 c3 ->  ACI (c0 _;_ c1) (c2 _;_ c3).*)
+(*| ACI2 c : ACI Empt (Empt _;_ c)*)
+(*| ACI3 c: ACI Empt (Empt _;_ c)*)
+(*| ACI4 c: ACI c (Empt _+_ c)*)
+(*| ACI5 c: ACI (Empt _+_ c) c.*)
+
+(*| ACI_dist c0 c1 c2: ACI ((c0 _+_ c1) _;_ c2) (c0 _;_ c2 _+_ c1 _;_ c2).*)
+(*| ACI_dist2 c0 c1 c2: ACI (c0 _;_ (c1 _+_ c2) ) (c0 _;_ c1 _+_ c0 _;_ c2)*)
+Hint Constructors ACI.
+
+
+
+Lemma pi_d : forall r r' a, r' \in pd a r -> r' \in pi r.
+Proof.
+elim;ssa. move: H. case_if. done. done.
+rewrite mem_cat in H1.  rewrite mem_cat. apply/orP. lo; eauto. 
+destruct (nu _) eqn:Heqn. rewrite !mem_cat in H1 *. apply/orP. lo. 
+destruct (mapP H2). subst. left. apply/map_f;  eauto. eauto.
+destruct (mapP H1). subst. rewrite mem_cat. apply/orP. left. apply/map_f. eauto.
+destruct (mapP H0). subst.  apply/map_f. eauto.
+Qed.
+Hint Resolve pi_d.
+
+Hint Resolve map_f.
+Lemma in_pi : forall r0 r1 r2 a, r1 \in pi r0 -> r2 \in pd a r1 -> r2 \in pi r0.
+Proof.
+elim;ssa.
+- rewrite !inE in H. norm_eqs. ssa. 
+- rewrite !mem_cat in H1 *.  destruct (orP H1).  
+  move: (H _ _ _ H3 H2). ssa. 
+  move: (H0 _ _ _ H3 H2). ssa. 
+- rewrite !mem_cat in H1 *. 
+  destruct (orP H1). destruct (mapP H3). subst. ssa.
+  destruct (nu _) eqn:Heqn.   rewrite mem_cat in H2. destruct (orP H2).
+  destruct (mapP H5). subst. 
+  move: (H _ _ _ H4 H6). ssa. 
+  con. apply/map_f. done. eauto. 
+  destruct (mapP H2). subst. 
+  move: (H _ _ _ H4 H5). ssa.
+  left. apply/map_f. eauto.
+  move: (H0 _ _ _ H3 H2). ssa.  
+- destruct (mapP H0). subst. ssa.
+  destruct (nu _) eqn:Heqn.   rewrite mem_cat in H1. destruct (orP H1). destruct (mapP H3). subst.
+  move: (H _ _ _ H2 H4). ssa. 
+  apply/map_f. eauto.
+  destruct (mapP H3). subst. apply:map_f. eauto.
+  destruct (mapP H1). subst. ssa.
+  move: (H _ _ _ H2 H3). ssa. apply/map_f. eauto.
+Qed.
+(*Lemma in_pi : forall r0 r1 r2 a, r1 \in pi r0 -> r2 \in pd a r1 -> exists x, r2 = x /\ x \in pi r0.
+Proof.
+elim;ssa.
+- rewrite !inE in H. norm_eqs. ssa. 
+- rewrite !mem_cat in H1 *.  destruct (orP H1).  
+  move: (H _ _ _ H3 H2). ssa. econ. con. apply:H4. rewrite mem_cat H5. lia.
+  move: (H0 _ _ _ H3 H2). ssa. econ. con. apply:H4. rewrite mem_cat H5. lia.
+- rewrite !mem_cat in H1 *. 
+  destruct (orP H1). destruct (mapP H3). subst. ssa.
+  destruct (nu _) eqn:Heqn.   rewrite mem_cat in H2. destruct (orP H2).
+  destruct (mapP H5). subst. 
+  move: (H _ _ _ H4 H6). ssa.
+  exists (x1 _;_ r1). con. eauto. subst. done. rewrite mem_cat. apply/orP.  left. apply/map_f. done.
+  econ. con. econ. rewrite mem_cat. apply/orP. right. eauto.
+  destruct (mapP H2). subst. 
+  move: (H _ _ _ H4 H5). ssa.
+  exists (x1 _;_ r1). ssa. subst. done. rewrite mem_cat. apply/orP. left. apply/map_f. eauto.
+  move: (H0 _ _ _ H3 H2). ssa.  
+  econ. con.  apply/H4. 
+  rewrite mem_cat H5.  lia.
+- destruct (mapP H0). subst. ssa.
+  destruct (nu _) eqn:Heqn.   rewrite mem_cat in H1. destruct (orP H1). destruct (mapP H3). subst.
+  move: (H _ _ _ H2 H4). ssa.
+  exists (x1 _;_ Star r0). con. subst. done. eauto. 
+  apply/map_f. eauto.
+  destruct (mapP H3). subst.
+  econ. con. econ. apply/map_f. eauto.
+  destruct (mapP H1). subst. ssa.
+  move: (H _ _ _ H2 H3). ssa.
+  exists (x1 _;_ Star r0). con. eauto.  subst. done.
+  apply/map_f. eauto.
+Qed.*)
+
+(*Lemma in_pi : forall r0 r1 r2 a, r1 \in pi r0 -> r2 \in pd a r1 -> exists x, ACI r2 x /\ x \in pi r0.
+Proof.
+elim;ssa.
+- rewrite !inE in H. norm_eqs. ssa. 
+- rewrite !mem_cat in H1 *.  destruct (orP H1).  
+  move: (H _ _ _ H3 H2). ssa. econ. con. apply:H4. rewrite mem_cat H5. lia.
+  move: (H0 _ _ _ H3 H2). ssa. econ. con. apply:H4. rewrite mem_cat H5. lia.
+- rewrite !mem_cat in H1 *. 
+  destruct (orP H1). destruct (mapP H3). subst. ssa.
+  destruct (nu _) eqn:Heqn.   rewrite mem_cat in H2. destruct (orP H2).
+  destruct (mapP H5). subst. 
+  move: (H _ _ _ H4 H6). ssa.
+  exists (x1 _;_ r1). con. eauto. rewrite mem_cat. apply/orP.  left. apply/map_f. done.
+  econ. con. apply/ACI_r. rewrite mem_cat. apply/orP. right. eauto.
+  destruct (mapP H2). subst. 
+  move: (H _ _ _ H4 H5). ssa.
+  exists (x1 _;_ r1). ssa. rewrite mem_cat. apply/orP. left. apply/map_f. eauto.
+  move: (H0 _ _ _ H3 H2). ssa.  
+  econ. con.  apply/H4. 
+  rewrite mem_cat H5.  lia.
+- destruct (mapP H0). subst. ssa.
+  destruct (nu _) eqn:Heqn.   rewrite mem_cat in H1. destruct (orP H1). destruct (mapP H3). subst.
+  move: (H _ _ _ H2 H4). ssa.
+  exists (x1 _;_ Star r0). con. eauto. 
+  apply/map_f. eauto.
+  destruct (mapP H3). subst.
+  econ. con. apply:ACI_r. apply/map_f. eauto.
+  destruct (mapP H1). subst. ssa.
+  move: (H _ _ _ H2 H3). ssa.
+  exists (x1 _;_ Star r0). con. eauto. 
+  apply/map_f. eauto.
+Qed.
+Ltac lfin :=   econ; con; [ apply:ACI_r | done].*)
+
+Lemma pi_pi : forall r0 r1 r2, r1 \in pi r0 -> r2 \in pi r1 -> r2 \in pi r0.
+Proof.
+elim;ssa.
+- rewrite !inE in H. norm_eqs. ssa.
+- rewrite mem_cat in H1. de (orP H1). 
+  move: (H _ _ H3 H2). ssa.  rewrite mem_cat H4 //.
+  move: (H0 _ _ H3 H2). ssa. rewrite mem_cat H4 //. lia.
+- rewrite mem_cat in H1. de (orP H1). de (mapP H3). subst. ssa.
+  rewrite mem_cat in H2. lo. de (mapP H5). subst.
+  move: (H _ _ H4 H6). ssa. 
+  rewrite mem_cat. apply/orP. left. apply/map_f. done.
+  rewrite mem_cat H5. lia.
+  move: (H0 _ _ H3 H2). ssa. rewrite mem_cat. apply/orP. eauto.
+- de (mapP H0). subst. ssa. rewrite mem_cat in H1. lo. de (mapP H3). subst.
+  move: (H _ _ H2 H4). ssa.
+  eauto. apply/map_f. done.
+Qed.
+
+Definition pder := seq regex. 
+
+
+Definition pi_l l := undup (flatten (map pi l)).
+
+(*Lemma pi_l_size : forall l, size (pi_l l) <=*)
+
+Fixpoint all_pder_aux n (l : pder) := 
+match n with 
+| 0 => nil::nil 
+| n'.+1 => (compose l (all_pder_aux n' l) cons) ++ (all_pder_aux n' l)
+end.
+
+Lemma all_pder_aux_nil : forall n l, [::] \in all_pder_aux n l.
+Proof.
+elim;ssa. rewrite mem_cat H. lia.
+Qed.
+Hint Resolve all_pder_aux_nil.
+Lemma in_all_pder_aux : forall n l' l, size l <= n -> (forall x, x \in l -> x \in l') -> l \in (all_pder_aux n l').
+Proof.
+elim;ssa. 
+destruct l;ssa. 
+destruct l;ssa.
+rewrite mem_cat. apply/orP. right. done.
+rewrite mem_cat. apply/orP. left. apply/mem_compose. eauto. eauto.
+Qed.
+
+Definition all_pder l := all_pder_aux (size (pi_l l)) (pi_l l).
+
+Lemma mem_compose_cons : forall (B : eqType) (aa : seq B) bb l,   l \in compose aa bb cons -> exists a b, l = cons a b /\  a \in aa /\ b \in bb.
+Proof. move => B. elim;intros. done. 
+move : H0=>/=. rewrite mem_cat. move/orP. case. move/mapP=>[] //=. intros. inversion q. subst. 
+econ. econ.  eauto.
+
+move/H. case. ssa. subst. econ. econ. eauto.
+Qed.
+
+Lemma in_all_pder_size : forall n l l', l' \in all_pder_aux n l -> size l' <= n.
+Proof.
+elim;ssa. rewrite !inE in H. norm_eqs. done.
+rewrite mem_cat in H0. lo. apply mem_compose_cons in H1. ssa. subst. ssa. eauto.
+eauto.
+Qed.
+
+Lemma self_all_pder_aux : forall n l, size l <= n -> l \in all_pder_aux n l.
+Proof.
+intros. apply:in_all_pder_aux. done. eauto.
+Qed.
+
+(*Lemma pd_pi_sub : forall l a,  subseq (undup (pd a l)) (undup (pi l)).
+Proof.*)
+
+Lemma count_undup_sub : forall (B : eqType) (l l' : seq B), (forall x, x \in l -> x \in l')  ->  size (undup l) <= size  (undup l').
+Proof. 
+move=> B.
+elim;ssa. case_if. eauto. 
+ssa.
+have : (forall x, x \in l -> x \in filter (fun y => y  != a) l'). 
+intros. rewrite mem_filter. ssa.  apply/eqP. intro. subst. rewrite H1 in H2. done.  
+move/H. move=>HH.
+have: (size (undup l)).+1 <= (size (undup [seq y <- l' | y != a])).+1. lia.
+intros.
+apply:leq_trans.  apply: H2. 
+Unset Printing Notations.
+apply/HH.
+apply/H0. rewrite !inE H2. lia.
+
+
+have : (forall x, x \in l -> x \in rem a l'). 
+intros. rewrite mem_rem //. apply/eqP. intro. subst. rewrite H1 in H2. done.  apply/H0. rewrite !inE H2. lia.
+move/H. Search _ rem.
+destruct l';ssa. move: (H0 a). rewrite !inE. ssa.
+case_if. 
+admit.
+ssa.
+suff: size (undup l) <= size (undup l'). lia.
+destruct (eqVneq s a). subst.
+apply/H.  intros. move: (H0 x). rewrite !inE H3 orbC /=. move/(_ is_true_true).
+move/orP. case. intros. norm_eqs. rewrite H1 in H3. done. done.
+apply:H. 
+intros. move: (H0 x). rewrite !inE H orbC /=. move/(_ is_true_true). 
+move/orP. case. intros. norm_eqs. rewrite H1 in H.
+intros. move: (H0 x).  rewrite inE.
+rewrite !inE H3 orbC /=.  rewrite H /=. 
+move/(_ is_true_true). move/orP. case. intros. norm_eqs.
+move: (H0 a). rewrite !inE H1 .
+have: (forall x, x \in l -> x \in l'). eauto. 
+move/H.  intros. lia.
+lia.
+Admitted.
+
+Lemma size_pd_l_pi_l : forall l a, size (pd_l a l) <= size (pi_l l).
+Proof.
+rewrite /pd_l /pi_l.
+intros. Search _ (size (undup _)).
+elim;ssa. rewrite !undup_cat !size_cat. 
+have: forall (n0 n1 n2 n3 : nat), n0 <= n2 -> n1 <= n3 -> n0 + n1 <= n2 + n3. lia.
+intros. apply/H0;eauto. 
+rewrite !size_filter /=. clear H0 H.
+have:  count (fun x : regex => x \notin flatten [seq pd a0 i | i <- l])
+    (undup (pd a0 a)) <=  count (fun x : regex => x \notin flatten [seq pd a0 i | i <- l])
+    (undup (pi a)). apply/count_undup_sub.
+intros. apply:pi_d. eauto. 
+intros. apply:leq_trans. eauto. apply:sub_count. 
+intro. ssa. apply/negP. intro. move/negP: H0. intro. apply/H0. 
+de (flattenP H1). de (mapP H2). subst.
+apply/flattenP. simpl. econ. apply/mapP. econ. eauto. 2: eauto. done.
+Search _ (count _ _ <= count _ _).
+Check count_undup.
+suff: size [seq x <- undup (pd a0 a) | x \notin flatten [seq pd a0 i | i <- l]] <=   size [seq x <- undup (pi a) | x \notin flatten [seq pi i | i <- l]].
+lia.
+ Check size_undup.
+sim
+
+Lemma size_pi_pd : forall l l' a, l' \in all_pder l -> size (pd_l a l') <= size (pi_l l).
+Proof. simpl. intros. 
+apply/in_all_pder_size.
+apply in_all_pder_size in H. apply self_all_pder_aux in H.
+apply in_all_pder_size in H.
+move: (self_all_pder_aux n l').
+lia.
+move: (in_all_pder_size  H).
+
+
+
+Lemma all_pder_closed : forall l l' a, l' \in all_pder l -> pd_l a l' \in all_pder l.
+Proof.
+intros. apply/in_all_pder_aux. lia.
+
+
+Lemma in_pi_l : forall l r1 r2 a, r1 \in pi_l l -> r2 \in pd a r1 -> r2 \in pi_l l.
+Proof.
+intros. destruct (flattenP H). ssa. de (mapP H1). subst. 
+Check in_pi. 
+move: (in_pi _ _ _ _ H2 H0). ssa. 
+apply/flattenP. econ. apply/map_f. eauto. done.
+Qed.
+
+(*Lemma pi_pi_l : forall l r1 r2 a, r1 \in pi_l l -> r2 \in pi_l l -> r2 \in pi_l l.*)
+
+
+
+
+(*Lemma pi_pi : forall r0 r1 r2, r1 \in pi r0 -> r2 \in pi r1 -> exists x, ACI r2 x /\ x \in pi r0.
+Proof.
+elim;ssa.
+- rewrite !inE in H. norm_eqs. lfin.
+- rewrite mem_cat in H1. de (orP H1). 
+  move: (H _ _ H3 H2). ssa. econ. con. apply: H4. rewrite mem_cat H5 //.
+  move: (H0 _ _ H3 H2). ssa. econ. con. apply:H4. rewrite mem_cat H5 //. lia.
+- rewrite mem_cat in H1. de (orP H1). de (mapP H3). subst. ssa.
+  rewrite mem_cat in H2. lo. de (mapP H5). subst.
+  move: (H _ _ H4 H6). ssa. 
+  exists (x1 _;_ r1). con. eauto. rewrite mem_cat. apply/orP. left. apply/map_f. done.
+  econ. con. apply:ACI_r. rewrite mem_cat H5. lia.
+  move: (H0 _ _ H3 H2). ssa. econ. con. apply:H4. rewrite mem_cat H5. lia.
+- de (mapP H0). subst. ssa. rewrite mem_cat in H1. lo. de (mapP H3). subst.
+  move: (H _ _ H2 H4). ssa.
+  exists (x1 _;_ Star r0). con. eauto. apply/map_f. done.
+  de (mapP H3). subst. 
+  econ. con. apply:ACI_r. apply/map_f.  eauto.
+Qed.
+*)
+(*Definition mod_ACI (p : regex -> bool) (r : regex)  := exists x, ACI r x /\ p x.*)
+
+Definition sub {B : eqType} (p0 p1: B -> bool) := (forall x, p0 x  -> p1 x)  /\ (exists x, p1 x /\ ~~ p0 x). 
+
+(*Lemma sub_aci_mon : forall (p0 p1 : regex -> bool), *)  
+
+Definition finite_pred {B: eqType} (p : B-> bool) n := exists (l : seq B), size l <= n /\ forall x, p x -> x \in l.
+
+Lemma preserve_fin : forall (B : eqType) (p p' : B -> bool) n, finite_pred p n -> sub p' p -> exists n', n' < n /\ finite_pred p' n'.
+Proof. 
+intros. inv H.
+rewrite /finite_pred.  ssa. subst. 
+elim: x n p0 p' H H0 H1 H2.
+- ssa. inv H0. ssa. apply H2 in H4. ssa.
+- intros. ssa.  inv H1. ssa.
+  destruct (eqVneq a x).  subst.
+  exists (size l). ssa. exists l. ssa. intros.
+  apply H4 in H7 as H7'. apply H3 in H7' as H7''.  rewrite !inE in H7''. lo.
+  rewrite H7 in H6. ssa.
+  destruct (p0 a) eqn:Heqn.
+ * move Heq : (fun x => ( x!= a) && p0 x) => /= p0'. 
+   move Heq2 : (fun x => ( x!= a) && p' x) => /= p''. 
+   have: finite_pred p0' n.-1. inv H0. ssa.  exists (rem a x0). ssa. rewrite size_rem //. destruct (size x0) eqn:Heqn2=>//.  lia.
+   eauto. ssa. rewrite mem_rem //.  eauto. move=>Hfin.
+   have: sub p'' p0'. inv H1. ssa. con. intros. ssa. 
+   exists x. ssa. rewrite neg_sym //. move=>Hsub.
+   have: size l <= n.-1. lia. move=>Hsize.
+   have: forall x, p0' x -> x \in l. subst. ssa. apply H3 in H9 as H9'.  rewrite !inE in H9'. lo.
+   move=>Hin.
+   move:(H _ _ _ Hfin Hsub Hsize Hin). subst. ssa.
+   exists x0.+1. ssa. lia. exists (a::x1).   ssa. ssa.
+   destruct (eqVneq x2 a). subst. done. rewrite inE. apply/orP. right. apply/H9. ssa.
+ * have: forall x, p0 x -> x \in l. intros. apply H3 in H7 as H7'. rewrite !inE in H7'. lo. rewrite Heqn in H7. done.
+   move=> Hin. have: size l <= n. lia. move=>Hsize.
+   move: (H _ _ _ H0 H1 Hsize Hin). ssa. exists x0. ssa. exists x1. ssa.
+Qed.
+
+Lemma fin_0 : forall (B : eqType) (p : B -> bool), finite_pred p 0 -> ~ exists p', sub p' p.
+Proof.
+intros. intro. ssa. 
+move: (preserve_fin H H0). ssa.
+Qed.
+
+Inductive D_bisim :  (pder -> bool) -> pder -> Prop := 
+| Db_next p l : (forall a, D_bisim (fun x => (x != l) && p x) (pd_l a l)) -> p l -> D_bisim p l
+| Db_stop p l : ~~ (p l) -> D_bisim p l.
+
+Lemma D_bisim_exists : forall l, exists p, D_bisim p l.
+Proof.
+intros.
+move Heq: (fun x => all (fun y => y \in pi_l x) x) => p. exists p.
+have : Acc sub p. 
+have: (size ( finite_pred p n. 
+econ. rewrite /finite_pred. simpl.
+subst.
+Check Acc_rect.
+
+apply Acc_rect. 
+(forall y, y \in x -> y \in pi_l x)).
+
+(*
+
+p_enum := pi(r0,r1)
+finite_pred p_enum
+p0 := (r0,r1)
+p_enum \ p0  < p_enum
+
+
+*)
+
+
+
+(*Inductive ACI : regex -> regex -> Prop :=
+| ACI_refl r : ACI r r
+| ACI_assoc r0 r1 r2 : ACI (r0 _;_ r1 _;_ r2) (r0 _;_ (r1 _;_ r2))
+| ACI_idemp r: ACI (r _+_ r ) r.
+Hint Constructors ACI.
+
+(*Hint Constructors ACI.*)
+Inductive IndContains : list (regex * regex) -> regex -> regex -> Prop := 
+| IC0 c0 c1 l : (forall e, IndContains ((c0,c1)::l) (e \ c0) (e \ c1)) ->  (nu c0 -> nu c1) -> IndContains l c0 c1
+| IC1 x y c0 c1 l : ACI c0 x  -> ACI c1 y -> (x,y) \in l -> IndContains l c0 c1.
+Hint Constructors IndContains.*)
+Definition base r := r::Eps::Empt::nil.
+Fixpoint regex_enum r := (base r)++
+match r with 
+| Eps => nil
+| Empt => nil 
+| Event _ => nil 
+| Plus r0 r1 => compose (regex_enum r0) (regex_enum r1) Plus
+| Seq r0 r1 => (compose (map (fun x => x _;_ r1)(regex_enum r0)) (regex_enum r1) Plus) ++ (regex_enum r1)
+| Star r0 => map (fun x => x _;_ Star r0 )(regex_enum r0)
+end.
+
+
+
+
+
+(*Lemma reg_enum : regex_enum Eps = base Eps.
+Proof. done.
+Qed.*)
+
+Lemma base_eq r : base r = r :: Eps :: Empt :: nil. 
+Proof. done.
+Qed.
+
+Lemma in_same (B : eqType) (b : B) l x : x \in b::b::l = (x \in b::l).
+Proof.
+rewrite !inE. lia.
+Qed.
+Lemma in_same2 (B : eqType) (b b' : B) l x : x \in b::b'::b::l = (x \in b'::b::l).
+Proof.
+rewrite !inE. lia.
+Qed.
+Let eqs := (base_eq,in_same,in_same2).
+
+
+Ltac rlo := repeat lo.
+Lemma selfe : forall r, r \in regex_enum r.
+Proof.
+elim;ssa.
+Qed.
+Hint Resolve selfe.
+
+Lemma mem_compose2 : forall aa bb l,   l \in compose aa bb Seq -> exists a b, l = Seq a b /\  a \in aa /\ b \in bb.
+Proof. elim;intros. done. 
+move : H0=>/=. rewrite mem_cat. move/orP. case. move/mapP=>[] //=. intros. inversion q. subst. 
+econ. econ.  eauto.
+
+move/H. case. ssa. subst. econ. econ. eauto.
+Qed.
+
+Lemma mem_compose_plus : forall aa bb l,   l \in compose aa bb Plus -> exists a b, l = Plus a b /\  a \in aa /\ b \in bb.
+Proof. elim;intros. done. 
+move : H0=>/=. rewrite mem_cat. move/orP. case. move/mapP=>[] //=. intros. inversion q. subst. 
+econ. econ.  eauto.
+
+move/H. case. ssa. subst. econ. econ. eauto.
+Qed.
+
+
+
+(*Definition INEQ_bot := paco3 c_ineq bot3.*)
+Lemma mem_Empt : forall r, Empt \in regex_enum r.
+Proof. case;ssa.
+Qed.
+Hint Resolve mem_Empt. 
+
+(**)
+
+Lemma in_help :   exists x : regex, ACI Eps x /\ x \in [:: Eps; Eps; Empt].
+Proof.
+intros. econ. con. apply:ACI_r. done.
+Qed.
+Hint Resolve in_help.
+
+Lemma in_help1 :  forall r, r \in regex_enum Empt -> exists x : regex, ACI r x /\ x \in [:: Eps; Eps; Empt].
+Proof.
+intros. ssa. rewrite eqs !inE in H. lo.   eauto.
+Qed.
+Hint Resolve in_help1.
+Lemma in_help2 :  forall r, r \in regex_enum Eps -> exists x : regex, ACI r x /\ x \in [:: Eps; Eps; Empt].
+Proof.
+intros. ssa. rewrite eqs !inE in H. lo.   
+Qed.
+Hint Resolve in_help2.
+Lemma in_help3 :  forall r, r \in regex_enum Eps -> exists x : regex, ACI r x /\ x \in [:: Empt; Eps; Empt].
+Proof.
+intros. ssa. rewrite eqs !inE in H. lo.    eauto. eauto.
+Qed.
+Hint Resolve in_help3.
+
+Lemma in_help4 :  forall r e, r \in regex_enum (Event e) -> exists x : regex, ACI r x /\ x \in [:: Event e; Eps; Empt].
+Proof.
+intros. ssa. rewrite !inE in H. lo.    eauto.  lo. ssa. eauto. eauto.
+Qed.
+Hint Resolve in_help4.
+Lemma in_help5 :  forall r e, r \in regex_enum (Eps) -> exists x : regex, ACI r x /\ x \in [:: Event e; Eps; Empt].
+Proof.
+intros. ssa. rewrite !inE in H. lo.    eauto.  lo. 
+Qed.
+Hint Resolve in_help5.
+Lemma in_help6 :  forall r e, r \in regex_enum (Empt) -> exists x : regex, ACI r x /\ x \in [:: Event e; Eps; Empt].
+Proof.
+intros. ssa. rewrite !inE in H. lo.    eauto.  lo. 
+Qed.
+Hint Resolve in_help6.
+
+Lemma test_test: forall r0 r1 r2, r1 \in regex_enum r0 -> r2 \in regex_enum r1 -> exists x, ACI r2 x /\ x \in regex_enum r0.
+Proof.
+elim;ssa.
+- rewrite !inE in H. lo. eauto. 
+  lo. eauto. rewrite !inE in H. lo. eauto. lo.  eauto.
+-  rewrite !inE in H. lo. lo.  
+- rewrite !inE in H1. lo. ssa. rewrite !inE in H2. lo. econ. con. apply:ACI_r. done.
+  lo. econ. con. apply:ACI_r. done.
+  lo. econ. con. apply:ACI_r. done.
+  apply mem_compose_plus in H5. ssa. subst.
+  econ. con. apply:ACI_r. rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right.
+  apply/mem_compose. done. done.
+  lo. ssa. rewrite eqs in H2. rewrite !inE in H2. lo. econ. con. apply:ACI_r. done.
+  econ. con. apply:ACI_r. done.
+  lo. ssa. rewrite eqs !inE in H2. lo. lfin. lo. lfin.
+  apply mem_compose_plus in H5. ssa. subst. ssa.
+  lo. inv H5. rewrite !inE in H2. lo. ssa.
+  lfin. lo. lfin. lo. lfin.
+  apply mem_compose_plus in H10. ssa. subst.
+  econ. con. apply:ACI_r. rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right.
+  apply/mem_compose. done. done.
+  apply mem_compose_plus in H5. ssa. inv H5.
+  rewrite !inE in H2. lo.
+  econ. con. apply:ACI_r. rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right.
+  apply/mem_compose. done. done.
+  lo. lfin. lo. lfin.
+  apply mem_compose_plus in H12. ssa. subst. 
+  move: (H _ _ H8 H13) (H0 _ _ H9 H14). ssa.
+  exists (x4 _+_ x3). con. eauto. rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right.
+    apply/mem_compose.  eauto. eauto.
+
+- rewrite !inE in H1. lo. ssa. rewrite !inE in H2. lo. ssa.
+  lfin. lo. lfin. lo. lfin. rewrite mem_cat in H5. lo.
+  apply mem_compose_plus in H6. ssa. destruct (mapP H7). subst.
+  econ. con. apply:ACI_r. rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right.
+  rewrite mem_cat. apply/orP. left. apply/mem_compose.  apply/map_f. done. done.
+  lfin.
+  lo. ssa. rewrite eqs !inE in H2. lo. lfin.  lfin.
+  lo. rewrite !inE in H2. lo. lfin. lo. lfin. lfin.
+  rewrite mem_cat in H5. lo.
+  apply mem_compose_plus in H6. ssa. subst. 
+  destruct (mapP H7). subst. ssa.
+  destruct (mapP H7).  inv H10.
+  rewrite !inE in H2. lo.
+  lfin. lo. lfin. lo. lfin.
+  rewrite !mem_cat in H13. lo.
+  destruct (mapP H14). subst. 
+  clear H13 H12 H11.
+  move: (H0 _ _ H8 H15). ssa.
+  exists (x _;_ r1 _+_ x2). con. eauto. 
+  rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right.
+  rewrite mem_cat. apply/orP. left. apply/mem_compose. apply/map_f. done. done.
+  clear H12 H13 H2 H11.
+  lo. destruct (mapP H2). subst. 
+  move: (H0 _ _ H8 H11). ssa. admit.
+
+
+
+  lo. destruct (mapP H11). subst.
+  move: (H0 _ _ H8 H12). ssa. 
+  exists x2. con. eauto.
+  rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right.
+  rewrite mem_cat. apply/orP. right. done.
+
+  apply mem_compose_plus in H11. ssa. subst. 
+  move: (H0 _ _ H8 H13). ssa. 
+  rewrite mem_cat in H12. lo.
+  apply mem_compose_plus in H16.  ssa. subst.
+  destruct (mapP H17). subst.
+  move: (H _ _ H6 H16). ssa. subst.
+  ex
+    
+  rewrite mem_cat in H11.
+subst. destruct (mapP H9). subst.
+
+  exists (Empt _;_ r1 _+_  (Eps _+_ x2)). con. apply:ACI_t. 2:{  apply:ACI_t. 2: {  apply:ACI_p. apply:ACI2. apply:ACI_r. } 
+                                                                       apply:ACI_p. apply:ACI_r. apply:ACI_p. apply:ACI_r. apply:H12. } 
+  apply:ACI_t. 2: { 
+  
+                                                                       apply:ACI_r. } eauto.
+  rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right.
+  rewrite mem_cat. apply/orP. left. apply:mem_compose. apply/map_f. done.
+
+  apply mem_compose_plus in H8. ssa. subst. destruct (mapP H9). subst.
+  lfin.
+  apply
+
+e
+
+  move: (H x r0 H6).
+  move: (H0 r3 r3). (selfe r3) (selfe r3)). (selfe r2) H2).
+lo. ssa. rewrite !inE in H2. lo.
+  move: (H _ (selfe r0)).
+clear
+ssa.
+ssa. rewrite eqs in H0. 
+  rewrite !inE in H0. lo. eauto. lo. ssa. rewrite eqs !inE in H0.  lo. eauto. ssa
+ssa. econ. con. apply:ACI_r. done.
+  econ. con. apply:ACI_r. done.
+  lo. ssa. rewrite eqs in H0. rewrite !inE in H0. lo. ssa. econ. con. apply:ACI_r. done.
+  econ. con. apply:ACI_r. done. ssa. rewrite eqs in H0.
+  rewrite !inE in H0.  lo. econ. con. apply:ACI_r. done. 
+  lo. econ. con. apply:ACI_r. done. 
+  rewrite !inE in H. lo. ssa. rewrite eqs in H0. rewrite !inE in H0. lo. ssa. econ. con. apply:ACI_r. done.
+  lo. econ. con. apply:ACI_r. done. lo. ssa. rewrite eqs in H0.
+  clear H . 
+  rewrite eqs in H0. rewrite eqs in H0.
+
+Lemma in_enum : forall r0 r1 e, r1 \in regex_enum r0 -> exists x, ACI (e \r1) x /\ x \in regex_enum r0.
+Proof.
+elim;rewrite /= ?eqs;intros. 
+- exists (e \ r1).  rewrite !eqs !inE in H. lo. 
+- exists (e\ r1).  rewrite eqs !inE in H. rlo. 
+- exists (e\r1).  rewrite !inE in H. lo. ssa. rifliad;ssa. lo.
+- rewrite !inE in H1. lo. simpl. 
+  move: (H r0 e (selfe r0)) (H0 r1 e (selfe r1)). ssa.
+  exists (x0 _+_ x). con. eauto.
+  rewrite inE in H1. lo. simpl. rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right.
+  apply/mem_compose.  eauto. eauto. 
+  apply mem_compose_plus in H6. ssa. inv H6. right.
+  apply/mem_compose. eauto. eauto.
+  lo. ssa. econ. con. con. done.
+  lo. ssa. econ. con. apply:ACI_r. done.  
+  apply mem_compose_plus in H4. ssa. subst. 
+  move: (H x e H5) (H0 x0 e H6). ssa.
+  exists (x2 _+_ x1). ssa. 
+  right. apply/mem_compose. eauto. eauto.
+- rewrite !inE in H1. lo. simpl.
+  destruct (nu _) eqn:Heqn. 
+* move: (H r0 e (selfe r0)) (H0 r1 e (selfe r1)). ssa.
+  exists (x0 _;_ r1 _+_ x). con. eauto.
+  rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right.
+  rewrite mem_cat. apply/orP. left. 
+  apply/mem_compose. apply/map_f. eauto. eauto. 
+* move: (H r0 e (selfe r0)). ssa.
+  exists (x _;_ r1 _+_ Empt).  con. eauto.
+  rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right.
+  rewrite mem_cat. apply/orP. left.
+  apply/mem_compose. apply/map_f. eauto. done.
+  lo. ssa. econ. con. apply:ACI_r. done.
+  lo. ssa. econ. con. apply:ACI_r. done.
+  rewrite mem_cat in H4. lo.
+  apply mem_compose_plus in H5. ssa. subst. 
+  destruct (mapP H6). subst. simpl.
+  destruct (nu _) eqn:Heqn;ssa.
+  move: (H x1 e H5) (H0 x0 e H7). ssa.
+  move: (H0 r1 e (selfe r1)). ssa.
+  exists (x2 _;_ r1 _+_ x3 _+_ x). con. (* apply: ACI_t. 2: { eapply ACI_p. apply ACI_r. apply:ACI_I. }*)
+  eauto.
+  simpl. rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right.
+  rewrite !mem_cat. apply/orP. left.
+  apply/mem_compose. 2:eauto. admit.
+
+  move: (H x1 e H5) (H0 _ e H7). ssa. 
+  exists ((x2 _;_ r1 _+_  x)). con. eauto.
+  simpl. rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right.
+  rewrite !mem_cat. apply/orP. left.
+  apply/mem_compose. apply/map_f. done. eauto.
+
+  move: (H0 _ e H5). ssa.
+  exists x. con. done.
+  rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right.
+  rewrite mem_cat. apply/orP. right. eauto.
+rewrite mem_cat. apply/orP. left. apply/mem_compose.
+  apply/map_f. eauto. eauto. eauto.
+
+- rewrite !inE in H0. lo. ssa.
+  move: (H r0 e (selfe r0)). ssa.
+  exists (x _;_ Star r0). ssa. apply/map_f. done.
+  lo. ssa. econ. con. apply:ACI_r. done.
+  lo. ssa. econ. con. apply:ACI_r. done.
+  destruct (mapP H3). subst. ssa.
+  destruct (nu _) eqn:Heqn;ssa.
+  move: (H x e H4) (H  _ e (selfe r0)). ssa.
+  exists (x1 _;_ (Star r0) _+_ x0 _;_ (Star r0)). con. eauto.
+  simpl. rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right.
+  rewrite !mem_cat. apply/orP. left. apply/mem_compose. apply/map_f. eauto.
+  rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right. apply/map_f. eauto.
+  move: (H x e H4). ssa.
+  exists (x0 _;_ Star r0 _+_ Empt). econ. eauto.
+  rewrite !inE.
+  apply/orP. right. apply/orP. right. apply/orP. right. rewrite mem_cat.
+  apply/orP. left. apply/mem_compose. apply/map_f. eauto.
+  done.
+Qed.
+
+
+
+
+Lemma in_enum : forall r0 r1 e, r1 \in regex_enum r0 -> exists x, ACI (e \r1) x /\ x \in regex_enum r1.
+Proof.
+elim;rewrite /= ?eqs;intros. 
+- exists (e \ r1).  rewrite !eqs !inE in H. lo. 
+- exists (e\ r1).  rewrite eqs !inE in H. rlo. 
+- exists (e\r1).  rewrite !inE in H. lo. ssa. rifliad;ssa. lo.
+- rewrite !inE in H1. lo. simpl. 
+  move: (H r0 e (selfe r0)) (H0 r1 e (selfe r1)). ssa.
+  exists (x0 _+_ x). con. eauto.
+  rewrite inE in H1. lo. simpl. rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right.
+  apply/mem_compose.  eauto. eauto. 
+   apply mem_compose_plus in H6. ssa. inv H6. right.
+  apply/mem_compose. eauto. eauto.
+  lo. ssa. econ. con. con. done.
+  lo. ssa. econ. con. apply:ACI_r. done.  
+  apply mem_compose_plus in H4. ssa. subst. 
+  move: (H x e H5) (H0 x0 e H6). ssa.
+  exists (x2 _+_ x1). ssa. 
+  right. apply/mem_compose. eauto. eauto.
+- rewrite !inE in H1. lo. simpl.
+  destruct (nu _) eqn:Heqn. 
+  move: (H r0 e (selfe r0)) (H0 r1 e (selfe r1)). ssa.
+  exists (x0 _;_ r1 _+_ x). con. eauto.
+  rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right.
+  rewrite mem_cat. apply/orP. left. 
+  apply/mem_compose. apply/map_f. eauto. eauto. 
+  move: (H r0 e (selfe r0)). ssa.
+  exists (x _;_ r1 _+_ Empt).  con. eauto.
+  rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right.
+  rewrite mem_cat. apply/orP. left.
+  apply/mem_compose. apply/map_f. eauto. done.
+  lo. ssa. econ. con. apply:ACI_r. done.
+  lo. ssa. econ. con. apply:ACI_r. done.
+  rewrite mem_cat in H4. lo.
+  apply mem_compose_plus in H5. ssa. subst. 
+  destruct (mapP H6). subst. simpl.
+  destruct (nu _) eqn:Heqn;ssa.
+  move: (H x1 e H5) (H0 x0 e H7). ssa.
+  move: (H0 r1 e (selfe r1)). ssa.
+  exists (x2 _;_ r1 _+_ x3 _+_ x). con. eauto.
+  simpl. rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right.
+  rewrite !mem_cat. apply/orP. right.
+  apply/orP. right. apply/orP. right.
+  apply/mem_compose. rewrite mem_cat. apply/orP. left. apply/mem_compose.
+  apply/map_f. eauto. eauto. eauto.
+
+  move: (H x1 e H5) (H0 _ e H7). ssa. 
+  exists ((x2 _;_ r1 _+_  Empt) _+_ x ). con. eauto.
+  simpl. rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right.
+  rewrite !mem_cat. apply/orP. right.
+  apply/orP. right. apply/orP. right. 
+  apply/mem_compose. rewrite mem_cat. apply/orP. left. apply/mem_compose.
+  apply/map_f. eauto. eauto. eauto.
+
+- rewrite !inE in H0. lo. ssa.
+  move: (H r0 e (selfe r0)). ssa.
+  exists (x _;_ Star r0). ssa. apply/map_f. done.
+  lo. ssa. econ. con. apply:ACI_r. done.
+  lo. ssa. econ. con. apply:ACI_r. done.
+  destruct (mapP H3). subst. ssa.
+  destruct (nu _) eqn:Heqn;ssa.
+  move: (H x e H4) (H  _ e (selfe r0)). ssa.
+  exists (x1 _;_ (Star r0) _+_ x0 _;_ (Star r0)). con. eauto.
+  simpl. rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right.
+  rewrite !mem_cat. apply/orP. left. apply/mem_compose. apply/map_f. eauto.
+  rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right. apply/map_f. eauto.
+  move: (H x e H4). ssa.
+  exists (x0 _;_ Star r0 _+_ Empt). econ. eauto.
+  rewrite !inE.
+  apply/orP. right. apply/orP. right. apply/orP. right. rewrite mem_cat.
+  apply/orP. left. apply/mem_compose. apply/map_f. eauto.
+  done.
+Qed.
+
+
+Lemma seq_der : forall r r' a, ACI (a \ (r _;_ r'))  ((a \ r) _;_ r'  _+_ (o(r) _;_ a \ r')).
+Proof. intros. simpl.
+rewrite /o. destruct (nu _) eqn:Heqn. simpl. apply:ACI_p. done. done.
+apply: ACI_t. 2 :  { apply:ACI_p. done. apply:ACI3. }  apply:ACI4.
+Qed.
+
+
+
+
+
+
+Lemma coerce_enum : forall r0 r1 d e, r1 <(bot3)= \big[Plus/Empt]_(a <- regex_enum r0) a ~> d -> 
+                             exists d', (e \ r1) <(bot3)= \big[Plus/Empt]_(a <- regex_enum r0) a ~> d'.
+Proof.
+elim;ssa.
+move: H. rewrite !big_cons !big_nil /=. intros.
+move=> r0 r1 d e H.
+elim: H e;eauto;intros.
+- econ. simpl. 
+
+Fixpoint rflatten r := 
+match r with 
+| Plus r0 r1 => (rflatten r0) ++ (rflatten r1)
+| Seq r0 r1 => map (fun x0 => x0 _;_ r1 ) (rflatten r0)
+| _ => r::nil
+end.
+
+Lemma big_cat_ACI : forall l l', ACI (\big[Plus/Empt]_(x <- l++l') x) ((\big[Plus/Empt]_(x <- l) x) _+_ (\big[Plus/Empt]_(x <- l') x)).  
+Proof.
+elim;ssa. rewrite big_nil. eauto. 
+rewrite !big_cons.
+apply:ACI_t. apply:ACI_p. apply:ACI_r. apply/H. 
+apply:ACI_t. apply: ACI_sym. apply: ACI_AP. apply:ACI_p. apply:ACI_p. eauto. eauto. eauto.
+Qed.
+
+
+
+Lemma ACI_factor_seq_r : forall (B: eqType) l (P: B -> regex) c, ACI
+(\big[Plus/Empt]_(a <- l) (P a _;_ c)) ((\big[Plus/Empt]_(a <- l) (P a)) _;_ c).
+Proof.
+move=> B +P c. elim=>//=. rewrite !big_nil //. 
+move=> a l IH. rewrite !big_cons.
+apply:ACI_t. 2:{ apply:ACI_sym. apply: ACI_dist. }  
+eauto.
+Qed.
+
+Lemma rflatten_ACI : forall r, ACI r (\big[Plus/Empt]_(x <- (rflatten r) ) x).
+Proof.
+elim;ssa.
+- rewrite big_cons big_nil. eauto.
+- rewrite big_cons big_nil. eauto.
+- rewrite big_cons big_nil. eauto. apply:ACI_t. apply:ACI_p. apply:H. apply:H0.
+  apply:ACI_sym. apply:big_cat_ACI.
+- apply:ACI_t. apply:ACI_s. apply:H. apply:H0.
+  apply:ACI_t. 2: { apply: ACI_sym. rewrite ACI_map.  apply:ACI_factor_seq_r. } simpl.
+  apply:ACI_s. done. apply:ACI_sym. done.
+- rewrite !big_cons !big_nil. eauto.
+Qed.
+
+
+Lemma rflatten_combine : forall r r0 r1, r0 \in rflatten r -> r1 \in rflatten r -> r0 _+_ r1 \in rflatten r.
+Proof.
+elim;ssa. admit. admit. admit.
+rewrite !mem_cat in H1 H2. destruct (orP H1). 
+destruct (orP H2). admit.
+
+Notation "r <ACI= r'" := ?
+Lemma upper_bound : forall r, exists l, forall r', r' <R= r -> r' \in l
+
+Lemma coerce_enum : forall  (s \\ r1) <R= \big[Plus/Empt]_(a <- regex_enum r) a
+
+
+
+
+Lemma coerce_enum : forall r0 r1, r1 <R= \big[Plus/Empt]_(a <- regex_enum r0) a -> 
+                             (e \ r1) <R= \big[Plus/Empt]_(a <- regex_enum r0) a
+
+
+Lemma enum_closed2 : forall r0 r1 r2 e, r1 \in regex_enum r0 -> r2 \in rflatten (derive e r1) -> r2 \in regex_enum r0.
+Proof.
+elim;ssa. rewrite inE in H. destruct (orP H). norm_eqs. ssa. rewrite inE in H0. norm_eqs. auto.
+rewrite !inE in H1. destruct (orP H1). norm_eqs. ssa. rewrite !inE in H0. norm_eqs. eauto.
+norm_eqs. ssa. rewrite inE in H0. norm_eqs. eauto.
+ rewrite inE in H. destruct (orP H). norm_eqs. ssa. rewrite inE in H0. norm_eqs. auto.
+rewrite !inE in H1. destruct (orP H1). norm_eqs. ssa. rewrite !inE in H0. norm_eqs. eauto.
+norm_eqs. ssa. rewrite inE in H0. norm_eqs. eauto.
+ rewrite inE in H. destruct (orP H). norm_eqs. ssa. 
+destruct (eqVneq s e). subst. rewrite inE in H0. norm_eqs. eauto. rewrite inE in H0. norm_eqs. eauto.
+rewrite inE in H1. destruct (orP H1). norm_eqs. ssa. rewrite inE in H0. norm_eqs. 
+rewrite eqxx. lia. rewrite inE in H2. norm_eqs. ssa. rewrite inE in H0. norm_eqs. eauto.
+
+rewrite inE in H1. destruct (orP H1). norm_eqs. ssa. rewrite mem_cat in H2. destruct (orP H2).
+right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. left.
+apply: H. 2 : eauto. eauto.
+right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. right. eauto.
+rewrite inE in H3. destruct (orP H3). norm_eqs. ssa. rewrite inE in H2. norm_eqs. rewrite eqxx. lia.
+rewrite inE in H4. destruct (orP H4). norm_eqs. ssa. rewrite inE in H2. norm_eqs. rewrite eqxx. lia.
+rewrite mem_cat in H5. destruct (orP H5). 
+rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. left.
+eauto.
+rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. right. eauto.
+
+
+- rewrite inE in H1. destruct (orP H1). norm_eqs. ssa.
+destruct (nu _) eqn:Heqn. ssa. rewrite mem_cat in H2. destruct (orP H2). 
+destruct (mapP H3). subst. right. apply/orP. right. apply/orP. right. 
+rewrite mem_cat. apply/orP. left. apply/mapP. econ. 2:eauto. apply:H. apply:selfe. apply:H4.
+right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. right. eauto.
+right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. eauto. clear H1. ssa.
+
+destruct (mapP H2). subst. destruct (mapP H2). inv H4. left. apply/mapP. econ.
+2:eauto. eauto.
+
+
+rewrite inE in H3. destruct (orP H3); norm_eqs; ssa. rewrite inE in H2. norm_eqs. rewrite eqxx. lia. clear H3.
+rewrite inE in H4. destruct (orP H4). norm_eqs. ssa. rewrite !inE in H2. norm_eqs. rewrite eqxx. lia.
+rewrite mem_cat in H3. destruct (orP H3). destruct (mapP H5). subst. ssa.
+
+destruct (nu _) eqn:Heqn. ssa.
+rewrite mem_cat in H2. destruct (orP H2). destruct (mapP H7). subst.
+right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. left.
+apply/map_f. eauto.
+right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. right. eauto. ssa.
+destruct (mapP H2). subst. ssa. destruct (mapP H2).  inv H9.
+right. rewrite mem_cat. apply/orP. left. apply/map_f. eauto.
+right. 
+apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. right.  eauto. 
+
+- rewrite !inE in H0. destruct (orP H0). norm_eqs. ssa. destruct (mapP H1). subst. right.
+apply/orP. right. apply/orP. right. apply/map_f. eauto.
+destruct (orP H2). norm_eqs. ssa. 
+rewrite !inE in H1. norm_eqs. rewrite eqxx. lia.
+destruct (orP H3). norm_eqs. ssa. rewrite inE in H1. norm_eqs.
+right. rewrite eqxx. lia. 
+destruct (mapP H4). norm_eqs. 
+ssa. destruct (nu _) eqn:Heqn. rewrite mem_cat in H1. destruct (orP H1). destruct (mapP H6).
+subst. right. apply/orP. right. apply/orP. right.
+apply/map_f. eauto.
+destruct (mapP H6). subst. 
+apply/orP. apply/orP. right. apply/orP. right. apply/orP. right.
+apply/map_f. eauto.
+destruct (mapP H1). subst.
+apply/orP. apply/orP. right. apply/orP. right. apply/orP. right.
+apply/map_f. eauto.
+Qed.
+
+
+(*Definition antimorov_l c := proj_sig (derive_unfold_coerce_l_aux bot3 c).
+Definition antimorov_r c := proj_sig (derive_unfold_coerce_r_aux bot3 c).*)
+
+
+(*Lemma ACI_l_c_proof : forall r0 r1, ACI r0 r1 -> { d| INEQ r0 r1 d}.
+Proof. Admitted.
+Definition ACI_l r0 r1 (H: ACI r0 r1) := proj_sig (ACI_l_c_proof  H).
+
+Lemma ACI_r_c_proof : forall r0 r1, ACI r0 r1 -> { d| INEQ r1 r0 d}.
+Proof. Admitted.
+Definition ACI_r r0 r1 (H: ACI r0 r1) := proj_sig (ACI_r_c_proof H).
+
+Lemma nu_proof : forall r0 r1, (nu r0 -> nu r1) -> { d | INEQ (o r0) (o r1) d}.
+Proof. Admitted.
+
+Definition nu_c r0 r1 (H: nu r0 -> nu r1) := proj_sig (nu_proof r0 r1 H).*)
+
+Definition sum_coerce (f : A -> dsl) := \big[cplus/cid]_(a : A) (guard (f a)).
+ (*(forall x y, (x,y) \in l -> INEQ x y (F (x,y))) -> *) 
+
+Inductive BuildCoerce : seq (regex * regex ) -> regex -> regex -> dsl -> Prop := 
+| BC0 l r0 r1 r0' r1' d d' d0 d1 : c_ineq bot3 r0 r0' d0 -> c_ineq bot3 r1' r1 d1 ->  BuildCoerce l r0' r1' d' ->
+                                                                 d = ctrans (ctrans d0 d') d1 ->
+                                                                 BuildCoerce l r0 r1 d
+| BC1 l r0 r1 d F d_o :  c_ineq bot3 (o r0) (o r1) d_o ->  (forall a, BuildCoerce ((r0,r1)::l) (a\r0) (a\r1) (F a)) ->
+                                     d = (cfix (ctrans (decomp_l r0) 
+                                               (ctrans (cplus d_o (sum_coerce F)) 
+                                                       ((decomp_r r1)))))
+                                         -> BuildCoerce l r0 r1 d
+| BC2 d r0 r1 l : d = guard (var_dsl (index (r0,r1) l)) -> BuildCoerce l r0 r1 d
+(*| BC3 c0 c1 d l  : c_ineq (BuildCoerce l) c0 c1 d ->   BuildCoerce l c0 c1 d.*)
+| BC3 d d0 d1 c0 c0' c1 c1' l  : BuildCoerce l c0 c0' d0 -> BuildCoerce l c1 c1' d1 ->  d = cseq d0 d1 ->   BuildCoerce l (c0 _;_ c1) (c0' _;_ c1') d
+| BC4 c0 c1 d l  : c_ineq bot3 c0 c1 d ->   BuildCoerce l c0 c1 d.
+
+
+
+
+Lemma Build : forall c, { d| BuildCoerce nil  (Star (Star c))  (Star c) d}.
+Proof.
+intros. econ. 
+apply: BC1. ssa.
+intros. simpl.
+apply: BC0. bt rule_assoc. lcid.
+apply:BC3. apply:BC4. eauto.
+apply:BC1. ssa. intros. simpl.
+apply:BC0.  bt rule_untag. lcid.
+apply:BC0. bt rule_assoc. lcid.
+apply:BC3. apply:BC4. eauto.
+apply:BC2. all:  done. 
+Defined.
+
+
+Lemma toBuildCoerce : forall c0 c1 l, IndContains l c0 c1 -> exists d, BuildCoerce l c0 c1 d.
+Proof.
+move=> c0 c1 l.
+elim.
+- intros. have: exists F : A -> dsl, forall e, BuildCoerce ((c2, c3) :: l0) (e \ c2) (e \ c3) (F e).
+  clear H H1. 
+  suff:  exists F : A -> dsl,
+    forall e : A, e \in index_enum A ->  BuildCoerce ((c2, c3) :: l0) (e \ c2) (e \ c3) (F e).
+  case. intros. exists x. intros. apply/p0. rewrite mem_index_enum //.
+  move: (index_enum A)=> l'.
+  elim : l'. exists (fun => cid). ssa.
+  ssa. destruct (H0 a).
+  exists (fun y => if y == a then x0 else x y). move=> e. rewrite !inE.
+  destruct (eqVneq e a). subst. ssa. simpl. intros. eauto. 2:simpl.
+  clear H0. case. intros. econ.
+  apply:BC1.
+  apply: nu_imp_coerce. done. apply:p0. done.
+- intros. econ. apply:BC4. lct1. apply:H. lct2. apply:H0.
+ eauto.
+  intros. 
+  
+
+Lemma toBuildCoerce : forall c0 c1 l F, (forall x y, (x,y) \in l -> INEQ x y (F (x,y))) ->  IndContains l c0 c1 -> exists d, INEQ c0 c1 d.
+Proof.
+move=> c0 c1 /= l F Hl Hind /=.  
+move: Hind Hl.
+elim.
+- intros. 
+  have: exists F', forall e,
+       (forall x y : regex, (x, y) \in (c2, c3) :: l0 -> x <C= y ~> F (x, y)) ->
+         e \ c2 <C= e \ c3 ~> (F' e).
+  suff: exists F', forall e, e \in index_enum A ->
+       (forall x y : regex, (x, y) \in (c2, c3) :: l0 -> x <C= y ~> F (x, y)) ->
+         e \ c2 <C= e \ c3 ~> (F' e).
+  ssa. exists x. ssa. apply/H2. rewrite mem_index_enum //. eauto. 
+  move: (index_enum A)=> l'.
+  elim : l'. exists (fun => cid). ssa.
+  ssa. destruct (H0 a). intros. destruct (orP H3);ssa. norm_eqs. inv H4.
+  
+  exists (fun x0 y => if y == a then x0 else x y). move=> e. rewrite !inE.
+  destruct (eqVneq e a). subst. ssa. simpl. intros. eauto. 2:simpl.
+  clear H0. case. intros. econ.
+  pfold. lct1. apply:derive_unfold_coerce_l.
+  lct2. apply:derive_unfold_coerce_r. 
+  lcp1. apply/c_ineq_gen_mon. apply: nu_imp_coerce. done. done.
+  apply:big_plus_coerce. intros. left. apply:p0. t0. t0. t0.
+admit.
+
+  have : exists F, forall e : A,  e \ c2 <C= e \ c3 ~> (F e).
+  suff : exists F, forall e : A, e \in index_enum A ->   e \ c2 <C= e \ c3 ~> (F e).
+  ssa. exists x. ssa. apply/H2. rewrite mem_index_enum //. 
+  move: (index_enum A)=> l'.
+  elim : l'. exists (fun => cid). ssa.
+  ssa. destruct (H0 a). 
+  exists (fun y => if y == a then x0 else x y). move=> e. rewrite !inE.
+  destruct (eqVneq e a). subst. ssa. simpl. intros. eauto. 2:simpl.
+  clear H0. case. intros. econ.
+  pfold. lct1. apply:derive_unfold_coerce_l.
+  lct2. apply:derive_unfold_coerce_r. 
+  lcp1. apply/c_ineq_gen_mon. apply: nu_imp_coerce. done. done.
+  apply:big_plus_coerce. intros. left. apply:p0. t0. t0. t0.
+- intros. econ. pfold. lct1. apply:c_ineq_gen_mon. eauto. done. lct2. apply:c_ineq_gen_mon.  eauto. done.
+  move: (Hl x y H1). sunfold. t0. t0.
+
+intros.
+intros.
+ eauto.
+
+
+  have : exists F', forall (e : A) (F : regex * regex -> dsl),
+       (forall x y : regex, (x, y) \in (c2, c3) :: l0 -> x <C= y ~> F (x, y)) ->
+        e \ c2 <C= e \ c3 ~> (F' e).
+  suff : exists F', forall (e : A) (F : regex * regex -> dsl), e \in index_enum A ->
+       (forall x y : regex, (x, y) \in (c2, c3) :: l0 -> x <C= y ~> F (x, y)) ->
+        e \ c2 <C= e \ c3 ~> (F' e).
+  ssa.  exists x. ssa. apply/H3. rewrite mem_index_enum //. eauto.
+  move: (index_enum A)=> l'.
+  elim : l'. exists (fun => cid). ssa.
+  ssa. destruct (H0 a F). intros.  rewrite inE in H4. destruct (orP H4);ssa. norm_eqs. inv H5.
+apply/H2.
+  exists (fun y => if y == a then x0 else x y). move=> e. rewrite !inE.
+  destruct (eqVneq e a). subst. ssa. simpl. intros. eauto. 2:simpl.
+  clear H0. case. intros. econ.
+  apply:BC1.
+  apply: nu_imp_coerce. done. apply:p0. done.
+- intros.
+ eauto.
+
+
+
+
+
+
+
+Lemma Build_type : forall c, Star (Star c) <C= Star c ~> (proj_sig (Build c)).
+Proof.
+intros.
+move Heq: (proj_sig (Build _)) => d.
+rewrite /=. pfold. rewrite -Heq /=. 
+apply:rule_ctrans. rewrite /full_unf /=. done.
+
+have :   (decomp_l (Star (Star c)))
+  [d cfix
+      (ctrans (decomp_l (Star (Star c)))
+         (ctrans
+            (cplus cid
+               (sum_coerce
+                  (fun=> ctrans
+                           (ctrans assoc
+                              (cseq cid
+                                 (cfix
+                                    (ctrans (decomp_l (Star c _;_ Star (Star c)))
+                                       (ctrans
+                                          (cplus cid
+                                             (sum_coerce
+                                                (fun=> ctrans
+                                                         (ctrans untag
+                                                            (ctrans
+                                                               (ctrans assoc
+                                                                  (cseq cid
+                                                                    (guard
+                                                                    (var_dsl (... ... ...)))))
+                                                               cid)) cid))) 
+                                          (decomp_r (Star c))))))) cid))) 
+            (decomp_r (Star c)))) .: var_dsl] = (decomp_l (Star (Star c))).
+
+(proj_sig (derive_unfold_coerce_l_aux bot3 (Star (Star c))))
+  [d cfix
+      (ctrans (proj_sig (derive_unfold_coerce_l_aux bot3 (Star (Star c))))
+         (ctrans
+            (cplus (nu_c (Star (Star c)) (Star c) ssrfun.id)
+               (sum_coerce
+                  (fun=> ctrans
+                           (ctrans assoc
+                              (cseq cid
+                                 (cfix
+                                    (ctrans
+                                       (proj_sig
+                                          (derive_unfold_coerce_l_aux bot3
+                                             (Star c _;_ Star (Star c))))
+                                       (ctrans
+                                          (cplus
+                                             (nu_c (Star c _;_ Star (Star c)) (Star c) ssrfun.id)
+                                             (sum_coerce
+                                                (fun=> ctrans
+                                                         (ctrans untag
+                                                            (ctrans
+                                                               (ctrans assoc
+                                                                  (cseq cid (guard (var_dsl 0))))
+                                                               cid)) cid)))
+                                          (antimorov_r (Star c))))))) cid)))
+            (antimorov_r (Star c)))) .: var_dsl] = (proj_sig (derive_unfold_coerce_l_aux bot3 (Star (Star c)))) . admit.
+move=>->.
+Check derive_unfold_coerce_l.
+apply: derive_unfold_coerce_l.
+
+Parameter (a : A).
+Eval compute in 
+
+
+admit.
+intros.  rewrite /ACI_l /=. rewrite /ACI_l_c_proof.
+econ.
+econ.
+econ.
+3 : { econ. } 
+2: {  intros. econ.
+ssa. rewrite /
+3 : { intros. simpl. 
+econ. econ.
+intros. simpl. rewrite eqxx. done.
+
+lcs1. lcid.
+move=> a0. 
+econ. intros. simpl.
+
+
+
+
+
+Lemma my_test : forall c, { d| Star (Star c) <C= Star c ~> d}.
+Proof.
+intros. econ. move: c. pcofix CIH. intros.
+pfold.
+lct1. instantiate (1:= (cfix (ctrans untag
+    (ctrans assoc
+       (cseq cid
+          (ctrans
+             (proj_sig (derive_unfold_coerce_l_aux (upaco3 c_ineq r) (Star c _;_ Star (Star c))))
+             (ctrans (cplus cid (\big[cplus/cid]_a1 guard (var_dsl 0)))
+                (proj_sig (derive_unfold_coerce_r_aux (upaco3 c_ineq r) (Star c)))))))))). pfold_reverse. pfold.
+ apply:derive_unfold_coerce_l. 
+lct2. apply:derive_unfold_coerce_r. 
+have: o (Star (Star c)) = Eps by done. move=>->.
+have : o (Star c) = Eps. by done. move=>->.
+lcp1. lcid. apply:big_plus_coerce. 
+intros. simpl. left. simpl.  
+pfold. 
+lct1.  bt rule_assoc.
+lcs1. lcid. pfold_reverse.
+pfold.
+lct1. apply:derive_unfold_coerce_l.
+lct2. apply:derive_unfold_coerce_r.
+lcp1. rewrite /o /=. eauto.
+apply:big_plus_coerce. intros. left. move: a0 H0. pcofix CIH2. intros.
+pfold. simpl.
+lct1. bt rule_untag.
+lct1.  bt rule_assoc.
+lcs1. lcid.
+lct1. apply:derive_unfold_coerce_l.
+lct2. apply:derive_unfold_coerce_r.
+lcp1. rewrite /o /=. eauto.
+apply:big_plus_coerce. intros. right. 
+apply: CIH2. done. t0. t0. t0.
+all : try t0.
+
+instantiate (2:= fun a => guard (var_dsl 0)).
+
+
+
+ simpl. right.
+
+Print c_ineq.
+
+right. simpl.
+rewrite /o. Check 
+rewrite [nu _]/= [match true with | _ => _ end]/=.
+ simpl. rewrite /o. simpl. =.
+
+
+
+| BC1 x y r0 r1 l d d' (H0 : ACI r0 x) (H1: ACI r1 y): index (r0,r1) l = n (x,y) \in l -> full_unf d = ctrans (ACI_l H0) (ctrans d' (ACI_r H1))  
+                                                                 -> BuildCoerce l r0 r1 d.
+Hint Constructors BuildCoerce.
+
+Inductive BuildCoerce : seq (regex * regex * dsl) -> regex -> regex -> dsl -> Type := 
+| BC0 l r0 r1 d F (H: nu r0 -> nu r1) :  (forall a, BuildCoerce ((r0,r1,d)::l) (a\r0) (a\r1) (F a))
+                                     -> full_unf d = ctrans (antimorov_l r0) (ctrans (cplus (nu_c r0 r1 H) (sum_coerce F)) (antimorov_r r1))  
+                                     -> BuildCoerce l r0 r1 d
+| BC1 x y r0 r1 l d d' (H0 : ACI r0 x) (H1: ACI r1 y): (x,y,d') \in l -> full_unf d = ctrans (ACI_l H0) (ctrans d' (ACI_r H1))  
+                                                                 -> BuildCoerce l r0 r1 d.
+Hint Constructors BuildCoerce.
+
+Lemma ToBuildCoerce : forall l r0 r1, IndContains l r0 r1 -> (forall x y, (x,y) \in l -> exists z, BuildCoerce nil x y z)  ->  exists l' d, BuildCoerce l' r0 r1 d.
+Proof.
+move=> l r0 r1.
+elim.
+- intros.
+
+
+
+
+
+
+(* (derive_unfold_coerce_l_aux  
+   Must be called with bot3, instead of (upaco3 c_ineq r)
+   Because r was not in the context when ?d was introduced
+  *)
 
 Lemma coerce_complete : forall c0 c1, Contains c0 c1 -> exists d, INEQ c0 c1 d.
 Proof.
@@ -3664,6 +5486,48 @@ pcofix CIH.
 intros. punfold H0. inversion H0. subst. pfold. 
 lct1. apply:derive_unfold_coerce_l.
 lct2. apply:derive_unfold_coerce_r. apply: nu_imp_coerce. done.
+apply: big_plus_coerce. intros. right. apply/CIH.  case: (H1 a)=>//.
+simpl.
+ t0. 
+simpl. 
+
+instantiate (1:=
+ ctrans (proj_sig (derive_unfold_coerce_l_aux (upaco3 c_ineq bot3) c0)) 
+    (ctrans
+       (proj_sig
+          (nu_imp_coerce_aux c0 c1 H2
+             (big_plus_coerce (index_enum A) (derive^~ c0) (derive^~ c1) (fun=> shuffle) 
+                (upaco3 c_ineq bot3)
+                (fun a : A =>
+                 fun=> or_intror
+                         (CIH (a \ c0) (a \ c1)
+                            match H1 a with
+                            | or_introl a0 => a0
+                            | or_intror b => False_ind (Contains (a \ c0) (a \ c1)) b
+                            end))))) (proj_sig (derive_unfold_coerce_r_aux (upaco3 c_ineq bot3) c1)))).
+
+instantiate (1:= shuffle).
+
+(*instantiate (1:= cfix (var_dsl 0)).*)
+instantiate (1 := (
+(ctrans (proj_sig (derive_unfold_coerce_l_aux (upaco3 c_ineq bot3) c0)) cid))).
+    (ctrans cid cid)))).
+       (proj_sig   
+          (nu_imp_coerce_aux c0 c1 H2
+             (big_plus_coerce (index_enum A) (derive^~ c0) (derive^~ c1) (fun=> guard (var_dsl 0) )
+                (upaco3 c_ineq r)
+                (fun a : A =>
+                 fun=> or_intror
+                         (CIH (a \ c0) (a \ c1)
+                            match H1 a with
+                            | or_introl a0 => a0
+                            | or_intror b => False_ind (Contains (a \ c0) (a \ c1)) b
+                            end))))) (proj_sig (derive_unfold_coerce_r_aux (upaco3 c_ineq r) c1)))))).
+
+ instantiate (1:= shuffle). simpl.
+
+t0.
+rewrite !big_shape.
 
 rewrite (derive_unfold _ c0) (derive_unfold _ c1). subst.
 rewrite /o H2.
@@ -3776,6 +5640,324 @@ Lemma contains_EQ : forall c0 c1, contains c0 c1 -> EQ  (c0 _+_ c1) c1.
 Proof.
 move=> c0 c1 /contains_equiv /completeness=>//.
 Qed.
+
+
+
+
+
+
+
+
+
+
+
+(*Lemma seq_der : forall r r' s, ACI (s \\ (r _;_ r')) \big[Plus/Empt]_( n < size s) (((take n s \\ r) _;_ r') _+_ (o(r) _;_ n
+  ((s \\ r) _;_ r'  _+_ (o(r) _;_ a \ r')).*)
+
+
+Fixpoint derive2 (e:A) (c:regex) : seq regex :=
+match c with
+| Eps => Empt::nil
+| Empt => Empt::nil
+| Event e' => if e' == e then Eps::nil else Empt::nil
+| c0 _;_ c1 => if nu c0 then 
+                (map  (fun x => x _;_ c1) (derive2 e c0))  ++
+                (derive2 e c1)
+              else  (derive2 e c1)
+| c0 _+_ c1 => (derive2 e  c0) ++  (derive2 e c1)
+| Star c => map (fun x => x _;_ Star c) (derive2 e c)
+end.
+
+
+Lemma enum_closed : forall r0 r1 r2 e, r1 \in regex_enum r0 -> r2 \in (derive2 e r1) -> r2 \in regex_enum r0.
+Proof.
+elim;ssa. rewrite inE in H. destruct (orP H). norm_eqs. ssa. rewrite inE in H0. norm_eqs. auto.
+rewrite !inE in H1. destruct (orP H1). norm_eqs. ssa. rewrite !inE in H0. norm_eqs. eauto.
+norm_eqs. ssa. rewrite inE in H0. norm_eqs. eauto.
+ rewrite inE in H. destruct (orP H). norm_eqs. ssa. rewrite inE in H0. norm_eqs. auto.
+rewrite !inE in H1. destruct (orP H1). norm_eqs. ssa. rewrite !inE in H0. norm_eqs. eauto.
+norm_eqs. ssa. rewrite inE in H0. norm_eqs. eauto.
+ rewrite inE in H. destruct (orP H). norm_eqs. ssa. 
+destruct (eqVneq s e). subst. rewrite inE in H0. norm_eqs. eauto. rewrite inE in H0. norm_eqs. eauto.
+rewrite inE in H1. destruct (orP H1). norm_eqs. ssa. rewrite inE in H0. norm_eqs. 
+rewrite eqxx. lia. rewrite inE in H2. norm_eqs. ssa. rewrite inE in H0. norm_eqs. eauto.
+
+rewrite inE in H1. destruct (orP H1). norm_eqs. ssa. rewrite mem_cat in H2. destruct (orP H2).
+right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. left.
+apply: H. 2 : eauto. eauto.
+right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. right. eauto.
+rewrite inE in H3. destruct (orP H3). norm_eqs. ssa. rewrite inE in H2. norm_eqs. rewrite eqxx. lia.
+rewrite inE in H4. destruct (orP H4). norm_eqs. ssa. rewrite inE in H2. norm_eqs. rewrite eqxx. lia.
+rewrite mem_cat in H5. destruct (orP H5). 
+rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. left.
+eauto.
+rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. right. eauto.
+- rewrite inE in H1. destruct (orP H1). norm_eqs. ssa.
+destruct (nu _) eqn:Heqn. ssa. rewrite mem_cat in H2. destruct (orP H2). 
+destruct (mapP H3). subst. right. apply/orP. right. apply/orP. right. 
+rewrite mem_cat. apply/orP. left. apply/mapP. econ. 2:eauto. apply:H. apply:selfe. apply:H4.
+right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. right. eauto.
+right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. eauto. clear H1.
+rewrite inE in H3. destruct (orP H3). norm_eqs. ssa. rewrite inE in H2. norm_eqs. rewrite eqxx. lia. clear H3.
+rewrite inE in H1. destruct (orP H1). norm_eqs. ssa. rewrite inE in H2. norm_eqs. rewrite eqxx. lia. clear H1.
+rewrite mem_cat in H3. destruct (orP H3). destruct (mapP H1). subst.  
+rewrite !inE. apply/orP. simpl in H2.
+destruct (nu _) eqn:Heqn.
+rewrite mem_cat in H2. destruct (orP H2). destruct (mapP H5). subst.
+right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. left.
+apply/map_f. eauto.
+right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. right. eauto.
+right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. eauto.
+rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. right.
+eauto.
+
+- rewrite !inE in H0. destruct (orP H0). norm_eqs. ssa. destruct (mapP H1). subst. right.
+apply/orP. right. apply/orP. right. apply/map_f. eauto.
+destruct (orP H2). norm_eqs. ssa. 
+rewrite !inE in H1. norm_eqs. rewrite eqxx. lia.
+destruct (orP H3). norm_eqs. ssa. rewrite inE in H1. norm_eqs.
+right. rewrite eqxx. lia. 
+destruct (mapP H4). norm_eqs. 
+ssa. destruct (nu _) eqn:Heqn. rewrite mem_cat in H1. destruct (orP H1). destruct (mapP H6).
+subst. right. apply/orP. right. apply/orP. right.
+apply/map_f. eauto.
+destruct (mapP H6). subst. 
+apply/orP. apply/orP. right. apply/orP. right. apply/orP. right.
+apply/map_f. eauto.
+destruct (mapP H1). subst.
+apply/orP. apply/orP. right. apply/orP. right. apply/orP. right.
+apply/map_f. eauto.
+Qed.
+
+
+
+
+
+
+
+
+
+
+
+rewrite inE in H2. destruct (orP H2). norm_eqs. ssa.
+  right. rewrite mem_cat. apply/orP. left. apply/map_f.  right. apply/mapP. econ. 2:eauto. apply:H. 
+destruct (mapP H3). subst. right. apply/orP. right. apply/orP. right. 
+rewrite mem_cat. apply/orP. left. apply/mapP. econ. 2:eauto.  eauto.
+right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. right. eauto.
+right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. eauto. clear H1.
+rewrite inE in H3. destruct (orP H3). norm_eqs. ssa. rewrite inE in H2. norm_eqs. rewrite eqxx. lia. clear H3.
+rewrite inE in H1. destruct (orP H1). norm_eqs. ssa. rewrite inE in H2. norm_eqs. rewrite eqxx. lia. clear H1.
+rewrite mem_cat in H3. destruct (orP H3). destruct (mapP H1). subst.  
+rewrite !inE. apply/orP. simpl in H2.
+destruct (nu _) eqn:Heqn.
+rewrite mem_cat in H2. destruct (orP H2). destruct (mapP H5). subst.
+right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. left.
+apply/map_f. eauto.
+right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. right. eauto.
+right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. eauto.
+rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. right.
+eauto.
+
+- rewrite !inE in H0. destruct (orP H0). norm_eqs. ssa. destruct (mapP H1). subst. right.
+apply/orP. right. apply/orP. right. apply/map_f. eauto.
+destruct (orP H2). norm_eqs. ssa. 
+rewrite !inE in H1. norm_eqs. rewrite eqxx. lia.
+destruct (orP H3). norm_eqs. ssa. rewrite inE in H1. norm_eqs.
+right. rewrite eqxx. lia. 
+destruct (mapP H4). norm_eqs. 
+ssa. destruct (nu _) eqn:Heqn. rewrite mem_cat in H1. destruct (orP H1). destruct (mapP H6).
+subst. right. apply/orP. right. apply/orP. right.
+apply/map_f. eauto.
+destruct (mapP H6). subst. 
+apply/orP. apply/orP. right. apply/orP. right. apply/orP. right.
+apply/map_f. eauto.
+destruct (mapP H1). subst.
+apply/orP. apply/orP. right. apply/orP. right. apply/orP. right.
+apply/map_f. eauto.
+Qed.
+
+
+
+
+
+
+
+
+
+
+
+apply/orP. right. apply/orP. right. apply/orP. right. 
+  rewrite mem_cat. apply/orP. left. apply/mapP. econ.
+rewrite inE in H1. destruct (orP H1). norm_eqs. ssa.
+destruct (nu _) eqn:Heqn. ssa. 
+
+rewrite mem_cat in H2. destruct (orP H2). 
+destruct (mapP H3). subst. right. apply/orP. right. apply/orP. right. 
+rewrite mem_cat. apply/orP. left. apply/mapP. econ. 2:eauto.  eauto.
+right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. right. eauto.
+right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. eauto. clear H1.
+rewrite inE in H3. destruct (orP H3). norm_eqs. ssa. rewrite inE in H2. norm_eqs. rewrite eqxx. lia. clear H3.
+rewrite inE in H1. destruct (orP H1). norm_eqs. ssa. rewrite inE in H2. norm_eqs. rewrite eqxx. lia. clear H1.
+rewrite mem_cat in H3. destruct (orP H3). destruct (mapP H1). subst.  
+rewrite !inE. apply/orP. simpl in H2.
+destruct (nu _) eqn:Heqn.
+rewrite mem_cat in H2. destruct (orP H2). destruct (mapP H5). subst.
+right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. left.
+apply/map_f. eauto.
+right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. right. eauto.
+right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. eauto.
+rewrite !inE. apply/orP. right. apply/orP. right. apply/orP. right. rewrite mem_cat. apply/orP. right.
+eauto.
+
+- rewrite !inE in H0. destruct (orP H0). norm_eqs. ssa. destruct (mapP H1). subst. right.
+apply/orP. right. apply/orP. right. apply/map_f. eauto.
+destruct (orP H2). norm_eqs. ssa. 
+rewrite !inE in H1. norm_eqs. rewrite eqxx. lia.
+destruct (orP H3). norm_eqs. ssa. rewrite inE in H1. norm_eqs.
+right. rewrite eqxx. lia. 
+destruct (mapP H4). norm_eqs. 
+ssa. destruct (nu _) eqn:Heqn. rewrite mem_cat in H1. destruct (orP H1). destruct (mapP H6).
+subst. right. apply/orP. right. apply/orP. right.
+apply/map_f. eauto.
+destruct (mapP H6). subst. 
+apply/orP. apply/orP. right. apply/orP. right. apply/orP. right.
+apply/map_f. eauto.
+destruct (mapP H1). subst.
+apply/orP. apply/orP. right. apply/orP. right. apply/orP. right.
+apply/map_f. eauto.
+Qed.
+
+Lemma derive_eq : forall r e, ACI (derive e r) (\big[Plus/Empt]_(r0 <- (derive2 e r)) r0).
+Proof.
+intros.
+
+apply/mapP. econ. eauto.
+
+right.
+apply/orP. right. apply/orP. right.
+rewrite mem_cat. apply/orP.  right.  bapply/mapP. econ.
+apply/orP. right. apply/orP.  eauto. right. apply/H0. 2: eauto.
+rewrite !inE in H3. destruct (orP H3). norm_eqs. ssa. rewrite inE in H2. norm_eqs. rewrite eqxx. lia.
+
+rewrite inE in H1. destruct 
+
+
+destruct (_==_) eqn:Heqn.  rewrite inE in H0. norm_eqs. auto.
+rewrite !inE in H1. destruct (orP H1). norm_eqs. ssa. rewrite !inE in H0. norm_eqs. eauto.
+norm_eqs. ssa. rewrite inE in H0. norm_eqs. eauto.
+destruct (orP H). norm_eqs. ssa. rewrite inE in H0.
+destruct (orP H). norm_eqs. ssa. rewrite inE in H0.
+destruct (orP H). norm_eqs. ssa. rewrite inE in H0. norm_eqs. eauto. 
+
+rewrite (eqP H) in H0. ssa. rewrite inE in H0.  
+
+Fixpoint trace_derive2 (s : trace) (c : regex)  : seq regex :=
+match s with
+| [::] => c::nil
+| e::s' => flatten (map (trace_derive2 s') (derive2 e c))
+end.
+
+Lemma regex_enumP : forall r, exists (l : seq regex), forall s, exists r', r' \in l /\ ACI (trace_derive s r) r'.
+
+Fixpoint reg_size r := 
+match r with 
+| Eps => 0
+| Empt => 0 
+| Event _ => 1
+| Plus r0 r1 => ((reg_size r0) + (reg_size r1)).+1
+| Seq r0 r1 => ((reg_size r0) + (reg_size r1)).+1
+| Star r0 => (reg_size r0).+1
+end.
+Lemma trace_derive_eq : forall a s r, trace_derive (a::s) r = (trace_derive s  (a\r)). 
+Proof. done.
+Qed.
+
+
+
+Inductive seq_derive : trace -> seq (regex * regex) -> regex -> regex -> Prop := 
+| sd0 r r' : seq_derive nil ((r,r')::nil) r r'
+| sd1 r r' : nu r ->  seq_derive (a::s) l r r'
+
+
+Lemma regex_enumP : forall r, exists (l : seq regex), forall s, exists r', r' \in l /\ ACI (trace_derive s r) r'.
+Proof.
+elim;ssa. exists (Eps::Empt::nil). elim;ssa. econ.  con. done. done. exists Empt. rewrite !inE orbC //=. ssa.
+clear H H0. elim:l;ssa.
+admit. admit.
+exists (compose x0 x Plus). intros.
+move: (H s) (H0 s). case. 
+move=> x1 [] Hin1 HACI1.
+move=>[] x2[] Hin2 HACI2. 
+
+rewrite derive_distr_plus. econ. con. apply/mem_compose. eauto. eauto.
+apply:ACI_p. done. done.
+exists ((compose x0 x Seq)++(compose (compose x0 x Seq) x Plus)).
+elim. simpl.
+move: (H nil) (H0 nil). ssa. exists (Seq x2 x1). con. rewrite mem_cat. apply/orP. left.
+apply/mem_compose. done. done. eauto.
+intros. destruct H1. destruct H1. 
+simpl.
+destruct (nu _) eqn:Heqn. simpl.
+rewrite derive_distr_plus. 
+econ. con. 
+2: { apply:ACI_p. apply:ACI_r. apply:ACI_r. } 
+rewrite mem_cat. apply/orP. right.
+apply/mem_compose. 
+rewrite -!trace_derive_eq.
+
+destruct (mem_compose H1).
+econ. con.
+ apply:mem_compose. 
+destruct s. admit.
+simpl.
+
+con. <bintros. exists Eps. elim:s;ssa. 
+econ. intros. 
+Inductive Chain : seq regex -> regex -> Prop := 
+| C0 l r : (forall a, Chain (r::l) (a \ r)) -> Chain l r
+| C1 l r' r : r' \in l -> ACI r' r -> Chain l r.
+Hint Constructors Chain.
+
+
+
+(*Lemma reg_size_derive : forall r r', 0 < reg_size r -> reg_size (a \ r)*)
+
+Lemma ChainP : forall r,  Chain l r.
+Proof.
+move=> r. move Heq: (reg_size r)=>n.
+move: Heq. wlog: n r / reg_size r <= n. intros. apply/H. 2: eauto. lia.
+move=>+_.
+elim: n r.
+- intros. destruct r0;ssa.
+  con. intros. simpl. con. intros. simpl. apply:C1. done. done. 
+  con. intros. simpl. apply:C1. done. done. 
+
+- intros. destruct r0;ssa.
+ * con. intros. simpl. case Heq: (_==_). rewrite (eqP Heq).
+   con. intros. simpl. con. intros. simpl. econstructor 2. done. done.
+   con. intros. econstructor 2. done. done.
+ * 
+- intros. con. intros. simpl. econstructor. intros.
+
+
+Lemma ToIndContains : forall r0 r1 l, Contains r0 r1 -> IndContains l r0 r1.
+Proof.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -5893,7 +8075,7 @@ Definition shuffle_i (t : term)
 Print dsl.
 Fixpoint interpret (d : dsl) :=
 match d with 
-| shuffle => 
+| shuffle => y
 
 
 Lemma TypesP: forall s c, Match s c <-> Types s c.

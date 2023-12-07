@@ -193,6 +193,10 @@ Discussion notes:
   Think more about these rules, realizing they are fixpoints themselves,
   does this change the way they can be presented?
 
+  Proving  (Star (Eps _+_ A)) <T= (Star A) ~>drop_i
+  uses size_induction (using 1-size), termination of interpretation 
+  is using event-size. What is happening here?
+
 - Two notions of guarded
  * full_unf d <> cfix ...
  * variable occurs only inside guard (*allows decreasing measure*)
@@ -224,6 +228,9 @@ Discussion notes:
   coercions map type derivations to type derivations, meaning we could easily just have
   intrinsically typed parse trees, but since the dsl is still extrinisically typed 
   maybe INEQ judgments need to be added in the computation graph? sounds messy
+  Update: We don't have a computation graph, so this could have worked.
+  Not, extrinsically typed dsl would need INEQ supplied to the procedure.
+  If DSL was intrinsically typed, this approach could work, but it isn't due to equi-recursive typing of DSL
 
 - It seems bragga method does not work with nested 
   structural recursion on parse tree. 
@@ -238,3 +245,84 @@ Discussion notes:
   Crucially, fuel is an upper bound of number of recursive calls to 
   a guard term. Unlike computation graph approach, we have simple
   definition for transitivity, D_dom c0 n -> D_dom c1 n -> D_dom (trans c0 c1) n
+  Solution is a mix of Bragga method + standard fuel approach
+  D_dom d n is really an inductive proof derived by chopping off derivations in invPred d 
+  why the functor has been applied up to n times
+  
+
+- Intentional proofs
+  The bragga method is very fitting for our setting, because we have intentional proofs,
+  we care about which proof we use, because it impacts the simplification behaviour 
+  during our other proofs. 
+
+
+Interpertation definition design:
+Two kinds of errrors, lacking fuel & typing errors, typing errors are reported first
+It is important D_dom does not depend on parse tree, to allow parse tree size induction
+
+Standard fuel approach would have required higher order function, using a wrapper to iterate in the continuation
+
+
+Maybe we don't need the constructive epsilon part.
+We can use this part as a comparison, by soundness of the EQ system, one can always construct 
+an ineffecient mapping on parse trees. 
+Structure of paper:
+Equational theory, weak fixpoint + context rules (allows us to show decomposition), comparison to incomplete axoimationzations, adding
+the fix rule gives completeness.
+By constructive proofs, this gives us an (ineffecient) translation on parse trees. We want an effecient one by directly interpreting rules of the containment
+
+Removing bot:
+Tried removing but, gave problems in showing
+interp_star_some_pair, during nested fixpoint it might be messy to return T, since a subterm could be untyped, making the function not be identity,
+but rather some outer context before going to identity.
+
+
+Proving decomosition for coercions uses a neat trick to make the derivations very similar to those for EQ:
+state exisistenail proofs using sig, allowing proofs to be destructed, giving concrete dsl values that can be resolved by eauto.
+This is necessary because existential cannot be introduced during proof. This makes the proof compositional, we do not 
+neeed to know to dsl a priori, analogy to parameterized coinduction?
+We also got extensional rewrite under sum!
+
+
+Derive unfold for coercions:
+Because of seq we must show both directions at the same time
+
+
+A coinductive proof might have more than finitely many remembered pairs in R. R is just a predicate, so 
+it does not need to be finite, using ACI we redo brozowski's finiteness argument
+
+
+We cannot use libraries like because our existential is inductive 
+https://drops.dagstuhl.de/storage/00lipics/lipics-vol141-itp2019/LIPIcs.ITP.2019.14/LIPIcs.ITP.2019.14.pdf
+
+
+
+
+Inductive vs Coinductive dsl:
+- Inductive is tricky because the existential witness is inductive, supposed to be derived from bisimilarity,
+  this requires inductive formulation of bisimilarity (my attempt with closed enum for partial derivatives),
+  the step from this to coinductive containment system seems large, so cut with an inductive containment system
+  Showing inductive to coinductive containment is like the proof of contractive /\ closed g <-> invPred g. Which was tricky.
+  All of this work would allow inductive dsl, which supports effecient (non-unfolding) interpretation.
+  As part of the complication lies in going from inductive to coinductive containment, it suggests only the inductive one should be used as the "main" system.
+  For inductive containment system, to choices are available: unfolding or non-unfolding? Environments seems to suggest non-unfolding (environment closes open terms),
+  but could environment + unfolding also work? 
+  It seems likely no, because we must show l |- inductive simulation r0 r1 -> exists d, l |- inductive containment r0 r1 d
+  but I'm not sure.
+
+  So there are more things in play here: Design space is inductive + environment vs coinductive AND unfolding vs non-unfolding.
+  non-unfolding is finite with open terms and must be inductive + environment, it is also a declarative description for an effecient interpreter 
+  unfolding and coinductive is the simplest approach, declarative description for a lazy evalation interpreter
+  non-unfolding coinductive does not make sense
+  unfolding inductive? Does this make sense? Benefits drawbacks? Declarative description for what kind of interpreter?
+
+
+Next steps:
+   - Invvestigate inductive + environment for equivalence, extending environment only in continuation of c_fix, (only place it is used in showing c** = c*
+   See theories/syntax2.v test2, which derive a** = a*
+   It thus seems possible to define the inference system inductively.
+   Future work is to redo the thesis project with this system
+   - Finish completeness for coinductive + unfolding
+   
+
+
