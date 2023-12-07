@@ -325,4 +325,4 @@ Next steps:
    - Finish completeness for coinductive + unfolding
    
 
-
+Applications in ITP23: https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.ITP.2023.27
