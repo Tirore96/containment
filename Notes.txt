@@ -326,3 +326,175 @@ Next steps:
    
 
 Applications in ITP23: https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.ITP.2023.27
+
+Paco cannot be used for gfp of syntax,
+paco type: paco2
+     : forall (T0 : Type) (T1 : T0 -> Type), (rel2 T0 T1 -> rel2 T0 T1) -> rel2 T0 T1 -> rel2 T0 T1
+rel2 definition:
+rel2 =
+fun (T0 : Type) (T1 : T0 -> Type) => forall x0 : T0, T1 x0 -> Prop
+     : forall T0 : Type, (T0 -> Type) -> Type
+
+It takes a relation going to Prop!
+
+
+
+The bragga method seems to origin here:
+https://link-springer-com.ep.ituproxy.kb.dk/content/pdf/10.1007/3-540-39185-1_3.pdf
+
+Found it through Yves Bertot:
+https://pdf.sciencedirectassets.com/272990/1-s2.0-S1571066108X00325/1-s2.0-S1571066108003320/main.pdf?X-Amz-Security-Token=IQoJb3JpZ2luX2VjEEoaCXVzLWVhc3QtMSJGMEQCIGc1UbrIiDGXZCF7n5gNRVuINkU3S4mlnpM5okQ3sTVRAiALrKup1gjaRBffrva78Ixg9qXDnPs%2F2CG1BFd7hIqbeSq8BQiy%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F8BEAUaDDA1OTAwMzU0Njg2NSIMYcc2NYeX89eN%2B%2FoAKpAFZ57wZJ6yUZyiYoVDuhWwDySYeAqiYH0WYCoVU%2FevWc5I5mO%2BfY4vtlRdSRKo4PD3C5Ul4W8rLltQeDMxqBb8KI06JuQpACv3YqgWW3ebtWtawrdAyXmlOeMC8GEHDX8v5RUqGTp94%2FSTgsyY4E%2BQ3NJoRp4xc1URBI5tEWLZ5l%2Fs%2Fbd8a9LPZcD93rSvm7bmGr1RC63xVE6BzwGQQuCFGFJqxkvjETROSxakQsQ5w%2BlRJg7weVNKVMu88Y8AydUato9RMhdiJ52gBxQOJm88RlYjEegY1C%2Bhrh0PzRDglZ7jsPBK%2BOV5XYPC5HImSTFkmDfWSlGFz9QUXmh6UD6qFAI3YX2XYmFYQBKjHKOzqcUNcym9Fd2FdARHbScnQ6H1%2F3%2F2sQlY41GVY2GvajdpVMxcjQApFQ%2FD8%2FBaqNhraj%2Bhr00B0yS6rzA0VxOY%2FIgFQQcZNKJwg1fnIkIIMEnxTJ3JWrrVj%2Bew8vvMlCKF%2FzpuxKL6w8VSJp5GW%2BFG2dTXujVJGHIUFcYqMu5m%2B6RsJv0vzlbRfQSUns5SHGMm5TTU8ALc%2BhMzwiYpgKJLC5bAghkas0kpQrk%2FHcwRpfZlRAjy8DVCjAZ34%2FP9E7hGKlAHvgSS3UjyQ8frXKrqShhmyXzw1riU7RPeA7spgnZRZ%2FZfNGZCwJLcSYsZEgsPNyY%2FhXX8Wc0coKx8eiuJt3BYqg2yeZUnnZGyhWKbXRNI1CTa8kZ6BJ6%2Bb%2BYLRWba42DniwtTO1kKW%2BB%2Ffa%2B3uRoyNSTKETqPlvtSLkFxJciz4Ejh1xj7irxBXinIRRbIr9IHaIUyGSkCUO%2BSFbdStnHgWe5mBB5PyvQQJFfqhzBEQTNIKiK3T7Os%2FXyFbc1xBx4wmN7JqwY6sgH9k4ABZt5KDdPr90Z5tEUqqgjMSzdJqxoFNXz1wpp%2BiwaA%2BqSjWOWUOT9owvwjuiUYRo%2FfbFEcZJ3ZX%2FwZUZdISL3bQW4%2BUR8NU2f498ZaSpg%2BQIVBl4Due95tfWJ8%2BzcX5JyCE6dY7LVmb7yIQFG1kGUhb18ktQS5JGqVTx0RmRKnpamp1ApNTBIOuSj9SE7sZSIYG4ddcZhsv8RguOk2Z6q5hDnTkP%2BeOFQN5h9up8S4&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20231208T012254Z&X-Amz-SignedHeaders=host&X-Amz-Expires=300&X-Amz-Credential=ASIAQ3PHCVTY5Z3HVWMH%2F20231208%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Signature=1494c853c77c39524979fb0dd67ce070d08b927aa24dafba48aa0fa85c0972fe&hash=9c3daf9e2faf0f2c214a0e288c7a4a235f8cb58085d17f9610f3264c08b475db&host=68042c943591013ac2b2430a89b270f6af2c76d8dfd086a07176afe7c76c2c61&pii=S1571066108003320&tid=spdf-f6f6659e-7cf5-4754-9436-085531efc72b&sid=b5c8cc4c9acc9849c48ae3564652e5211f36gxrqb&type=client&tsoh=d3d3LnNjaWVuY2VkaXJlY3QuY29t&ua=010d585c5355505451&rr=8321332fee5123ad&cc=gb
+
+
+
+
+Coinductive fix rule coercion vs c_eq:
+sum_fix rule is not necessary but might be exactly what we need for guardedness in completeness proof
+
+
+
+The inductice c_eq system can be shown sound wrt to the coinductive one quickly.
+Completeness is not as clear because the proof cannot be by coinduction, it must be on inductino on something.
+We use the bisimilarity to construction the proof, but we will need an inductive verison of bisimilarity,
+or some accessibility predicate that says finitely many pairs will be visited before we stop.
+If I can show the inductive rules can do the antimorov decomposition, then showing 
+equivalence between the inductive and coinductive c_eq systems reduces to decidability of bisimilarity.
+Therefore we need to do this twice, for both systems. Can we get away with doing it only for the inductive?
+
+Inductive c_eq -> Coinductive c_eq 
+
+Coinductive c_eq -> Bisimilarity
+
+Bisimilarity -> inductive bisimilarity (finitness of partial derivatives)
+
+inductive bisimilarity -> inductive c_eq 
+
+Yes! (we don't need derive_unfold for coinductive c_eq)
+
+
+
+Paper idea:
+Relate coinductive rules to stream equivalence mod tau
+
+Comparison between inductive/coidnuctive c_eq:
+Coinductive c_eq we know how to prove c_eq -> bisimilarity,
+relaxes r, does not have to be finite,
+
+So the current soundness path is:
+c_eq (ind) -> c_eq (co) -> bisim (co) -> language equivalence
+
+Why can't we just do c_eq (ind) -> language equivalence, by induction on c_eq.
+Because of the final rule! it is based on a coinduction principle. Since languange equivalence is not a coinductive definition, we need an equivalent relation with a coinduction principle to prove this.
+Since the explicit inductive list that c_eq is parameterized over is awkard to show implies bisimilarity,
+we go via the coinductive c_eq.
+So we use coinductive c_eq to go to bisimilarity,
+
+Code illustrating this:
+Lemma test_c_eq : forall l c0 c1, c_eq2 l c0 c1 -> (forall x y, (x,y) \in l -> (forall s, Match s x <-> Match s y)) -> (forall s, Match s c0 <-> Match s c1).
+Proof.
+move=> l c0 c1.
+elim.
+20: {  intros. suff: Match s c2 <-> Match s c3. admit. eauto. } 
+20: { intros. suff: Match s c2 <-> Match s c3. admit. apply:H0.
+intros. rewrite !inE in H0. de (orP H0). norm_eqs. inv H2.
+ apply:H1.
+Abort.
+
+
+
+
+Relating axiomatization to Fritz and Nielsen,
+The condition on D is that it is called directly under an event.
+Would the instantiation of this condition be suffecient in Fritz system?
+Probably not: 
+I was correct, it is not possible as it would disallow deriving star context and epsilon through fix with S2.
+Relating our system to theirs, they code Salomaas rules (which are nearly ours), using S1 \/ S3 for fix rule.
+S1 corresponds to our fix rule. S3, corresponds to our star and epsilon rule.
+
+
+
+
+General notes about doing research:
+Use curiosity to decide what to look at, curiosity breeds more curiosity
+
+Inductive dsl interpretation:
+Define it without conformity, using tactics to do it. 
+Benefit of intrinsically typed dsl and parse trees, eauto can synthesize the implementation
+
+
+
+Notes about henglein and nielsens papers:
+Salooma already realised that antimorov decomposition only requires weak equivalence plus epsilon elimination
+Our system is Salomaas, replacing his last rule by two rules!
+
+Our system is similar to S1 of the restrictions to the fix rule.
+Our sy
+
+
+
+
+Questions:
+S3 is not satisfied in 3.3.1, but it can be if we call c after the recursive call
+
+Thoughts:
+The difference between our system and the other is that they encode star and epsilon elimination with fix instantiated by S3. S3 is not a compositional property of dsl, it requires the fixpoint 
+to be declared and called (f) in fix f. (id + id ; f) ; d
+In our setting it looks like
+
+F <= F' |- E;F <= E;F'
+
+
+
+Motivation for paper:
+
+We would like 
+F <= F' |- E;F <= E;F'
+Not possible though, fx E = eps then proj and projinv will let us derive antyhing
+
+
+
+Our bisimilarity relation is basically Grabmeyers system without ACI,making the bisimulation infinitary,
+using partial derivatives and the enumeration closure essentially gives the grabmeyer system.
+
+
+
+
+Idea:
+Fritz and Nielsens system could replace our rules,
+the disjunct S1 \/ S3 gives rise to two rules, the first looking very much like our fix.
+The second one is used to derive the extra star rules, and 
+I think our rules might be parametrically complete as well (but for finite languages)
+
+The other system codes Salomaa and Grabmeyer using S1, which breaks parametric completeness by o(c).
+S2 is a better side condition
+
+
+Kozen system is parametetrically complete for infinite languages, and by S2 so is the coercion system, but 
+it yields slow (quadratic runtime) programs for star a * star star a <= star a. 
+Using S1 they can simulate grabmeyer for linear time programs. They loose parametricity (and supporting infinite languages) 
+
+
+Simulating bisimilarity using fixpoints means we are creating many fixpoints.
+Synthesizing the dsl, means synthesising the proof of the property for such a generated dsl which will take long, quadratic in the size of the dsl, which is bounded by number of distinct derivatives pi(..).
+For large alphabets, the side condition is  expensive
+Even their antimorov decomposition uses the S3 rules which checks closedness of d, again linear time.
+Proof synthesis is really slow!
+
+Their general (parameterized) fixpoint is bad from a computational interpretation viewpoint:
+For effecient grabmeyer programs, testing S1 is ineffecient.
+S1 loses parametric completeness. 
+Problem arise from restricting use of fix. It should always be allowed. 
+Discharing the assumption should be guarded (compositional, effecient, parametric)
+
+Parameterized fixrule is not compositional nor parametric.
+dsl cannot be corecursively defined because we must check how 
+
+Pitch:
+We present a new sound/complete axiomatization of regular expression equivalence replacing Salomaa's last rule with a coinductively motivated rule. The system can be represented inductively but also coinductively, and the two formulations are equivalent. Unlike previous systems with coindctuively motivated rules, our rules have no operational notions nor side conditions for when the "coinduction principle" can be invoked.
+
+Inspired from Henglein and Nielsen, we transform our new axiomatization into a new coercion system, interpreting proofs of containments as coercion functions on parsetrees. 
+Freeing our rules from side conditions an operational notions, we achieve faster proof synthesis of effecient coercions, that can be derived parametrically.
+Our guarded use of coinduction hypotheses additionally translates to a natural termination measures for computational interpretation.
+We present both inductive and coinductive flavors of our coercion systems, with the former naturally giving rise to an effecient interpreter, and in the latter case, an ineffecient lazy-evaluation interpreter
+
+
