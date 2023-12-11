@@ -498,3 +498,16 @@ Our guarded use of coinduction hypotheses additionally translates to a natural t
 We present both inductive and coinductive flavors of our coercion systems, with the former naturally giving rise to an effecient interpreter, and in the latter case, an ineffecient lazy-evaluation interpreter
 
 
+Maybe parametericity becomes important for bit coded strings with mu types? free variables X?
+
+
+
+
+
+Unanswered questions:
+What is the relation between inductive and coinductive dsl? 
+relationship betewen inductive and coinductive c_eq is that coinductive is used to show 
+
+
+
+Remember to mention that decidability section reuses some code patterns from session type code

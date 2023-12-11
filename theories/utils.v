@@ -6,6 +6,21 @@ Notation Forall := List.Forall.
 
 Notation Forall2 := List.Forall2.
 
+Equations foldIn {A B : Type} (l : list A) (f : forall (x : A), List.In x l -> B -> B) (b : B) : B := 
+  foldIn nil f b := b;
+  foldIn (x:: xs) f b := f x _ (foldIn xs (fun x H b => f x _ b) b).
+
+
+Definition foldInAll {A : Type} (l : list A) (f : forall (x : A), List.In x l -> bool) : bool  := 
+ foldIn l (fun x H b => (f x H) && b ) true.  
+
+Lemma foldInAllP : forall (A: Type) (l : list A) (f : A -> bool), foldInAll l (fun x H => f x) = all f l.
+Proof. 
+move => A. rewrite /foldInAll.  elim. done. 
+intros. simpl.   simp foldIn. f_equal.  done. 
+Qed. 
+
+
 Inductive Forall3 {A B C : Type} (R : A -> B -> C -> Prop) : seq A -> seq B -> seq C ->  Prop :=
     Forall3_nil : Forall3 R [::] [::] [::]
   | Forall3_cons : forall (x : A) (y : B) (z: C) (l : seq A) (l' : seq B) (l'' : seq C),
