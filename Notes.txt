@@ -511,3 +511,35 @@ relationship betewen inductive and coinductive c_eq is that coinductive is used 
 
 
 Remember to mention that decidability section reuses some code patterns from session type code
+
+
+Question:
+Is A7 from salooma present in Hengleins paper?
+We have essentially mechanised Grabmeyers work, and almost Salomaas 
+
+
+
+
+
+Reminders:
+bisim is less effecient because of uniqueness test right now, fix later
+Effecient approach assumes input lists are unique, which gives a restricted induction principle, you need to reason about equality of proofs.
+
+
+
+Overview of 11/12 meeting:
+Fully inductive system
+
+
+Using dependent destruction now, remove later 
+
+
+Interpretation:
+One size is used to define interpretation of star rules, just like Henglein and Nielsen.
+The induction necessary to define this is interesting.
+We have outer structural recursion on the dsl syntax.
+Fix uses zero-size induction
+Star rules use one-size induction
+Mention in paper, how we simplified extracted code, inlining, avoiding jmeg equality, proof induction, bragga method
+Comment in paper on Obj.Magic occurences in interpretation.
+Use effecient data structure for inductive dsl (instead of list)
