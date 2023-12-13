@@ -15,9 +15,6 @@ From Containment Require Import Original.
 Set Implicit Arguments.
 Set Maximal Implicit Insertion.
 
-
-
-
 Let inE := utils.inE.
 
 Section Regex.
@@ -43,16 +40,6 @@ Notation "c0 _;_ c1"  := (Seq c0 c1)
 Notation "c0 _+_ c1"  := (Plus c0 c1)
                          (at level 53, left associativity).
 Definition trace := seq A.
-(*Section Regex.
-Variable A : finType.
-
-End Regex.
-
-Check regex.*)
-
-
-
-
 
 Fixpoint nu(c:regex ):bool :=
 match c with
@@ -66,38 +53,6 @@ end.
 
 Reserved Notation "e \ c" (at level 40, left associativity).
 
-(*Fixpoint derive (e:A) (c:regex) :regex :=
-match c with
-| Eps => Empt
-| Empt => Empt
-| Event e' => if e' == e then Eps else Empt
-| c0 _;_ c1 => if nu c0 then
-                 ((e \ c0) _;_ c1) _+_ (e \ c1)
-                 else (e \ c0) _;_ c1
-| c0 _+_ c1 => e \ c0 _+_ e \ c1
-| Star c => e \ c _;_ (Star c)
-end
-where "e \ c" := (derive e c).
-
-
-Ltac destruct_ctx :=
-  repeat match goal with
-         | [ H: ?H0 /\ ?H1 |- _ ] => destruct H
-         | [ H: exists _, _  |- _ ] => destruct H
-         end.
-
-Ltac autoIC := auto with cDB.
-
-Reserved Notation "s \\ c" (at level 42, no associativity).
-Fixpoint trace_derive (s : trace) (c : regex)  : regex :=
-match s with
-| [::] => c
-| e::s' => s' \\ (e \ c)
-end
-where "s \\ c" := (trace_derive s c).*)
-
-
-(*Reserved Notation "s (:) re" (at level 63).*)
 Inductive Match : trace -> regex -> Prop :=
   | MEps : Match [::]  Eps
   | MEvent x : Match [::x] (Event x)
@@ -165,10 +120,7 @@ Ltac destruct_ctx :=
          | [ H: exists _, _  |- _ ] => destruct H
          end.
 
-
-
 Ltac autoIC := auto with cDB.
-
 
 Reserved Notation "s \\ c" (at level 42, no associativity).
 Fixpoint trace_derive (s : trace) (c : regex)  : regex :=
@@ -177,11 +129,7 @@ match s with
 | e::s' => s' \\ (e \ c)
 end
 where "s \\ c" := (trace_derive s c).
-
-
-
 Hint Resolve seq_Eps seq_Empt.
-
 
 Lemma derive_distr_plus : forall (s : trace)(c0 c1 : regex), s \\ (c0 _+_ c1) = s \\ c0 _+_ s \\ c1.
 Proof.
@@ -237,16 +185,12 @@ move=> c s. rewrite /matchb. elim=>//=.
 - move=> c0 []//= a l s2 HM HN HM' HN' /=. by apply/matchb_seq=>//.
 Qed.
 
-
-
 Lemma Match_nil_nu : forall (c : regex), nu c  -> Match [::] c.
 Proof.
 intros;induction c; simpl in H ; try discriminate; auto.
 - case: (orP H). move/IHc1;eauto. move/IHc2;eauto.
 - case: (andP H). move=>/IHc1 HH0 /IHc2 HH1. apply/MSeq2;eauto.
 Qed.
-
-
 
 Lemma Match_nil_seq: forall c0 c1, Match nil (Seq c0 c1) -> Match nil c0 /\ Match nil c1.
 Proof.
@@ -263,7 +207,6 @@ move=> r IH r0 IH2 HM. apply/andP.
 move/Match_nil_seq: HM=>[]. eauto.
 Qed.
 
-
 (*This direction with longer trace on the right because of induction step on trace*)
 Lemma Match_matchb : forall (c : regex)(e : A)(s : trace), Match s (e \ c)-> Match (e::s) c.
 Proof.
@@ -279,9 +222,6 @@ induction c;intros; simpl in*; try solve [inversion H].
 - inversion H. apply/MStar2;eauto.
 Qed.
 
-
-
-
 Theorem  matchbP: forall (c : regex)(s : trace), Match s c <-> matchb s c. 
 Proof.
 move=> c s. rewrite /matchb.
@@ -295,7 +235,6 @@ Proof.
 by move=> c e s; rewrite !matchbP.
 Qed.
 
-
 Fixpoint pd a r := 
 match r with 
 | Eps => nil 
@@ -305,7 +244,6 @@ match r with
 | Seq r0 r1 => if nu r0 then (map (fun x => Seq x r1) (pd a r0)) ++ (pd a r1) else (map (fun x => Seq x r1) (pd a r0))
 | Star r0 => map (fun x => x _;_ Star r0) (pd a r0)
 end.
-
 
 Definition pd_l_aux a l := (flatten (map (pd a) l)).
 (*uniqueness of pd_l will become important later for decision procedure*)
@@ -323,7 +261,6 @@ rewrite big_cons. eauto.
 rewrite !big_cons. split. intros. inv H1;eauto. constructor 5. apply/H. done.
 intros. inv H1;eauto. constructor 5. apply/H. done.
 Qed.
-
 
 Lemma Match_big_cat : forall l  l' s, Match s (\big[Plus/Empt]_(i <- l ++ l') i)  <->  Match s ((\big[Plus/Empt]_(i <- l) i) _+_  (\big[Plus/Empt]_(i <- l') i)).
 Proof.
@@ -351,10 +288,6 @@ elim;ssa. rewrite big_nil in H. inv H. inv H3.
 move: H0. rewrite !big_cons. intros. inv H0. inv H4. eauto. eauto.
 Qed.
 
-
-
-
-
 Lemma map_big_plus : forall l (f : regex -> regex), 
 \big[Plus/Empt]_(a <- map f l) a = \big[Plus/Empt]_(a <- l) (f a).
 Proof.
@@ -362,7 +295,6 @@ elim;ssa.
 rewrite !big_nil. done.
 rewrite !big_cons. f_equal. done.
 Qed.
-
 
 Lemma der_eq : forall e r s, Match s (derive e r) <-> Match s (pd_sum e r).
 Proof.
@@ -400,353 +332,11 @@ Proof. intros.
 rewrite -der_eq. apply/deriveP.
 Qed.
 
-Lemma deriveP3
+(*Lemma deriveP3
      : forall (c : regex) (e : A) (s : trace),
        Match (e :: s) c <-> Match s (\big[Plus/Empt]_(i <- (pd e c)) i).
 Proof. intros. rewrite deriveP2 /pd_sum Match_big_undup //.
-Qed.
-
-
-(*Fixpoint trace_derive (s : trace) (l : pder)  : pder :=
-match s with
-| [::] => l
-| e::s' => trace_derive s' (pd_l_aux e l)
-end.
-Notation "s \\ c" := (trace_derive s c)(at level 42, no associativity).
-
-Definition matchb s (r : pder) := has nu (trace_derive s r).
-
-Lemma Match_nil_nu : forall (c : regex), nu c  -> Match [::] c.
-Proof.
-intros;induction c; simpl in H ; try discriminate; auto.
-- case: (orP H). move/IHc1;eauto. move/IHc2;eauto.
-- case: (andP H). move=>/IHc1 HH0 /IHc2 HH1. apply/MSeq2;eauto.
-Qed.
-
-Lemma Match_nil_seq: forall c0 c1, Match nil (Seq c0 c1) -> Match nil c0 /\ Match nil c1.
-Proof.
-move=> c0 c1 HM. inversion HM;subst. 
-destruct s1;ssa. destruct s2;ssa.
-Qed.
-
-Lemma nuP : forall c, nu c <-> Match [::] c.
-Proof.
-move=> c.  con;first by apply/Match_nil_nu=>//.
-elim: c=>//=. move=> HM. inv HM. move=> s HM. inv HM.
-move=> r IH r0 HM HM2. apply/orP. inv HM2;eauto.
-move=> r IH r0 IH2 HM. apply/andP.
-move/Match_nil_seq: HM=>[]. eauto.
-Qed.
-
-
-
-Lemma has_nu_Match : forall l, Match [::] (\big[Plus/Empt]_(i <- l) i) ->  has nu l.
-Proof.
-elim;ssa. rewrite big_nil in H. inv H.
-rewrite !big_cons in H0. inv H0. left. apply/nuP=>//. eauto.
-Qed.
-
-Lemma has_nuP : forall l, has nu l <->  Match [::] (\big[Plus/Empt]_(i <- l) i).
-Proof.
-intros. split. apply/Match_has_nu. apply/has_nu_Match.
-Qed.
-
-
-(*Lemma derive_distr_plus : forall (s : trace)(c0 c1 : regex), s \\ (c0 _+_ c1) = s \\ c0 _+_ s \\ c1.
-Proof.
-induction s;intros;simpl;auto. rewrite /pd_sum.
-Qed. *)
-
-(*Hint Rewrite derive_distr_plus.*)
-(*Lemma nu_seq_derive : forall (e : A)(c0 c1 : regex), 
-nu c0 -> nu (e \ c1) -> nu (e \ (c0 _;_ c1)).
-Proof.
-intros. simpl. destruct (nu c0). simpl. auto with bool. discriminate.
 Qed.*)
-
-(*Lemma nu_Empt : forall (s : trace)(c : regex), nu (s \\ (Empt _;_ c)) = false.
-Proof.
-induction s;intros. now simpl. simpl. rewrite /pd_sum.
-Qed.
-
-Hint Rewrite nu_Empt.
-
-Lemma nu_Eps : forall (s : trace)(c : regex), nu (s \\ (Eps _;_ c)) = nu (s \\ c).
-Proof.
-induction s;intros;simpl;auto. 
-by rewrite derive_distr_plus /= nu_Empt //=.
-Qed.
-
-
-Lemma nu_seq_trace_derive : forall (s : trace)(c0 c1 : regex), 
-nu c0 -> nu (s \\ c1) -> nu (s \\ (c0 _;_ c1)).
-Proof.
-induction s;intros;simpl in *. intuition. destruct (nu c0).
-rewrite derive_distr_plus. simpl. auto with bool. discriminate.
-Qed.*)
-
-(*Lemma matchb_seq : forall (s0 s1 : trace)(c0 c1 : regex), nu (s0\\c0) 
-                                                      -> nu (s1\\c1)-> nu ((s0++s1)\\(c0 _;_c1)).
-Proof.
-induction s0;intros;simpl in *.
-- rewrite nu_seq_trace_derive; auto. 
-- destruct (nu c0);first by rewrite derive_distr_plus /= IHs0//.
-  rewrite IHs0 //.
-Qed.*)
-
-Lemma derive_nil : forall s, trace_derive s nil = nil.
-Proof. elim;ssa.
-Qed.
-Lemma trace_derive_cat : forall s l0 l1, trace_derive s (l0 ++ l1) = (trace_derive s l0) ++ (trace_derive s l1).
-Proof.
-elim;ssa=>//=.  rewrite /pd_l_aux.
-elim: l0 l1 H;ssa. rewrite derive_nil /=. done.
-rewrite !H0. rewrite H. rewrite catA. done. done.
-Qed.
-
-Fixpoint plus_flat (r : regex) := 
-match r with 
-| Plus r0 r1 => (plus_flat r0) ++ (plus_flat r1)
-| _ => r::nil
-end.
-
-Theorem  matchbP: forall r (s : trace) l, Match s r -> plus_flat r = l ->  matchb s l. 
-Proof.
-move=> s r l Hm.  rewrite /matchb /pd_sum. 
-elim: Hm l;ssa;eauto.
-subst;ssa.
-subst;ssa.
-rewrite /pd_l_aux //= eqxx //=. 
-subst. 
-have : c1::c2::nil = (c1::nil)++(c2::nil). done. move=>->. 
-clear H H1.
-elim: s1 s2 c1 c2 H0 H2;ssa.
-elim: s2 c1 c2 H0 H2;ssa. rewrite orbC /= in H2. rewrite H0 H2 //. ssa.
-rewrite /pd_l_aux. simpl. rewrite H0. rewrite cats0.
-rewrite trace_derive_cat. 
-rewrite has_cat. rewrite /pd_l_aux in H2. rewrite /= cats0 in H2. rewrite H2. lia.
-rewrite trace_derive_cat /=.
-destruct (nu c1) eqn:Heqn. 
-rewrite derive_nil cats0. rewrite !trace_derive_cat !has_cat. 
-ssa. rewrite /pd_l_aux in H0. rewrite /= cats0 in H0.
-move: (@H _ _ _ H0).
-move: (@H _ _ _ H0 H2).
-rewrite /pd_sum //= eqxx // big_cons big_nil //.
-
-
-
-Lemma Match_single : forall a l r, Match (a :: l) r -> Match l (\big[Plus/Empt]_(i <- pd a r) i).
-Proof. 
-
-Lemma Match_cons : forall a l l0, Match (a :: l) (\big[Plus/Empt]_(i <- l0) i) -> Match l (\big[Plus/Empt]_(i <- pd_l a l0) i).
-Proof.
-intros. rewrite /pd_l. apply/Match_big_undup.
-elim: l0 a l H;ssa.
-rewrite big_nil in H *. inv H.
-rewrite !big_cons in H0 *.
-rewrite Match_big_cat. inv H0. con.
-Theorem  matchbP: forall (l : pder)(s : trace), Match s (\big[Plus/Empt]_(i <- l) i) <-> matchb s l. 
-Proof.
-move=> l s. rewrite /matchb. split.
-elim: s l. ssa. apply/has_nuP=>//.
-ssa. apply:H.
-elim: l s;ssa. rewrite big_nil in H. inv H.
-rewrite big_cons in H0. inv H0. destruct s. ssa. left. apply/nuP=>//.
-ssa.
-
-
-move=> c s. rewrite /matchb.
-split;first by apply/Match_i_matchb=>//.
-elim: s c=>//;first by move=> c /Match_nil_nu=>//.
-move=> a l IH c /=. move/IH/Match_matchb=>//.
-Qed.
-
-
-
-
-
-Definition matchb s r := nu (trace_derive s r).
-
-Lemma Match_i_matchb : forall (c : regex)(s : trace), Match s c -> matchb s c.  
-Proof.
-move=> c s. rewrite /matchb. elim=>//=.
-- move => x. rewrite eqxx//.
-- move => s1 c1 s2 c2 HM0 HN0 HM1 HN1/=. by apply/matchb_seq=>//.
-- move=> s1 c1 c2 HM HN. rewrite derive_distr_plus /= HN//.
-- move=> c1 s2 c2 HM HN. rewrite derive_distr_plus /= HN orbC //.
-- move=> c0 []//= a l s2 HM HN HM' HN' /=. by apply/matchb_seq=>//.
-Qed.
-
-
-
-
-
-
-
-
-
-
-(*This direction with longer trace on the right because of induction step on trace*)
-Lemma Match_matchb : forall (c : regex)(e : A)(s : trace), Match s (e \ c)-> Match (e::s) c.
-Proof.
-induction c;intros; simpl in*; try solve [inversion H].
-- move: H. case Hcase:(_==_)=>// HM. rewrite (eqP Hcase).
-  inv HM;auto. inv HM.
-- inv H;eauto.
-- destruct (nu c1) eqn:Heqn.
-  * inv H.
-    ** inv H2. apply/MSeq2;eauto.
-    ** apply/MSeq2. apply/Match_nil_nu=>//. eauto. done.
-  * inv H. apply/MSeq2. eauto. eauto. done.
-- inversion H. apply/MStar2;eauto.
-Qed.
-
-
-
-
-Theorem  matchbP: forall (c : regex)(s : trace), Match s c <-> matchb s c. 
-Proof.
-move=> c s. rewrite /matchb.
-split;first by apply/Match_i_matchb=>//.
-elim: s c=>//;first by move=> c /Match_nil_nu=>//.
-move=> a l IH c /=. move/IH/Match_matchb=>//.
-Qed.
-
-Lemma deriveP : forall (c : regex)(e : A)(s : trace), Match (e::s) c <-> Match s (e \ c).
-Proof.
-by move=> c e s; rewrite !matchbP.
-Qed.*)
-
-
-
-Section BisimInd.
-
-
-Inductive bisim_ind_gen bisim : pder -> pder-> Prop :=
- contains_con2 l0 l1 (H0: forall e, bisim (pd_l e l0) (pd_l e l1) : Prop ) (H1: has nu l0 = has nu l1) : bisim_ind_gen bisim l0 l1.
-
-Definition BisimInd l0 l1 := paco2 bisim_ind_gen bot2 l0 l1.
-Hint Unfold  BisimInd : core.
-
-Lemma bisim_ind_gen_mon: monotone2 bisim_ind_gen. 
-Proof.
-unfold monotone2. intros.  constructor. inversion IN. intros.
-auto. inversion IN. auto.  
-Qed.
-Hint Resolve bisim_ind_gen_mon : paco.
-
-
-
-
-
-
-
-(*Theorem containsP : forall c0 c1, equiv c0 c1 -> Contains c0 c1.
-Proof.
-pcofix CIH. intros. pfold. constructor.
-- intros. right. apply CIH.  move=> s.  
-  rewrite -!deriveP2. eauto.
-  move: (H0 nil). rewrite !matchbP /matchb //=. 
-Qed.*)
-
-Lemma pd_plus : forall l e, undup (pd e (\big[Plus/Empt]_(i <- l) i)) = pd_l e l.
-Proof.
-rewrite /pd_l.
-elim;ssa.
-rewrite big_nil. done.
-rewrite big_cons /=. rewrite !undup_cat.  f_equal;try done. 
-apply/eq_in_filter. intro. ssa.   clear H0.
-move: x. clear H.  elim: l. ssa. rewrite big_nil. done. 
-intros. rewrite !big_cons /=.
-rewrite !mem_cat !negb_or. f_equal. eauto.
-Qed.
-
-
-Lemma nu_has : forall l, nu (\big[Plus/Empt]_(i <- l) i) = has nu l.
-Proof.
-elim;ssa.
-rewrite big_nil. done. rewrite !big_cons /=. f_equal. done.
-Qed.
-
-(*Theorem Contains : forall l l', Contains  (\big[Plus/Empt]_(i <- l) i) (\big[Plus/Empt]_(i <- l') i) -> Contains2 l l'.*)
-Definition equiv_r (r0 r1 : regex) := forall s, Match s r0 <-> Match s r1.
-
-Lemma equiv_r_derive : forall r0 r1 e, equiv_r r0 r1 -> equiv_r (e \ r0) (e \ r1).
-Proof.
-intros. intro. rewrite -!deriveP. done.
-Qed.
-Lemma equiv_r_trans : forall r0 r1 r2, equiv_r r0 r1 -> equiv_r r1 r2 -> equiv_r r0 r2.
-Proof.
-intros. intro. rewrite H -H0 //.
-Qed.
-
-Lemma equiv_r_sym : forall r0 r1, equiv_r r0 r1 -> equiv_r r1 r0. 
-Proof.
-intros. intro. rewrite H //.
-Qed.
-
-
-Lemma derive_pd_l : forall l e, equiv_r (e \ \big[Plus/Empt]_(i <- l) i) 
-                                   (\big[Plus/Empt]_(i <- pd_l e l) i).
-Proof.
-elim;ssa. rewrite !big_nil. done.
-rewrite !big_cons. split;intros; ssa.
-rewrite /pd_l. simpl. 
-rewrite Match_big_undup. 
-rewrite Match_big_cat. 
-inv H0.
-con.
-rewrite -Match_big_undup. 
-have:  (\big[Plus/Empt]_(i <- undup (pd e a)) i) = pd_sum e a. done.
-move=>->. rewrite -deriveP2. rewrite -deriveP in H3. done.
-constructor 5. 
-apply H in H3. rewrite /pd_l in H3. rewrite Match_big_undup in H3. done.
-
-rewrite /pd_l Match_big_undup /= Match_big_cat in H0.
-inv H0. con. rewrite -deriveP deriveP2 /pd_sum Match_big_undup //.
-constructor 5. apply/H.  rewrite /pd_l Match_big_undup //.
-Qed.
-
-
-(*Theorem Bisim_co_ind : forall l l', Bisimilarity (\big[Plus/Empt]_(i <- l) i) (\big[Plus/Empt]_(i <- l') i) -> BisimInd l l'.
-Proof.
-pcofix CIH. intros. punfold H0. inv H0. pfold. con. intros.
-right. apply/CIH. 
-destruct (H1 e)=>//. apply/equivP. move/equivP : H.
-intros.
-apply:equiv_r_trans. apply/equiv_r_sym. apply:derive_pd_l.
-apply:equiv_r_trans.  done.
-apply:derive_pd_l.
-rewrite !nu_has in H2. done.
-Qed.*)
-
-
-(*Lemma big_derive : forall l e, e \ \big[Plus/Empt]_(i <- l) i = \big[Plus/Empt]_(i <- map (derive e)l) i.
-Proof.
-elim;ssa.
-rewrite !big_nil //.
-rewrite !big_cons //=. f_equal. done.
-Qed.*)
-
-
-
-(*Theorem equiv_r1 : forall c0 c1, equiv_r c0 c1 -> Bisimilarity c0 c1.
-Proof.
-pcofix CIH. intros. pfold. constructor.
-- intros. right. apply CIH.  rewrite /equiv_r. move=> s.  rewrite -!deriveP. eauto.
-  move: (H0 nil). rewrite !matchbP /matchb /=. 
-  move/eq_iff=>->//.
-Qed.*)
-
-(*Lemma Match_nil_nu : forall (c : regex), nu c  -> Match [::] c.
-Proof.
-intros;induction c; simpl in H ; try discriminate; auto.
-- case: (orP H). move/IHc1;eauto. move/IHc2;eauto.
-- case: (andP H). move=>/IHc1 HH0 /IHc2 HH1. apply/MSeq2;eauto.
-Qed.*)
-
-
-
 
 Lemma has_nu_Match : forall l, Match [::] (\big[Plus/Empt]_(i <- l) i) ->  has nu l.
 Proof.
@@ -766,37 +356,142 @@ Lemma Match_has_nu_iff : forall l, has nu l <->  Match [::] (\big[Plus/Empt]_(i 
 Proof.
 intros. split. apply/Match_has_nu. apply/has_nu_Match.
 Qed.
-(*Check pd_plus.
-Lemma pd_plus : forall l a, pd a (\big[Plus/Empt]_(i <- l) i) = flatten (map (pd a) l).*)
-Theorem equiv_rInd : forall l l', BisimInd l l' -> equiv_r ( (\big[Plus/Empt]_(i <- l) i))  (\big[Plus/Empt]_(i <- l') i).
+
+Lemma pd_plus : forall l e, undup (pd e (\big[Plus/Empt]_(i <- l) i)) = pd_l e l.
+Proof.
+rewrite /pd_l.
+elim;ssa.
+rewrite big_nil. done.
+rewrite big_cons /=. rewrite !undup_cat.  f_equal;try done. 
+apply/eq_in_filter. intro. ssa.   clear H0.
+move: x. clear H.  elim: l. ssa. rewrite big_nil. done. 
+intros. rewrite !big_cons /=.
+rewrite !mem_cat !negb_or. f_equal. eauto.
+Qed.
+
+End Regex.
+Arguments regex {A}.
+Arguments Eps {A}.
+Arguments Empt {A}.
+Arguments Event {A}.
+Arguments Plus {A}.
+Arguments Seq {A}.
+Arguments Star {A}.
+Notation "s \\ c" := (trace_derive s c)(at level 42, no associativity).
+Notation "s \ c" := (derive s c)(at level 42, no associativity).
+Module Type Pred.
+Parameter A : eqType.
+Definition regex := @regex A.
+Definition pder := @pder A.
+
+Definition trace := trace A.
+Parameter (P: forall s : trace, regex -> regex -> Prop).
+Parameter (Pb : seq regex -> seq regex -> bool).
+Axiom derive_pd_l : forall l e s, P s (e \ \big[Plus/Empt]_(i <- l) i) 
+                                   (\big[Plus/Empt]_(i <- pd_l e l) i).
+Axiom Pb_P_iff : forall l l', Pb l l' <->
+                      P [::] (\big[Plus/Empt]_(i <- l) i) (\big[Plus/Empt]_(i <- l') i).
+Axiom P_derive : forall a l l0 l1, P l (\big[Plus/Empt]_(i <- (pd_l a l0)) i) (\big[Plus/Empt]_(i <- (pd_l a l1)) i) <-> P (a :: l) (\big[Plus/Empt]_(i <- l0) i) (\big[Plus/Empt]_(i <- l1) i).
+End Pred.
+
+
+
+Module BisimInd (M : Pred).
+Include M.
+
+
+Inductive bisim_ind_gen bisim : pder -> pder-> Prop :=
+ contains_con2 l0 l1 (H0: forall e, bisim (pd_l e l0) (pd_l e l1) : Prop ) (H1: Pb l0 l1 (*has nu l0 = has nu l1*)) : bisim_ind_gen bisim l0 l1.
+
+Definition BisimInd l0 l1 := paco2 bisim_ind_gen bot2 l0 l1.
+Hint Unfold  BisimInd : core.
+
+Lemma bisim_ind_gen_mon: monotone2 bisim_ind_gen. 
+Proof.
+unfold monotone2. intros.  constructor. inversion IN. intros.
+auto. inversion IN. auto.  
+Qed.
+Hint Resolve bisim_ind_gen_mon : paco.
+
+
+
+
+
+(*Lemma nu_has : forall l, nu (\big[Plus/Empt]_(i <- l) i) = has nu l.
+Proof.
+elim;ssa.
+rewrite big_nil. done. rewrite !big_cons /=. f_equal. done.
+Qed.*)
+
+(*Definition equiv_r (r0 r1 : regex) := forall s, Match s r0 <-> Match s r1.
+
+Lemma equiv_r_derive : forall r0 r1 e, equiv_r r0 r1 -> equiv_r (e \ r0) (e \ r1).
+Proof.
+intros. intro. rewrite -!deriveP. done.
+Qed.
+Lemma equiv_r_trans : forall r0 r1 r2, equiv_r r0 r1 -> equiv_r r1 r2 -> equiv_r r0 r2.
+Proof.
+intros. intro. rewrite H -H0 //.
+Qed.
+
+Lemma equiv_r_sym : forall r0 r1, equiv_r r0 r1 -> equiv_r r1 r0. 
+Proof.
+intros. intro. rewrite H //.
+Qed.
+*)
+
+
+(*elim;ssa. rewrite !big_nil. done.
+rewrite !big_cons. split;intros; ssa.
+rewrite /pd_l. simpl. 
+rewrite Match_big_undup. 
+rewrite Match_big_cat. 
+inv H0.
+con.
+rewrite -Match_big_undup. 
+have:  (\big[Plus/Empt]_(i <- undup (pd e a)) i) = pd_sum e a. done.
+move=>->. rewrite -deriveP2. rewrite -deriveP in H3. done.
+constructor 5. 
+apply H in H3. rewrite /pd_l in H3. rewrite Match_big_undup in H3. done.
+
+rewrite /pd_l Match_big_undup /= Match_big_cat in H0.
+inv H0. con. rewrite -deriveP deriveP2 /pd_sum Match_big_undup //.
+constructor 5. apply/H.  rewrite /pd_l Match_big_undup //.
+Qed.*)
+
+Theorem equiv_rInd : forall l l', BisimInd l l' -> forall s, P s ( (\big[Plus/Empt]_(i <- l) i))  (\big[Plus/Empt]_(i <- l') i).
 Proof.
 move=> l0 l1 HC s. 
 elim: s l0 l1  HC.
 - move=> c0 c1. sunfold. case. move=> ce c3 HC HC'.
-  rewrite -!Match_has_nu_iff HC' //.
+  apply Pb_P_iff. done.
 - move=> a l IH c0 c1. sunfold. elim.
   move=> c2 c3 /(_ a) [] // HC _. 
+(*Check deriveP2.*)
+  apply/P_derive. apply IH. done.
+(*rewrite pd_sum.
   rewrite !deriveP2. rewrite /pd_sum. rewrite !pd_plus //.
-  apply/IH=>//. 
+  apply/IH=>//. *)
 Qed.
 
-Theorem Bisim_co_ind : forall l l', equiv_r (\big[Plus/Empt]_(i <- l) i) (\big[Plus/Empt]_(i <- l') i) -> BisimInd l l'.
+Theorem Bisim_co_ind : forall l l', (forall s, P s (\big[Plus/Empt]_(i <- l) i) (\big[Plus/Empt]_(i <- l') i)) -> BisimInd l l'.
 Proof.
-pcofix CIH. intros. pfold. con. 
-intros. right. apply:CIH. 
-apply:equiv_r_trans. apply:equiv_r_sym. apply:derive_pd_l.
+pcofix CIH. move=> l l'. pfold. con. 
+intros. right. apply:CIH. intros.
+apply P_derive. apply H0.
+apply/Pb_P_iff. done.
+(*apply:equiv_r_trans. apply:equiv_r_sym. apply:derive_pd_l.
 apply:equiv_r_trans. 2: { apply:derive_pd_l. }
 apply:equiv_r_derive. done.
-move: (H0 nil). rewrite -!Match_has_nu_iff //.  move/eq_iff=>//.
+move: (H0 nil). rewrite -!Match_has_nu_iff //.  move/eq_iff=>//.*)
 Qed.
 
-Lemma BisimInd_equiv : forall l l', BisimInd l l' <->  equiv (\big[Plus/Empt]_(i <- l) i) (\big[Plus/Empt]_(i <- l') i). 
+Lemma BisimInd_equiv : forall l l', BisimInd l l' <->  forall s, P s (\big[Plus/Empt]_(i <- l) i) (\big[Plus/Empt]_(i <- l') i). 
 Proof.
 intros. split. apply/equiv_rInd. apply:Bisim_co_ind.
 Qed.
 
 End BisimInd.
-Hint Resolve bisim_ind_gen_mon : paco.
 
 
 (*Definition pder := seq regex.
@@ -831,13 +526,6 @@ Notation "c0 _+_ c1"  := (Plus c0 c1)
 Definition equiv_r (A : eqType) (r0 r1 : @regex A) := forall s, Match s r0 <-> Match s r1.
 
 
-Module Type Pred.
-Parameter A : eqType.
-Definition regex := @regex A.
-(*Parameter (P: regex -> regex -> Prop).*)
-Parameter (Pb : regex -> regex -> bool).
-Parameter (Pbl : seq regex -> seq regex -> bool).
-End Pred.
 
 Module Bisim (p: Pred).
 Include p.
