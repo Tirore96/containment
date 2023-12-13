@@ -1039,24 +1039,7 @@ Qed.*)
 Proof.
 intros.*)
 Check in_enum_uniq.
-(*Equations bisim (pp : pder * pder) (visited : seq (pder * pder) ) (H : uniq_pair pp) : bool by wf (r_measure visited pp) := 
- bisim pp visited H  with (dec (pp \in visited)) => {
-  bisim _  _ _ (in_left) := true;
-  bisim pp visited _ (in_right) := ((has nu pp.1) == (has nu pp.2)) && 
-                                           (foldInAll (index_enum A) (fun e _ => bisim (pair_pd_l e pp) (pp::visited) _));
- }.
-Next Obligation. 
-apply/andP.
-con. simpl. rewrite /pd_l. done.  simpl. rewrite /pd_l. done.
-Defined.
-Next Obligation.
-apply/ltP. apply:measure_lt. done. rewrite e0 //. 
-Defined.*)
 
-(*Lemma uniq_pair_proof : forall  l l', uniq_pair (undup l,undup l').
-Proof.
-intros. apply/andP. con; ssa. 
-Qed.*)
 
 
 
@@ -7517,7 +7500,7 @@ move=>s.
   
 
 
-under eq_big_plus. move=> a Hin. rewrite !eqs. over. rewrite plus_empt eqs //.
+under eq_big_plus. move=> a Hin. rewrite !eqs. ovEquer. rewrite plus_empt eqs //.
 - rewrite /o /=. under eq_big_plus. move=> a Hin. rewrite !eqs. over. rewrite plus_empt eqs //.
 - move => s. rewrite big_event_in /o //= ?eqs // mem_index_enum //. 
 - move=> r HQ r' HQ'. rewrite o_plus /=. 
@@ -7539,3 +7522,18 @@ under eq_big_plus. move=> a Hin. rewrite !eqs. over. rewrite plus_empt eqs //.
   rewrite factor_seq_r. rewrite {1}HQ.
   rewrite !star_o /o /= c_unfold //.  (*We need c_star_plus here*)
 Qed.
+
+
+
+
+Lemma test : forall a, Contains (Star (Star a)) (Star a).
+Proof.
+move => a. pfold. con=>//=.
+move=> e. left. pfold. con=>//.
+move=> e0. left. rewrite /= andbC /=. case_if.
+simpl. admit. 
+ rewrite /derive.
+Set Printing All. rewrite /=. rewrite /derive.
+simpl.
+
+

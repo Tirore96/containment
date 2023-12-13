@@ -543,3 +543,5 @@ Star rules use one-size induction
 Mention in paper, how we simplified extracted code, inlining, avoiding jmeg equality, proof induction, bragga method
 Comment in paper on Obj.Magic occurences in interpretation.
 Use effecient data structure for inductive dsl (instead of list)
+So the ineffecient Equations bisim has a nice induction principle (no need for reasoning on equality of proofs).
+Proving this equivalent to an effecient procedure should be fine, because we have both inductino principles (for each procedure) availble
