@@ -1,5 +1,74 @@
 
 
+Module MyOrder (M : FModule) <: Orders.OrderedType.
+Import M.
+Definition T := @regex A.
+Definition eq (r0 r1 : T) := r0 = r1.
+Lemma eq_equiv : Equivalence eq.
+con; rewrite /eq; eauto. 
+intro. intros. subst. done.
+Qed.
+
+Fixpoint regex_size (r : T) := 
+match r with 
+| Eps => 0
+| Empt => 0
+| Event a => 0
+| Plus r0 r1 => ((regex_size r0) + (regex_size r1)).+1
+| Seq r0 r1 =>  ((regex_size r0) + (regex_size r1)).+1
+| Star r0 => (regex_size r0).+1
+end.
+Definition lt r0 r1 := regex_size r0 < regex_size r1.
+
+Lemma lt_strorder : StrictOrder lt.
+con. intro. intro. rewrite /lt in H. lia.
+intro. rewrite /lt. intros. lia.
+Qed.
+
+Lemma lt_compat : Morphisms.Proper (eq ==> eq ==> iff) lt.
+intro. intros. intro. intros. rewrite /eq in H. subst. rewrite /eq in H0. subst. done.
+Qed.
+Print comparison.
+Definition compare (r0 r1 : T) := 
+let n0 := regex_size r0 in 
+let n1 := regex_size r1 in 
+if n0 < n1 then Lt 
+else if n1 < n0 then Gt
+else Eq.
+Lemma compare_spec :  forall x y : T, CompareSpec (eq x y) (lt x y) (lt y x) (compare x y).
+Proof.
+intros. rewrite  /compare. rewrite /eq /lt. 
+case_if. con. done. case_if. con. done.
+con.
+
+have: ~~ (regex_size x < regex_size y). lia.
+have: ~~ (regex_size y < regex_size x). lia.
+intros.  clear H H0.
+rewrite -leqNgt in H1.
+rewrite -leqNgt in H2.
+move: H1 H2. 
+move: (regex_size x) => n.
+move: (regex_size y)=> n'.
+elim:n nl
+
+Search _ (?a <= ?b -> ?b <= ?a).
+lia.
+
+
+Definition ltp
+   Parameter eq : t -> t -> Prop.
+   Parameter eq_equiv : Equivalence eq.
+   Parameter lt : t -> t -> Prop.
+   Parameter lt_strorder : StrictOrder lt.
+   Parameter lt_compat : Morphisms.Proper (eq ==> eq ==> iff) lt.
+   Parameter compare : t -> t -> comparison.
+   Parameter compare_spec : forall x y : t, CompareSpec (eq x y) (lt x y) (lt y x) (compare x y).
+   Parameter eq_dec : forall x y : t, {eq x y} + {~ eq x y}.
+ End
+Print Orders.OrderedType.
+Require Import MSets.
+Print MSetInterface.
+
 
 
 Section Containment.

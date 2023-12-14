@@ -713,6 +713,174 @@ End Equivalence_Soundness.
 Hint Resolve bisimilarity_gen_mon : paco.
 
 
+Section AntimorovDecomp.
+
+Lemma c2_plus_neut_l : forall R c, Empt _+_ c =⟨R⟩= c.
+Proof. intros. rewrite c2_plus_comm. auto.
+Qed.
+
+
+Lemma plus_empt2 : forall (A: eqType) R (l : seq A), \big[Plus/Empt]_(a <- l) (Empt) = ⟨R⟩ = Empt.
+Proof.
+move=> B R. elim=>//=. rewrite big_nil //. 
+move=> a l IH. rewrite big_cons IH //.
+Qed.
+
+Let eqs_aux :=   (c2_plus_neut_l,
+             c2_plus_neut,
+             c2_seq_neut_l,
+             c2_seq_neut_r,
+             c2_seq_failure_l,
+             c2_seq_failure_r,
+             c2_distr_l,
+             c2_distr_r,c2_plus_idemp).
+
+
+Lemma o_plus2 : forall c0 c1 R, o (c0 _+_ c1) =⟨R⟩= o c0 _+_ o c1.
+Proof.
+unfold o. intros. simpl. destruct (nu c0);destruct (nu c1);simpl;auto. rewrite eqs_aux //.
+Qed.
+
+Lemma o_seq2 : forall c0 c1 R, o (c0 _;_ c1) =⟨R⟩= o c0 _;_ o c1.
+Proof.
+unfold o. intros. simpl. destruct (nu c0);destruct (nu c1);simpl;auto.
+Qed.
+
+Lemma seq_comm_o2 : forall R c c', c _;_ (o c') =⟨R⟩= (o c') _;_ c.
+Proof.
+move=> R c c'. rewrite /o. case Hcase: (nu _)=>//; rewrite !eqs_aux //.
+Qed.
+
+
+Let eqs2 :=   (eqs_aux,o_plus2,o_seq2).
+Ltac eq_m_left2 := repeat rewrite c2_plus_assoc; apply c2_plus_ctx;
+                 auto.
+Ltac eq_m_right2 := repeat rewrite <- c2_plus_assoc; apply c2_plus_ctx;
+                  auto.
+
+
+Definition ex_eq {A : eqType} (l: seq A) (F0 F1 : A -> regex) R  := forall a, a \in l -> R (F0 a) (F1 a).
+
+Lemma eq_big_plus : forall (l : seq A) F1 F2 R, ex_eq l F1 F2 (c_eq R) ->
+   \big[Plus/Empt]_(i <- l) F1 i = ⟨R⟩ = \big[Plus/Empt]_(i <- l) F2 i.
+Proof.
+move=> + F1 F2 R. 
+rewrite /ex_eq. elim=>//.
+move=> _. rewrite !big_nil//.
+move=> a l IH Hin. rewrite !big_cons. rewrite Hin //. 
+eq_m_left2.
+Qed.
+
+(*Necessary to use ssreflect under for rewriting*)
+Add Parametric Morphism R : (Under_rel regex (c_eq R)) with
+signature (c_eq R ==> c_eq R ==> flip impl) as under_c_eq. 
+Proof.
+move=> x y HC x0 y0 HC'. intro. move: H. rewrite UnderE. move=> HC''. apply/c2_trans.  eauto. apply/c2_trans. eauto. apply/c2_sym. eauto.
+Qed.
+
+Add Parametric Morphism R : (Under_rel regex (c_eq R)) with
+signature (c_eq R ==> c_eq R ==> impl) as under_c_eqc3. 
+Proof.
+move=> x y HC x0 y0 HC'. intro. move: H. rewrite UnderE. move=> HC''.  apply/c2_trans;last by eauto. apply/c2_trans;last by eauto. apply/c2_sym. eauto.
+Qed.
+
+(*This has to be proved by induction because I cannot use ssreflects big_split since commutativity is over c_eqc, and not leibniz equality*)
+Lemma split_plus2 : forall R (B: eqType) l (P P' : B -> regex),
+\big[Plus/Empt]_(a <- l) (P a _+_ P' a) = ⟨R⟩ = \big[Plus/Empt]_(a <- l) (P a) _+_ \big[Plus/Empt]_(a <- l) (P' a).  
+Proof.
+move => R B + P P'.
+elim=>//. rewrite !big_nil // eqs2 //.
+move=> a l IH. rewrite !big_cons. eq_m_left2. rewrite IH. eauto.
+Qed.
+
+Lemma factor_seq_l2 : forall R (B: eqType) l (P: B -> regex) c,
+\big[Plus/Empt]_(a <- l) (c _;_ P a) =⟨R⟩=  c _;_ (\big[Plus/Empt]_(a <- l) (P a)).
+Proof.
+move=> R B +P c. elim=>//=. rewrite !big_nil eqs2 //.
+move=> a l IH. rewrite !big_cons eqs2 //= IH //.
+Qed.
+
+
+
+
+Lemma big_event_notin2 R : forall l a, a \notin l -> \big[Plus/Empt]_(i <- l) ((Event i)_;_(i \ Event a)) =⟨R⟩= Empt. 
+Proof.
+elim=>//=. move=> a _. rewrite !big_nil //.
+move=> a l IH a0 /=. rewrite !inE. move/andP=>[] Hneq Hin.
+rewrite !big_cons. rewrite (negbTE Hneq) IH // !eqs2 //.
+Qed.
+
+Lemma big_event_in2 R : forall l a, a \in l -> \big[Plus/Empt]_(i <- l) ((Event i)_;_(i \ Event a)) =⟨R⟩= Event a. 
+Proof.
+elim=>//=.
+move=> a l IH a0 /=.
+rewrite !inE. move/orP. case. move/eqP=>Heq;subst.
+rewrite big_cons eqxx //= !eqs2.
+case Hcase: (a \in l). rewrite IH. apply/c2_plus_idemp=>//. rewrite Hcase//.
+rewrite big_event_notin2 //. rewrite Hcase//.
+move=>Hin. rewrite big_cons IH //.
+case: (eqVneq a a0). move=>Heq;subst. rewrite !eqs2 //.
+move=>Hneq. rewrite !eqs2 //=.
+Qed.
+
+(*Shorten this proof*)
+Lemma derive_seq2 : forall R a r r', a \ (r _;_ r') =⟨R⟩= ((a \ r) _;_ r') _+_ (o (r) _;_ a \ r').
+Proof.
+move=> R a r r' /=. case Hcase: (nu r)=>/=. rewrite /o Hcase /= eqs2 //.
+rewrite /o Hcase !eqs2 //.
+Qed.
+
+
+
+(*Why we need star ctx, 
+  Proof below is by induction on regex syntax, to use IH, we need c0 = c1 -> c0* = c1*
+  This cannot be derived, as we need some coinductive rule, namely c_fix, which requires
+  us to show this decomposition rule to be useful
+*)
+
+
+(*Uses c_star_plus!*)
+Lemma star_o2 : forall R c c', Star ((o c) _+_ c') =⟨R⟩ = Star c'.
+Proof. 
+move=> R c c'. 
+rewrite /o. case Hcase: (nu c);last by rewrite eqs2 //. clear Hcase.
+rewrite c2_star_plus //.
+Qed.
+
+Lemma derive_unfold2 : forall R c, c =⟨R⟩= o c _+_ \big[Plus/Empt]_(a : A) (Event a _;_ a \ c). 
+Proof.
+move=>R. 
+elim.
+- rewrite /o /=. under eq_big_plus. move=> a Hin. rewrite !eqs2. over. rewrite plus_empt2 eqs2 //.
+- rewrite /o /=. under eq_big_plus. move=> a Hin. rewrite !eqs2. over. rewrite plus_empt2 eqs2 //.
+- move => s. rewrite big_event_in2 /o //= ?eqs2 // mem_index_enum //. 
+- move=> r HQ r' HQ'. rewrite o_plus2  /=. 
+  under eq_big_plus. move=> a Hin. rewrite eqs2. over. 
+  rewrite split_plus2. 
+  apply/c2_trans. apply/c2_plus_ctx. apply: HQ. apply: HQ'. eq_m_left2.  
+  rewrite c2_plus_comm. eq_m_left2.
+- move=> r HQ r' HQ'. 
+  under eq_big_plus. move=> a Hin. 
+  rewrite derive_seq2 !eqs2 -!c2_seq_assoc seq_comm_o2 (c2_seq_assoc _ (o r)).
+  over.
+  rewrite split_plus2 !factor_seq_l2 !factor_seq_r2  o_seq2. 
+  apply/c2_trans. apply/c2_seq_ctx. apply: HQ. apply: HQ'.
+  apply/c2_trans. 2 : {  apply/c2_plus_ctx. apply/c2_refl. apply/c2_plus_ctx. apply/c2_seq_ctx. apply/c2_refl.
+                        apply/c2_sym. apply: HQ'. apply/c2_refl. }
+  rewrite !eqs2. eq_m_left2. 
+- move=> r HQ /=. 
+  under eq_big_plus. move=> a Hin. rewrite -c2_seq_assoc. rewrite {2}HQ. over.
+  rewrite factor_seq_r2. rewrite {1}HQ.
+  rewrite {1}star_o2.
+  rewrite {1}star_o2. 
+  rewrite c2_unfold. done.
+ (*We need c_star_plus here*)
+Qed.
+
+
+
+End AntimorovDecomp.
+
 
 
 
