@@ -554,3 +554,6 @@ I think it is the shortest one, approx 880 lines of code
 Todos if time:
 Simplify axioms of pred.v
 Parameterize decision procedure over set implementation
+
+
+We don't use equations because Wf assumes functional extensionality and we don't need it.

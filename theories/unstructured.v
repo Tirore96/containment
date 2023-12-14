@@ -1,5 +1,27 @@
 
 
+
+
+(*Check pd_plus.
+Lemma pd_plus : forall l a, pd a (\big[Plus/Empt]_(i <- l) i) = flatten (map (pd a) l).*)
+(*Theorem equiv_rInd : forall l l', Extensional l l' -> forall s, P s ( (\big[Plus/Empt]_(i <- l) i))  (\big[Plus/Empt]_(i <- l') i).
+Proof.
+move=> l0 l1 HC s. 
+elim: s l0 l1  HC.
+- move=> c0 c1. sunfold. case. move=> ce c3 HC HC'. 
+  rewrite -!Match_has_nu_iff. HC' //.
+- move=> a l IH c0 c1. sunfold. elim.
+  move=> c2 c3 /(_ a) [] // HC _. 
+  rewrite !deriveP2. rewrite /pd_sum. rewrite !pd_plus //.
+  apply/IH=>//. 
+Qed.*)
+
+(*Check Extensional_equiv.
+Lemma Extensional_equiv : forall l l', Extensional l l' <->  forall s, P s (\big[Plus/Empt]_(i <- l) i) (\big[Plus/Empt]_(i <- l') i). 
+Proof.
+intros. split. apply/equiv_rInd. move/equivP/Bisim_co_ind=>//.
+Qed.*)
+
 Module MyOrder (M : FModule) <: Orders.OrderedType.
 Import M.
 Definition T := @regex A.

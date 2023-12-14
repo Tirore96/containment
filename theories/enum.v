@@ -250,9 +250,9 @@ size (rep_rem visited (undup (pair_enum l))).
 
 (*Used in session type project*)
 Hint Resolve undup_uniq.
-Lemma measure_lt : forall V l a, uniq_pair l -> l \notin V -> r_measure (l::V) (pair_pd_l a l) < r_measure V l.
+Lemma measure_lt : forall V l, uniq_pair l -> l \notin V -> forall a,r_measure (l::V) (pair_pd_l a l) < r_measure V l.
 Proof.
-move=> V l a Hun Hnotin.
+move=> V l Hun Hnotin a.
 intros. rewrite /r_measure. 
 simpl. 
 destruct (l \in (pair_enum (pair_pd_l a l))) eqn:Heqn.
@@ -291,4 +291,74 @@ destruct (l \in (pair_enum (pair_pd_l a l))) eqn:Heqn.
   * rewrite -mem_rep_iff. rewrite mem_undup. eauto. done.
 Qed.
 
+Definition vType := (seq (@pder A  * @pder A)).
+Definition nType:= ((@pder A * @pder A)) %type.
+
+Definition pType := (vType * nType)%type.
+Definition myRel (p0 p1 : pType) := r_measure p0.1 p0.2 < r_measure p1.1 p1.2.
+Lemma myRel_lt : forall V l, uniq_pair l -> l \notin V -> forall a, myRel (l::V,pair_pd_l a l) (V,l).
+Proof.
+intros. apply/measure_lt=>//.
+Qed.
+
+Lemma measure_rect
+     : forall (P :  pType -> Type),
+       (forall p,
+           (forall p', myRel p' p  -> P p') -> P p) ->
+       forall (p : pType) , P p.
+Proof.
+move=> P  Hsize u. 
+have: Acc myRel u. clear Hsize. 
+move Heq : (r_measure u.1 u.2)=>n. move: n Heq.
+suff : forall n : nat, r_measure u.1 u.2 <= n -> Acc (fun p' p : pType => myRel p' p) u.
+intros. eauto.
+move=>n. elim: n u.
+intros. con. intros. rewrite /myRel in H0. lia.
+intros. con. intros. apply/H. rewrite /myRel in H1. lia.
+move=>Hacc.
+move: u Hacc Hsize. apply: Acc_rect.
+intros.  apply/Hsize. intros. apply/X. done.
+auto.
+Defined.
+
+Inductive D_bisim : vType -> nType -> Prop := 
+| Db_stop V p : p \in V  -> D_bisim V p
+| Db_next V p : p \notin V -> uniq_pair p -> (forall (a : A), D_bisim (p::V) (pair_pd_l a p)) -> D_bisim V p.
+
+Lemma D_bisim_proj : forall V p, D_bisim V p -> p \notin V ->  (forall (a : A), D_bisim (p::V) (pair_pd_l a p)). 
+Proof.
+intros. destruct H. rewrite H in H0. simpl in H0. discriminate.
+apply H2.
+Defined.
+
+Fixpoint reachable (V : vType) (p : nType)(P : @pder A -> @pder A -> bool)  (H : D_bisim V p)  {struct H} : bool.
+refine(
+match dec (p \in V) with 
+| in_left => true (*avoid evaluating recursion if condition is true*)
+| in_right => (P p.1 p.2) && (all (fun a => @reachable (p::V) (pair_pd_l a p) P _) (index_enum A))
+end
+).
+move: (D_bisim_proj H). move=>HH. apply HH. rewrite e. done.
+Defined.
+
+
+Lemma D_bisim_make : forall (p : pType), uniq_pair p.2 -> D_bisim p.1 p.2.
+Proof.
+apply:measure_rect. 
+intros. destruct (p.2 \in p.1) eqn:Heqn. con. done.
+apply:Db_next. rewrite Heqn. done. done.
+intros. 
+move: (H (p.2::p.1,pair_pd_l a p.2)). ssa. apply/H1.
+apply/myRel_lt. done. rewrite Heqn. done. 
+rewrite /uniq_pair /pd_l. ssa; rewrite /pd_l; ssa.
+Qed.
+
+Lemma D_bisim_start : forall (l0 l1 : @pder A), D_bisim nil (undup l0,undup l1).
+Proof.
+intros. move: (D_bisim_make ((nil, (undup l0,undup l1)))). ssa.
+apply/D_bisim_make0. rewrite /uniq_pair;ssa.
+Qed.
+Definition reachable_wrap (l0 l1 : @pder A) P := @reachable nil (undup l0,undup l1) P (D_bisim_start l0 l1).
 End Enum.
+
+

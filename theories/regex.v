@@ -306,7 +306,28 @@ Qed.
 
 Definition equiv_r (r0 r1 : regex) := forall s, Match s r0 <-> Match s r1.
 Definition contains_r (r0 r1 : regex) := forall s, Match s r0 -> Match s r1.
+Definition o (c : regex) : regex := if nu c then Eps else Empt.
+Definition o_l (l: pder) : regex := if has nu l then Eps else Empt.
 
+Lemma equiv_r_empt : forall r, equiv_r r (r _+_ Empt). 
+intros. split;ssa. inv H;ssa. inv H2.
+Qed.
+
+Lemma equiv_r_derive : forall r0 r1 e, equiv_r r0 r1 -> equiv_r (e \ r0) (e \ r1).
+Proof. intros. intro. rewrite -!deriveP. done. Qed.
+Lemma equiv_r_trans : forall r0 r1 r2, equiv_r r0 r1 -> equiv_r r1 r2 -> equiv_r r0 r2.
+Proof. intros. intro. rewrite H -H0 //. Qed.
+Lemma equiv_r_sym : forall r0 r1, equiv_r r0 r1 -> equiv_r r1 r0. 
+Proof. intros. intro. rewrite H //. Qed.
+
+Lemma equiv_seq1 : forall r0 r1, equiv_r r0 r1 <-> equiv_r (\big[Plus/Empt]_(a <- r0::nil) a) (\big[Plus/Empt]_(a <- r1::nil) a).
+Proof.
+intros. rewrite !big_cons !big_nil. split.
+intros. apply/equiv_r_trans. apply/equiv_r_sym. apply/equiv_r_empt.
+apply/equiv_r_trans. 2: { apply/equiv_r_empt. }  done.
+intros. apply/equiv_r_trans. apply/equiv_r_empt.
+apply/equiv_r_trans. 2: { apply/equiv_r_sym. apply/equiv_r_empt. }  done.
+Qed.
 
 End Regex.
 Arguments regex {A}.

@@ -2,7 +2,7 @@ Require Import Program.
 From Equations Require Import Equations.  
 From mathcomp Require Import all_ssreflect zify.
 Require Import Paco.paco.
-From Containment Require Import tactics utils regex enum pred.
+From Containment Require Import tactics utils regex enum modules.
 Set Implicit Arguments.
 Set Maximal Implicit Insertion.
 
@@ -50,6 +50,66 @@ Proof.
 intros. split. apply/equiv_rInd. apply:Bisim_co_ind.
 Qed.
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+(*Definition undup2 (pp : @nType A) := (undup pp.1,undup pp.2).
+
+Lemma pair_uniq_proof : forall pp, uniq_pair (undup2 pp). 
+Proof.
+intros. rewrite /uniq_pair. ssa; apply/undup_uniq.
+Qed.
+
+Definition bisim (p : @pType A) (H : uniq_pair p.2) : bool.
+move: p H.
+Check measure_rect.
+apply: (@measure_rect A).
+intros. destruct (p.2 \in p.1) eqn:Heqn. 
+- apply true.
+- have: p.2 \notin p.1. lia. move=> Hnot.
+  move: (myRel_lt p.1 p.2 H Hnot). move=>HH.
+  have : (forall (a : A), bool).
+  move=> a. move: (HH a). move/X. simpl. 
+  have: (uniq_pair (pair_pd_l a p.2)). 
+  rewrite /pair_pd_l /pd_l. rewrite /uniq_pair. ssa; apply undup_uniq.
+  move=>Hun. move/(_ Hun). move=> B. apply B.
+  move=> f. apply (all f (index_enum A)).
+Defined.
+
+
+Extraction Inline measure_rect.
+Extraction bisim.
+
+
+
+
+  move/(_ (pair_uniq_proof _)).
+rewrite /uniq_pair.
+  
+  have : (forall a, 
+clear X Heqn Hnot H.
+  move: (index_enum A) => l.
+  elim: p. intros. simpl in measure_lt.
+  move=>HH. 
+  have: (forall (a : A), 
+ move: X. clear Heqn.
+admit.
+apply A.
 Hint Resolve undup_uniq.
 Unset Implicit Arguments.
 Implicit Type (pp : (@pder A) * (@pder A)).
@@ -108,7 +168,86 @@ Qed.
 Lemma bisim_iff : forall pp visited (H : uniq_pair pp), bisim pp visited <-> bisim2 pp visited H.
 Proof.
 intros. split. apply:bisim12. apply:bisim21.
+Qed.*)
+Fixpoint bisim_complete_aux p l_v (H : D_bisim l_v p) {struct H} :  Extensional p.1 p.2 ->  reachable Pb H.  
+refine( 
+match H with 
+| Db_stop x y z => _ 
+| _ => _ 
+end).
+- 
+simpl in x,y,z. intros.
+have:  exten_gen (upaco2 exten_gen bot2) y.1 y.2. clear bisim_complete_aux. punfold H0.
+clear H0. move=> He.  move: He z. case.
+intros. simpl. destruct (dec _). done.
+exfalso. rewrite z in e. done.
+simpl in p0. intros.
+have:  exten_gen (upaco2 exten_gen bot2) p1.1 p1.2.
+punfold H0.
+clear H0=>H0. destruct p1. simpl in *.
+destruct (dec _). done.
+move: H0 i i0 d. clear e.
+case. intros. ssa. 
+apply/allP. intro. intros.
+apply (bisim_complete_aux _ _ (d x)). simpl.
+clear bisim_complete_aux. simpl. case: (H0 x). ssa. done.
 Qed.
+
+Lemma bisim_complete : forall l0 l1, Extensional l0 l1 ->  reachable_wrap l0 l1 Pb.
+Proof.
+intros. apply:bisim_complete_aux. 
+apply/Extensional_equiv. 
+intro.
+apply -> P_undup. move: s.
+apply/Extensional_equiv=>//.
+Qed.
+
+Fixpoint bisim_sound_aux p l_v (H : D_bisim l_v p) (R : @pder A -> @pder A -> Prop) {struct H} : (forall x0 x1, (x0,x1) \in l_v -> R x0 x1) ->   reachable Pb H -> upaco2 exten_gen R p.1 p.2. 
+refine( 
+match H with 
+| Db_stop x y z => _ 
+| _ => _ 
+end).
+ssa.
+- right.  apply/H0. destruct y. ssa. 
+- simpl. intros. left. destruct (dec _). rewrite e in i. done.
+  destruct (andP H1).
+  pcofix CIH. pfold. con. intros. 
+  eapply (bisim_sound_aux (pd_l e0 p1.1,pd_l e0 p1.2)).  
+  simpl. 2: { apply (allP H3). done. } 
+  intros. rewrite !inE in H4. destruct (orP H4). 
+  norm_eqs. ssa.  eauto. done.
+Qed.
+
+Lemma bisim_sound : forall e0 e1, reachable_wrap e0 e1 Pb -> Extensional e0 e1.  
+Proof. move => e0 e1 H. 
+rewrite /reachable_wrap in H. 
+apply:Bisim_co_ind=>s. apply/P_undup.
+move: s. apply/Extensional_equiv.
+apply (@bisim_sound_aux _ _ _ bot2) in H. ssa. inv H. 
+ssa.
+Qed.
+
+Lemma P_decidable : forall l0 l1, reachable_wrap l0 l1 Pb <-> (forall s, P s l0 l1).
+Proof.
+intros. split. move/bisim_sound. move/Extensional_equiv.
+move=> H s. eauto.
+intros. apply/bisim_complete. apply/Bisim_co_ind. done.
+Qed.
+
+(*Proof. 
+move=> p V. elim;ssa.
+intros. funelim (bisim  (l0,l1) l_v).  rewrite -Heqcall. ssa.
+rewrite -Heqcall. ssa. 
+punfold H1.  inv H1. 
+rewrite foldInAllP. apply/allP=> x xIn. 
+apply:H. apply/inP. eauto.  simpl. 
+rewrite /uniq_pair /pd_l. ssa.
+punfold H1. inv H1. case: (H2 x)=>//. con. 
+done. rewrite  e1 in H. done.
+Qed.
+Fixpoint reachable (V : vType) (p : nType) (H : D_bisim V p) {struct H} : bool.
+
 
 Lemma bisim_complete_aux : forall l0 l1 l_v, uniq_pair (l0,l1) ->  Extensional l0 l1 ->  bisim  (l0,l1) l_v.  
 Proof. 
@@ -128,46 +267,11 @@ intros. apply/bisim_iff. apply:bisim_complete_aux. done. done.
 Qed.
 
 
-Definition undup2 pp := (undup pp.1,undup pp.2).
-Lemma pair_uniq_proof : forall pp, uniq_pair (undup2 pp). 
-Proof.
-intros. rewrite /uniq_pair. ssa.
-Qed.
+
 Definition bisim_wrap l l' := bisim2 (undup l,undup l') nil (pair_uniq_proof (l,l')).
+*)
 
-Lemma bisim_complete : forall l0 l1, Extensional l0 l1 ->  bisim_wrap l0 l1.
-Proof.
-intros. apply:bisim_complete_aux2. 
-apply/Extensional_equiv. 
-intro.
-apply -> P_undup. move: s.
-apply/Extensional_equiv=>//.
-Qed.
 
-Lemma bisim_sound_aux : forall e0 e1 l_v (R : @pder A -> @pder A -> Prop), (forall x0 x1, (x0,x1) \in l_v -> R x0 x1) ->   bisim (e0,e1) l_v -> upaco2 exten_gen R e0 e1. 
-Proof. 
-move => e0 e1 /= l_v R.  intros. funelim (bisim (e0,e1) l_v).
-right.  apply/H=>//=.
-left. pcofix CIH. pfold. rewrite -Heqcall in H1.
-destruct (andP H1).  ssa.
-rewrite foldInAllP in H3. con. 
-intros. eapply H. 3: {  apply (allP H3). done. } 3: { con. }  apply/inP. done. 
-intros. rewrite !inE in H1. de (orP H1). norm_eqs. inv H6. done. eauto.
-rewrite -Heqcall in H0. done.
-Qed.
 
-Lemma bisim_sound : forall e0 e1, bisim_wrap e0 e1 -> Extensional e0 e1.  
-Proof. move => e0 e1 H. 
-rewrite /bisim_wrap in H. apply bisim_iff in H. apply:Bisim_co_ind=>s. apply/P_undup.
-move: s. apply/Extensional_equiv.
-suff: upaco2 exten_gen bot2 (undup e0) (undup e1). case=>//=. 
-apply/bisim_sound_aux.  2:eauto. done.
-Qed.
 
-Lemma P_decidable : forall l0 l1, bisim_wrap l0 l1 <-> (forall s, P s l0 l1).
-Proof.
-intros. split. move/bisim_sound. move/Extensional_equiv.
-move=> H s. eauto.
-intros. apply/bisim_complete. apply/Bisim_co_ind. done.
-Qed.
 End ExtensionalPartial.
