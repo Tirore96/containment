@@ -7537,3 +7537,198 @@ Set Printing All. rewrite /=. rewrite /derive.
 simpl.
 
 
+
+
+
+(*Lemma find_prefix : forall s r, Match s (Star r) -> s = nil \/ exists a s0 s1, s = a::(s0++s1) /\ 
+ Match (a::s0) r /\ Match s1 (Star r).
+Proof.
+elim;ssa. 
+inv H0. destruct s1;ssa. subst. right. 
+exists a. exists nil
+econ. econ. econ.
+inv H0. inv H3. destruct s2;ssa. inv H1.
+
+elim;ssa. inv H0. destruct s1;ssa. subst. exists nil,nil. ssa.*)
+Inductive NP : Prop := 
+| ZP : NP
+| SP : NP -> NP.
+
+Fixpoint NP_plus (n0 n1 : NP) := 
+match n0 with 
+| ZP => n1 
+| SP n0' => SP (NP_plus n0' n1)
+end.
+
+
+Fixpoint proof_size s r (H : Match s r)  := 
+match H with 
+| MEps => (SP ZP)
+| MEvent _ => (SP ZP)
+| MSeq _ _ _ _ H0 H1 => NP_plus (proof_size H0) (proof_size H1)
+| MPlusL _ _ _ H0 => proof_size H0
+| MPlusR _ _ _ H0 => proof_size H0
+| MStar0 H0 => (SP ZP)
+| MStarSeq _ _ _ H0 H1 => NP_plus (proof_size H0) (proof_size H1)
+end.
+
+(*Lemma derP0 : forall r a l, Match (a :: l) r <->
+                       Match l (\big[Plus/Empt]_(i <- (pd a r)) i ).
+Proof.
+intros. split. move => Hm.
+move Heq: (proof_size  Hm)=>n.
+move: Heq. wlog: n Hm / proof_size Hm <= n.
+
+elim: r a l;ssa. inv H. inv H. inv H. rewrite eqxx //. rewrite  big_cons big_nil //. eauto.
+rewrite Match_big_cat. inv H1;eauto.
+destruct (nu _) eqn:Heqn. 
+rewrite Match_big_cat. 
+inv H1;eauto. 
+destruct s1;ssa;subst;eauto.
+inv H2. con.
+rewrite map_big_plus.
+apply Match_factor_r2. 
+con. eauto. done.
+inv H1. destruct s1;ssa. apply nuP in H5. rewrite Heqn in H5. done.
+inv H2. *)
+
+Lemma derP0 : forall r a l, Match (a :: l) r <->
+                       Match l (\big[Plus/Empt]_(i <- (pd a r)) i ).
+Proof.
+intros. split.
+elim: r a l;ssa. inv H. inv H. inv H. rewrite eqxx //. rewrite  big_cons big_nil //. eauto.
+rewrite Match_big_cat. inv H1;eauto.
+destruct (nu _) eqn:Heqn. 
+rewrite Match_big_cat. 
+inv H1;eauto. 
+destruct s1;ssa;subst;eauto.
+inv H2. con.
+rewrite map_big_plus.
+apply Match_factor_r2. 
+con. eauto. done.
+inv H1. destruct s1;ssa. apply nuP in H5. rewrite Heqn in H5. done.
+inv H2. 
+rewrite map_big_plus.
+apply Match_factor_r2.  con. eauto. done.
+
+destruct (nu r) eqn:heqn.
+intros.
+inv H0. destruct s1;ssa. apply nuP in H4. rewrite H1 in H4. done.
+inv H2. apply H in H4.
+rewrite map_big_plus.
+apply Match_factor_r2.  con. eauto. done.
+
+
+
+
+subst.
+
+eauto.
+subst. eauto. 
+inv H2. left. clear H2.
+apply H in H5.
+destruct s2;ssa. rewrite cats0.
+move/hasP : H5. case. ssa.
+apply/hasP.
+simpl. exists (x _;_ r0).
+econ. 2:eauto.
+apply Match_factor_r2. con. eauto. done.
+
+
+
+
+Lemma derP : forall s l, Match s (\big[Plus/Empt]_(i <- l) i) <-> has nu (derive2 s l).
+Proof.
+intros. split.
+move: s l. elim;ssa. apply/Match_has_nu_iff=>//.
+inv H0. apply:H. clear H0.
+case: l0 H4;ssa. rewrite big_nil in H4. ssa.
+rewrite !big_cons in H4. ssa.
+destruct l0;ssa. rewrite big_nil in H2. ssa.
+rewrite big_cons in H2. ssa.
+destruct l0;ssa. rewrite big_nil in H1. ssa.
+rewrite big_cons in H1. inv H1. clear H1.
+rewrite trace_derive_cat.
+
+rewrite has_cat. 
+apply/orP. left.
+clear H1. clear H2.
+apply/orP. right. apply H. rewrite 
+rewrite !big_cons in H0.
+rewrite derive_fl
+destruct s1;ssa. apply H.
+apply/has_nuP.
+Lemma der_eq : forall s e r, Match (e::s) r <-> Match s (pd_sum e r).
+Proof.
+rewrite /pd_sum.
+intros.
+rewrite Match_big_undup. split.
+elim: s r e;ssa. inv H;ssa. rewrite eqxx // big_cons big_nil //. eauto.
+destruct (nu _) eqn:Heqn.  
+destruct s1;ssa. destruct s2;ssa. destruct s2;ssa. inv H0.
+rewrite Match_big_cat. 
+eauto. ssa. inv H2.
+rewrite Match_big_cat. 
+constructor 4. 
+rewrite map_big_plus. 
+apply Match_factor_r2. con. eauto. done.
+inv H1. destruct s1;ssa. 
+move/nuP : H5. rewrite Heqn //.
+inv H2. rewrite map_big_plus. apply Match_factor_r2. con. eauto. done.
+rewrite map_big_plus. apply:Match_factor_r2. 
+
+
+Lemma der_eq : forall e r s, Match (e::s) r <-> Match s (pd_sum e r).
+Proof.
+intros. rewrite /pd_sum. rewrite Match_big_undup. split.
+elim: r s e;ssa.  rewrite big_nil //. inv H. inv H. 
+inv H. rewrite eqxx //= big_cons big_nil //=. eauto.
+rewrite Match_big_cat. inv H1. eauto. eauto.
+destruct (nu _) eqn:Heqn.  
+inv H1. 
+destruct s1;ssa. subst.
+rewrite Match_big_cat. eauto. ssa. inv H2.
+rewrite Match_big_cat. 
+constructor 4. 
+rewrite map_big_plus. 
+apply Match_factor_r2. con. eauto. done.
+inv H1. destruct s1;ssa. 
+move/nuP : H5. rewrite Heqn //.
+inv H2. rewrite map_big_plus. apply Match_factor_r2. con. eauto. done.
+rewrite map_big_plus. apply:Match_factor_r2. 
+destruct (nu r) eqn:Heqn.
+elim: s H H0;ssa.
+inv H0. destruct s1;ssa. destruct s2;ssa. destruct s2;ssa.
+inv H1. Print Match.
+inv H0. 
+destruct s2;ssa. rewrite cats0 in H1. subst. 
+apply H in H3. 
+rewrite -(cats0 s). con. done. done.
+destruct s1. ssa. inv H1.
+
+
+apply 
+move: H. case_if. norm_eqs. rewrite eqxx. rewrite !big_cons big_nil. eauto.
+rewrite eq_sym H big_nil //=.
+inv H1. apply H in H4.
+move: H4. move: (pd e r0)=> l. 
+intros. apply/Match_big_cat. eauto.
+apply H0 in H4. apply/Match_big_cat. eauto.
+destruct (nu _) eqn:Heqn.  
+apply/Match_big_cat.  inv H1.  inv H4. 
+con.
+apply H in H6. 
+rewrite map_big_plus. apply Match_factor_r2. eauto. eauto. 
+inv H1.  apply H in H5.
+rewrite map_big_plus. apply Match_factor_r2. eauto.
+inv H0. rewrite map_big_plus. apply Match_factor_r2. eauto.
+
+rewrite /pd_sum.
+elim: r s e;ssa.  rewrite big_nil // in H. rewrite big_nil // in H.
+move: H. case_if. norm_eqs. rewrite eqxx. rewrite !big_cons big_nil. intros. inv H. inv H2. 
+rewrite eq_sym H big_nil //=. apply Match_big_cat in H1. inv H1. eauto. eauto.
+destruct (nu _) eqn:Heqn.  apply Match_big_cat in H1. inv H1. 
+rewrite map_big_plus in H4. apply Match_factor_r in H4. inv H4. eauto. eauto.
+rewrite map_big_plus in H1. apply Match_factor_r in H1. inv H1. eauto. 
+rewrite map_big_plus in H0. apply Match_factor_r in H0. inv H0. eauto.
+Qed.

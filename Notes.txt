@@ -545,3 +545,12 @@ Comment in paper on Obj.Magic occurences in interpretation.
 Use effecient data structure for inductive dsl (instead of list)
 So the ineffecient Equations bisim has a nice induction principle (no need for reasoning on equality of proofs).
 Proving this equivalent to an effecient procedure should be fine, because we have both inductino principles (for each procedure) availble
+
+
+Paper might be the shortest proof of regex decidability.
+I think it is the shortest one, approx 880 lines of code
+
+
+Todos if time:
+Simplify axioms of pred.v
+Parameterize decision procedure over set implementation

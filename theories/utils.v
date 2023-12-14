@@ -1,10 +1,12 @@
 From mathcomp Require Import all_ssreflect finmap zify.
 Require Import Paco.paco.
 From Equations Require Import Equations.
+From Containment Require Import tactics.
 
-Notation Forall := List.Forall.
+Let inE := tactics.inE.
+(*Notation Forall := List.Forall.
 
-Notation Forall2 := List.Forall2.
+Notation Forall2 := List.Forall2.*)
 
 Equations foldIn {A B : Type} (l : list A) (f : forall (x : A), List.In x l -> B -> B) (b : B) : B := 
   foldIn nil f b := b;
@@ -21,89 +23,138 @@ intros. simpl.   simp foldIn. f_equal.  done.
 Qed. 
 
 
-Inductive Forall3 {A B C : Type} (R : A -> B -> C -> Prop) : seq A -> seq B -> seq C ->  Prop :=
-    Forall3_nil : Forall3 R [::] [::] [::]
-  | Forall3_cons : forall (x : A) (y : B) (z: C) (l : seq A) (l' : seq B) (l'' : seq C),
-                   R x y z -> Forall3 R l l' l'' -> Forall3 R (x :: l) (y :: l') (z::l'').
-Hint Constructors Forall3.
 
-Notation In := List.In.
-Let inE := (inE, eqxx,negb_or,negb_and).
+Lemma my_in_cons : forall (A :eqType) (a : A) l, a \in (a::l).
+Proof. intros. rewrite !inE. done. Qed.
 
-Ltac con := constructor. 
-Ltac econ := econstructor.
+Lemma my_in_cons2 : forall (A :eqType) (a a0 : A) l, a \in l -> a \in (a0::l).
+Proof. intros. rewrite !inE H. lia. Qed.
 
-Ltac case_if := match goal with 
-                | [ |- context[if ?X then _ else _ ]] => have : X by subst
-                | [ |- context[if ?X then _ else _ ]] => have : X = false by subst 
+#[export] 
+Hint Resolve my_in_cons my_in_cons2.
 
-                | [ |- context[if ?X then _ else _ ]] => let H := fresh in destruct X eqn:H
 
-                end; try (move=>->).
+Lemma negb_involutive : forall b, ~~ ~~ b = b. case;done. Qed.
 
-Ltac rifliad := (repeat case_if); try done.
+Fixpoint compose {A B C : Type} (aa : seq A) (bb : seq B) (r : A -> B -> C) :=
+match aa with 
+| nil => nil
+| a::aa' => (map (r a) bb) ++ (compose aa' bb r)
+end.
 
-Lemma neg_sym : forall (A : eqType) (a b : A), (a != b) = (b != a).
-Proof.
-intros. destruct (eqVneq a b).  done. done. 
+
+Lemma mem_compose : forall (A B C : eqType) (aa : seq A) (bb : seq B) (a : A) (b : B) (r : A -> B -> C), a \in aa -> b \in bb -> r a b \in compose aa bb r.
+Proof. move => A B C. elim;intros. done. 
+simpl. rewrite mem_cat. rewrite !inE in H0. destruct (orP H0). rewrite (eqP H2). apply/orP. 
+left. apply/map_f. done. apply/orP. right. apply/H. done. done. 
 Qed.
 
-Ltac split_ando :=
-  intros;
-   repeat
-    match goal with
-    | H:is_true (_ && _) |- _ => destruct (andP H); clear H
-    | H:_ && _ = true |- _ => destruct (andP H); clear H
-    | H:_ /\ _ |- _ => destruct H
-    | |- _ /\ _ => Init.split
-    | |- is_true (_ && _) => apply /andP ; Init.split
-    | |- is_true (_ || _) => apply /orP
-    | H : ex _ |- _ => destruct H
-    end; auto.
-
-
-Ltac split_and :=
-  intros;
-   repeat
-    match goal with
-    | H:is_true (_ && _) |- _ => destruct (andP H); clear H
-    | H:_ && _ = true |- _ => destruct (andP H); clear H
-    | H:_ /\ _ |- _ => destruct H
-    | |- _ /\ _ => Init.split
-    | |- is_true (_ && _) => apply /andP ; Init.split
-    | H : ex _ |- _ => destruct H
-    end; auto.
-
-
-Notation eq_iff := Bool.eq_iff_eq_true.
-Ltac ssa' := rewrite ?inE;simpl in *; split_and;try done.
-Ltac ssa := rewrite ?inE;simpl in *; split_ando;try done.
-
-Ltac ptac := 
-(match goal with 
-                   | [ H : is_true (_ \in (map _ _)) |- _ ] => move/mapP : H;case;intros;subst
-                   | [ H : is_true (_ \in (flatten _)) |- _ ] => move/flattenP : H;case;intros;subst
-                   | [ H : is_true (_ \in (filter _ _)) |- _ ] => move : H;rewrite mem_filter
-                   | [ H : is_true (_ \in (mem ((filter _ _)))) |- _ ] => move : H;rewrite mem_filter
-                  end);ssa.
-
-Ltac de i := destruct i;ssa.
-Ltac ctac := 
-(match goal with 
-                   | [ H : is_true (_ \in (_ ++ _)) |- _ ] => move : H;rewrite !mem_cat;move/orP;case;intros
-                   | [  |-is_true ( _ \in (_ ++ _)) ] => rewrite !mem_cat
-                  end);ssa.
-
-Ltac lor :=
-    match goal with
-    | H:is_true (_ || _) |- _ => destruct (orP H)
-    end. 
-Ltac sunfold := let H := fresh "_Hunf" in move => H;punfold H;move : H.
+Lemma mem_compose2 : forall (A B : eqType) aa bb (a : A) (b : B),   pair a b \in compose aa bb pair ->  a \in aa /\ b \in bb.
+Proof. move => A B. elim;intros. done. 
+move : H0=>/=. rewrite mem_cat. move/orP. case. move/mapP=>[] //=. intros. inversion q. subst. rewrite inE //= eqxx. lia. 
+move/H. case. rewrite inE. move=>->. ssa. 
+Qed.
 
 
 
 
 
+
+
+Arguments rem {_}.
+Fixpoint rep_rem {A : eqType} (xs l : seq A) :=
+match xs with 
+| nil => l 
+| x::xs' => rem x (rep_rem xs' l)
+end. 
+
+Lemma mem_rem : forall (A : eqType) l' (a a' : A), a != a' -> a \in l' ->  a \in rem a' l'.  
+Proof. 
+move => A.
+elim. done. 
+intros. simpl. case_if. move : H2. move/eqP=>HH. subst. rewrite inE in H1. 
+move : H1. move : (negbTE H0)=>-> //=.
+move : H1. 
+rewrite !inE. move/orP. case. move=>-> //=. move/H=>->. lia. done. 
+Qed.
+
+Lemma mem_rem2 : forall (A : eqType) l' (a a' : A), a != a' -> a \in rem a' l'  -> a \in l'.  
+Proof. 
+move => A. 
+elim. done. 
+intros. simpl in H1. move : H1. case_if. rewrite inE. move=>->. lia.
+rewrite inE. move/orP=>[]. move/eqP=>->. done. 
+move/H. rewrite inE. move=>->. lia. lia. 
+Qed.
+
+Lemma mem_rep_rem : forall (A : eqType) l l' (a : A), a \notin l -> a \in l' ->  a \in rep_rem l l'.  
+Proof. 
+move => A. elim. done.
+intros. simpl. rewrite inE negb_or in H0. ssa. apply/mem_rem. done. auto. 
+Qed.
+
+Lemma mem_rep_rem2 : forall (A : eqType) l l' (a : A), a \in rep_rem l l' -> a \notin l -> a \in l'.  
+Proof. 
+move => A. elim. done.
+intros. simpl. rewrite inE negb_or in H1. ssa.
+apply mem_rem2 in H0.  auto. lia. 
+Qed.
+
+Lemma mem_rep_iff : forall (A : eqType) l l' (a : A),  a \notin l  -> a \in l'  <-> a \in rep_rem l l'.
+Proof. 
+move => A. 
+intros. split;intros. apply/mem_rep_rem;auto.  
+apply/mem_rep_rem2;eauto. 
+Qed.
+
+Lemma rep_rem2 : forall (A : eqType) (l l0 l1 : seq A) a, a \notin l -> (forall x, x \in l0 -> x \in l1) ->a \in rep_rem l l0  -> a \in rep_rem l l1.
+Proof. 
+move => A. elim. 
+simpl. intros. auto.
+simpl.  ssa. rewrite inE negb_or in H0.  ssa. 
+apply/mem_rem. done. apply/H.  done. eauto. apply/mem_rem2. eauto. done. 
+Qed.
+
+Lemma rep_rem_uniq : forall (A : eqType) (l l' : seq A), uniq l' -> uniq (rep_rem l l').
+Proof. 
+move => A.
+elim.  done. 
+intros. simpl. rewrite rem_uniq. done. auto. 
+Qed.
+
+Lemma size_strict_sub : forall (A : eqType) (l l' : seq A) a, uniq l  -> (forall x, x \in l -> x \in l') -> a \notin l -> a \in l' -> size l < size l'. 
+Proof. 
+intros. 
+have : size (a::l) <= size l'. 
+apply/uniq_leq_size. ssa. move => x0 x1. 
+rewrite inE in x1. destruct (orP x1). rewrite (eqP H3). done. auto. done. 
+Qed.
+
+Lemma rem_uniq2 : forall (A: eqType) (l'  : seq A) a x, uniq l' -> x <> a -> x \notin l' ->   x \notin rem a l'.
+Proof.
+move => A. 
+elim. done. 
+intros. ssa. case_if. 
+rewrite inE negb_or in H2. ssa. 
+rewrite inE negb_or. ssa. rewrite inE negb_or in H2. ssa. 
+apply/H. ssa. 
+done. rewrite inE negb_or in H2. ssa. 
+Qed.
+
+
+Lemma rep_rem_uniq2 : forall (A: eqType) (l l' : seq A) x, uniq l' ->  x \in l -> x \notin rep_rem l l'.
+Proof. 
+move => A. 
+elim. done. 
+intros. rewrite inE in H1.
+destruct (eqVneq x a).   subst. 
+
+simpl. rewrite mem_rem_uniqF. done. apply/rep_rem_uniq. done.
+simpl. simpl in H1. apply/rem_uniq2. apply/rep_rem_uniq. done. apply/eqP. done.
+auto.  
+Qed.
+
+Notation In := List.In.
 
 Lemma inP : forall {A : eqType} l (g : A) , reflect (In g l) (g \in l).
 Proof.
@@ -115,8 +166,40 @@ by rewrite orbC.
 rewrite inE. move/orP =>[].  move/eqP=>->. auto. move/H. auto.
 Qed.
 
+Definition uniq_pair (A : eqType) (pp  : (seq A) * (seq A)):= uniq pp.1 && uniq pp.2.
+Arguments uniq_pair {A}.
 
-Lemma In_in : forall (A : eqType) (a : A) l, In a l <-> a \in l.
+
+(*Inductive Forall3 {A B C : Type} (R : A -> B -> C -> Prop) : seq A -> seq B -> seq C ->  Prop :=
+    Forall3_nil : Forall3 R [::] [::] [::]
+  | Forall3_cons : forall (x : A) (y : B) (z: C) (l : seq A) (l' : seq B) (l'' : seq C),
+                   R x y z -> Forall3 R l l' l'' -> Forall3 R (x :: l) (y :: l') (z::l'').
+Hint Constructors Forall3.
+
+Notation In := List.In.
+Let inE := (inE, eqxx,negb_or,negb_and).
+
+
+Ltac ctac := 
+(match goal with 
+                   | [ H : is_true (_ \in (_ ++ _)) |- _ ] => move : H;rewrite !mem_cat;move/orP;case;intros
+                   | [  |-is_true ( _ \in (_ ++ _)) ] => rewrite !mem_cat
+                  end);ssa.
+
+Ltac lor :=
+    match goal with
+    | H:is_true (_ || _) |- _ => destruct (orP H)
+    end. 
+
+
+
+*)
+
+
+
+
+
+(*Lemma In_in : forall (A : eqType) (a : A) l, In a l <-> a \in l.
 Proof.
 move => A a. elim. split;done.
 intros. rewrite /= inE. split. case. move=>->. rewrite eqxx. done. move/H. move=>->. by rewrite orbC. 
@@ -238,25 +321,15 @@ Forall (fun p => P p.2) (zip l l') -> Forall P l'.
 Proof.
 move => A B P. elim. case. done. done. intros. destruct l0. simpl in H0. done. simpl in *. inversion H1. subst. simpl in *. constructor. done. apply :H. inversion H0. eauto. done. 
 Qed.
+*)
 
-
-Lemma forallP : forall (A : eqType) (P : A -> Prop) a l,(forall x0, x0 < size l -> P (nth a l x0)) -> 
+(*Lemma forallP : forall (A : eqType) (P : A -> Prop) a l,(forall x0, x0 < size l -> P (nth a l x0)) -> 
 Forall P l.
 Proof. intros.
 apply/Forall_forall. intros. move : H0 => /nthP H3.  specialize H3 with a. destruct H3. rewrite -H1. auto.
-Qed.
-
-Lemma my_in_cons : forall (A :eqType) (a : A) l, a \in (a::l).
-Proof. intros. rewrite !inE. done. Qed.
-
-Lemma my_in_cons2 : forall (A :eqType) (a a0 : A) l, a \in l -> a \in (a0::l).
-Proof. intros. rewrite !inE H. lia. Qed.
-
-#[export] 
-Hint Resolve my_in_cons my_in_cons2.
+Qed.*)
 
 
-Lemma negb_involutive : forall b, ~~ ~~ b = b. case;done. Qed.
 
 
 (*Open Scope fset_scope.
@@ -284,39 +357,6 @@ Proof. move => A B n. elim. move => f0 f1.  rewrite big_nil. done. intros. move 
 Qed.*)
 
 
-Ltac norm_eqs := repeat 
-(match goal with 
-                   | [ H : is_true (_ == _) |- _ ] => move : H => /eqP=>H
-                   | [ H : (_ == _) = true |- _ ] => move : H => /eqP=>H
-                   | [ H : (_ == _) = false |- _ ] => move : H => /negbT=>H
-
-                  end);subst;repeat (match goal with 
-                   | [ H : is_true (?a != ?a_) |- _ ] => rewrite eqxx in H;done 
-
-                  end).
-
-
-
-
-
-Fixpoint compose {A B C : Type} (aa : seq A) (bb : seq B) (r : A -> B -> C) :=
-match aa with 
-| nil => nil
-| a::aa' => (map (r a) bb) ++ (compose aa' bb r)
-end.
-
-
-Lemma mem_compose : forall (A B C : eqType) (aa : seq A) (bb : seq B) (a : A) (b : B) (r : A -> B -> C), a \in aa -> b \in bb -> r a b \in compose aa bb r.
-Proof. move => A B C. elim;intros. done. 
-simpl. rewrite mem_cat. rewrite !inE in H0. destruct (orP H0). rewrite (eqP H2). apply/orP. 
-left. apply/map_f. done. apply/orP. right. apply/H. done. done. 
-Qed.
-
-Lemma mem_compose2 : forall (A B : eqType) aa bb (a : A) (b : B),   pair a b \in compose aa bb pair ->  a \in aa /\ b \in bb.
-Proof. move => A B. elim;intros. done. 
-move : H0=>/=. rewrite mem_cat. move/orP. case. move/mapP=>[] //=. intros. inversion q. subst. rewrite inE //= eqxx. lia. 
-move/H. case. rewrite inE. move=>->. ssa. 
-Qed.
 
 
 
@@ -324,54 +364,7 @@ Qed.
 
 
 
-Arguments rem {_}.
-Fixpoint rep_rem {A : eqType} (xs l : seq A) :=
-match xs with 
-| nil => l 
-| x::xs' => rem x (rep_rem xs' l)
-end. 
-
-Lemma mem_rem : forall (A : eqType) l' (a a' : A), a != a' -> a \in l' ->  a \in rem a' l'.  
-Proof. 
-move => A.
-elim. done. 
-intros. simpl. case_if. move : H2. move/eqP=>HH. subst. rewrite inE in H1. 
-move : H1. move : (negbTE H0)=>-> //=.
-move : H1. 
-rewrite !inE. move/orP. case. move=>-> //=. move/H=>->. lia. done. 
-Qed.
-
-Lemma mem_rem2 : forall (A : eqType) l' (a a' : A), a != a' -> a \in rem a' l'  -> a \in l'.  
-Proof. 
-move => A. 
-elim. done. 
-intros. simpl in H1. move : H1. case_if. rewrite inE. move=>->. lia.
-rewrite inE. move/orP=>[]. move/eqP=>->. done. 
-move/H. rewrite inE. move=>->. lia. lia. 
-Qed.
-
-Lemma mem_rep_rem : forall (A : eqType) l l' (a : A), a \notin l -> a \in l' ->  a \in rep_rem l l'.  
-Proof. 
-move => A. elim. done.
-intros. simpl. rewrite inE negb_or in H0. ssa. apply/mem_rem. done. auto. 
-Qed.
-
-Lemma mem_rep_rem2 : forall (A : eqType) l l' (a : A), a \in rep_rem l l' -> a \notin l -> a \in l'.  
-Proof. 
-move => A. elim. done.
-intros. simpl. rewrite inE negb_or in H1. ssa.
-apply mem_rem2 in H0.  auto. lia. 
-Qed.
-
-Lemma mem_rep_iff : forall (A : eqType) l l' (a : A),  a \notin l  -> a \in l'  <-> a \in rep_rem l l'.
-Proof. 
-move => A. 
-intros. split;intros. apply/mem_rep_rem;auto.  
-apply/mem_rep_rem2;eauto. 
-Qed.
-
-
-Definition next_closed {A: eqType} (l : seq A) (next : A -> seq A) := forall a a', a \in l -> a' \in next a -> a' \in l.
+(*Definition next_closed {A: eqType} (l : seq A) (next : A -> seq A) := forall a a', a \in l -> a' \in next a -> a' \in l.
 Definition unf_closed {A: eqType} (l : seq A) (unf : A ->  A) := forall a, a \in l -> unf a \in l. 
 
 
@@ -495,7 +488,6 @@ intros. punfold H1. inversion H1. done. pfold. constructor. auto. eauto.
 right. apply/CIH. pclearbot. done. 
 Qed.
 
-Ltac inv H := inversion H;subst;try done. 
 Ltac pc := pfold;constructor;auto.
 Ltac uis H := (try  punfold H);inversion H;subst;try pc;auto;pclearbot. 
 Ltac cauto := pclearbot;auto. 
@@ -539,61 +531,15 @@ Proof. intros. move => x0 x1. intros. apply/H. eauto. eauto.  Qed.
 
 
 #[export] 
-Hint Resolve  monotone_comp1 monotone_comp : paco. 
+Hint Resolve  monotone_comp1 monotone_comp : paco. *)
 
-Definition idemp {A : Type} (f : A -> A) := forall a, f (f a) = f a. 
-
-
-
-Lemma rep_rem2 : forall (A : eqType) (l l0 l1 : seq A) a, a \notin l -> (forall x, x \in l0 -> x \in l1) ->a \in rep_rem l l0  -> a \in rep_rem l l1.
-Proof. 
-move => A. elim. 
-simpl. intros. auto.
-simpl.  ssa. rewrite inE negb_or in H0.  ssa. 
-apply/mem_rem. done. apply/H.  done. eauto. apply/mem_rem2. eauto. done. 
-Qed.
-
-Lemma rep_rem_uniq : forall (A : eqType) (l l' : seq A), uniq l' -> uniq (rep_rem l l').
-Proof. 
-move => A.
-elim.  done. 
-intros. simpl. rewrite rem_uniq. done. auto. 
-Qed.
-
-Lemma size_strict_sub : forall (A : eqType) (l l' : seq A) a, uniq l  -> (forall x, x \in l -> x \in l') -> a \notin l -> a \in l' -> size l < size l'. 
-Proof. 
-intros. 
-have : size (a::l) <= size l'. 
-apply/uniq_leq_size. ssa. move => x0 x1. 
-rewrite inE in x1. destruct (orP x1). rewrite (eqP H3). done. auto. done. 
-Qed.
-
-Lemma rem_uniq2 : forall (A: eqType) (l'  : seq A) a x, uniq l' -> x <> a -> x \notin l' ->   x \notin rem a l'.
-Proof.
-move => A. 
-elim. done. 
-intros. ssa. case_if. 
-rewrite inE negb_or in H2. ssa. 
-rewrite inE negb_or. ssa. rewrite inE negb_or in H2. ssa. 
-apply/H. ssa. 
-done. rewrite inE negb_or in H2. ssa. 
-Qed.
+(*Definition idemp {A : Type} (f : A -> A) := forall a, f (f a) = f a. *)
 
 
-Lemma rep_rem_uniq2 : forall (A: eqType) (l l' : seq A) x, uniq l' ->  x \in l -> x \notin rep_rem l l'.
-Proof. 
-move => A. 
-elim. done. 
-intros. rewrite inE in H1.
-destruct (eqVneq x a).   subst. 
-
-simpl. rewrite mem_rem_uniqF. done. apply/rep_rem_uniq. done.
-simpl. simpl in H1. apply/rem_uniq2. apply/rep_rem_uniq. done. apply/eqP. done.
-auto.  
-Qed.
 
 
-Definition comap' {A B : Type} (f0 : coseq A ->  coseq B) (f : A -> B) (l : coseq A) := 
+
+(*Definition comap' {A B : Type} (f0 : coseq A ->  coseq B) (f : A -> B) (l : coseq A) := 
 match l with 
 | conil => conil 
 | cocons a l' => cocons (f a) (f0 l')
@@ -755,6 +701,6 @@ match es with
 | nil => nil
 | (n',e')::es' => if n == n' then (n,e)::es' else (n',e')::(label_update es' n e)
 end.
-
+*)
 
 
