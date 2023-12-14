@@ -1,20 +1,16 @@
 From HB Require Import structures.
-Require Import Program. 
-From Equations Require Import Equations.  
 From mathcomp Require Import all_ssreflect zify.
-Require Import Relation_Definitions Setoid.
 From deriving Require Import deriving. 
 Require Import Paco.paco.
 Require Import Coq.btauto.Btauto.
 Require Import ConstructiveEpsilon.
-Require Import Numbers.BinNums.
-Require Import PArith.BinPos.
-From Coq.Logic Require Import Eqdep_dec.
-From Containment Require Import  utils regex pred.
+From Containment Require Import  utils tactics regex modules.
 Set Implicit Arguments.
 Set Maximal Implicit Insertion.
 
-Inductive pTree : regex -> Type := 
+Module Constructive (M : FModule).
+Import M.
+Inductive pTree : @regex A -> Type := 
 | p_tt : pTree Eps 
 | p_singl a : pTree (Event a)
 | p_inl r0 r1 : pTree r0 -> pTree (r0 _+_ r1) 
@@ -335,17 +331,16 @@ case=> x [] Ht /eqP Hf.
 exists (to_pTree (typingP1 _ _ Ht)). rewrite pflatten_to_pTree. apply/eqP=>//.
 Qed.
 
+Hint Constructors Match.
 Lemma pTree_Match : forall r T, typing T r -> Match (uflatten T) r.  
 Proof.
 move => r T. elim;ssa. inv H. inv H2. inv H2.  con. done. done.
 Qed.
 
-Definition contains (r0 r1 : regex) := forall s, Match s r0 -> Match s r1.
-
-Definition constr_eps_coerce r0 r1 (H : contains r0 r1): pTree r0 -> pTree r1 := 
+Definition constr_eps_coerce r0 r1 (H : contains_r r0 r1): pTree r0 -> pTree r1 := 
 fun T =>  (proj1_sig (Match_pTree (H _ (pTree_Match (to_typing T))))).
 
-Lemma constr_eps_coerce_pres_string : forall r0 r1 (H : contains r0 r1) (T : pTree r0), pflatten (constr_eps_coerce  H T) = pflatten T. 
+Lemma constr_eps_coerce_pres_string : forall r0 r1 (H : contains_r r0 r1) (T : pTree r0), pflatten (constr_eps_coerce  H T) = pflatten T. 
 Proof.
 intros. rewrite /constr_eps_coerce /=. 
 destruct ((Match_pTree (H (uflatten (to_upTree T)) (pTree_Match (to_typing T))))) eqn:Heqn.
@@ -353,4 +348,4 @@ simpl. rewrite (eqP i). rewrite uflatten_to_upTree //.
 Qed.
 
 End CoercionByConstructiveEpsilon.
-
+End Constructive.

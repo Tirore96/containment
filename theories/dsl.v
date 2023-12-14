@@ -10,7 +10,7 @@ Require Import ConstructiveEpsilon.
 Require Import Numbers.BinNums.
 Require Import PArith.BinPos.
 From Coq.Logic Require Import Eqdep_dec.
-From Containment Require Import  tactics utils regex pred modules.
+From Containment Require Import  tactics utils regex pred modules constructiveEps.
 Set Implicit Arguments.
 Set Maximal Implicit Insertion.
 
@@ -60,7 +60,8 @@ Parameter (F : Type -> Type).
 End ContainerM.*)
 
 Module MyDSL (M : FModule).
-Import M.
+Module CM := Constructive M.
+Import M CM.
 Inductive dsl (R: seq (@regex A * regex)) : regex -> regex -> Type := 
 | shuffle A B C : dsl R ((A _+_ B) _+_ C) (A _+_ (B _+_ C))
 | shuffleinv A B C : dsl R (A _+_ (B _+_ C)) ((A _+_ B) _+_ C)
@@ -118,7 +119,6 @@ Check dsl_var.
 Notation "c0 < ⟨ R ⟩ = c1" := (dsl R c0 c1)(at level 63).
 
 
-Require Import MSets.MSetRBT.
 (*Module MyDec (M : FModule) <: DecidableType.
 Import M.
 Definition t := @regex A.
@@ -193,19 +193,6 @@ Arguments dsl_fix {R A B}.
 
 
 Section Interpret.
-Inductive pTree : @regex A -> Type := 
-| p_tt : pTree Eps 
-| p_singl a : pTree (Event a)
-| p_inl r0 r1 : pTree r0 -> pTree (r0 _+_ r1) 
-| p_inr r0 r1 : pTree r1 -> pTree (r0 _+_ r1) 
-| p_pair r0 r1 : pTree r0 -> pTree r1 -> pTree (r0 _;_ r1)
-| p_fold r : pTree (Eps _+_ (r _;_ (Star r))) -> pTree (Star r).
-Hint Constructors pTree : pauto.
-Arguments p_inl {r0 r1}.
-Arguments p_inr {r0 r1}.
-Arguments p_pair {r0 r1}.
-Arguments p_fold {r}.
-
 
 Fixpoint pTree_0size r  (p : pTree r) := 
 match p with 
@@ -273,16 +260,6 @@ auto.
 Defined.
 
 
-
-Fixpoint pflatten {r : regex} (T : pTree r) : seq A := 
-match T with 
-| p_tt => nil 
-| p_singl a => (a :: nil )
-| p_inl _ _ T' => pflatten T'
-| p_inr _ _ T' => pflatten T'
-| p_pair _ _ T0 T1 => (pflatten T0) ++ (pflatten T1)
-| p_fold _ T' => pflatten T' 
-end.
 Definition post (r0 r1 : regex) (T : pTree r0) := 
   { T' : pTree r1 | pTree_0size T' <= pTree_0size  T /\ pflatten T = pflatten T' }. 
 
@@ -561,8 +538,8 @@ Lemma dsl_sound : forall c0 c1, dsl nil c0 c1 -> (forall s, Match s c0 -> Match 
 Proof.
 move=> c0 c1 d s Hmatch. 
 case: (exists_pTree Hmatch) => x /eqP Hf. subst.
-have: (forall (n : positive) (x0 y : regex),
-    PTree.get n tree = Some (x0, y) -> forall T0 : pTree x0, pRel0 T0 x -> post y T0).
+have: (forall  (x0 y : regex),
+    (x0, y) \in nil -> forall T0 : pTree x0, pRel0 T0 x -> post y T0).
 intros. done. move=>Hp.
 move: (interp d x Hp). 
 case. intros. ssa. rewrite H0. rewrite -uflatten_to_upTree.
@@ -582,7 +559,7 @@ Extraction Implicit p_pair [ 1].
 Extraction interp.
 Extraction pTree_case.*)
 
-End InductiveInterpretation.
+End Interpret.
 
 
 
