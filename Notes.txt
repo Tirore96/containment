@@ -601,3 +601,17 @@ that is paco F R, where R is finite.
 If R is finite and F is invertible, we should be able to decide it.
 We are writing our proofs for characterizing equivalecne of regex nice and neat,
 and now we "simulate" the 
+
+
+
+Collect inductive and oincudctive dsl in module, instantiate with each rules
+Tried to modularize but it is inconvenient because we use list in one representation
+and a type in another
+
+
+
+The two systems are "fixpoints" of the same underlying functor, explore that on paper, but for 
+practical reasons we don't mechanise from the same functor. 
+We would need the relation in the functor to be instantiated for both Props and lists.
+We would not be able to have all rules on the same level, we need the fix rule to add to the context.
+We just describe this informally. So now the coding part of the projection is done!

@@ -17,8 +17,9 @@ Let inE := tactics.inE.
 
 Module CoDSL (M : FModule).
 Module PM := ContainsF M.
+Module CM := Constructive M.
 Module EM := ExtensionalPartial PM.
-Import M PM EM.
+Import M CM EM.
 Section CoinductiveDSL.
 Inductive dslF (R: @regex A -> @regex A -> Type) : @regex A -> @regex A -> Type := 
 | shuffle A B C : dslF R ((A _+_ B) _+_ C) (A _+_ (B _+_ C))
@@ -66,8 +67,8 @@ Inductive dslF (R: @regex A -> @regex A -> Type) : @regex A -> @regex A -> Type 
 (*| guard a A B  : R A B -> dslF R ((Event a) _;_ A)  ((Event a) _;_ B)*)
 
 (*We need this to be a sum because Coq disallows fix in cofix*)
-| guard F F' : (forall a, R (F a) (F' a))  -> dslF R (\big[Plus/Empt]_(a : A) ((Event a) _;_ F a))
-                                                           (\big[Plus/Empt]_(a :A) ((Event a) _;_ F' a)).
+| guard l F F' : (forall a, a \in l -> R (F a) (F' a))  -> dslF R (\big[Plus/Empt]_(a <- l) ((Event a) _;_ F a))
+                                                           (\big[Plus/Empt]_(a <- l) ((Event a) _;_ F' a)).
 (**)
 
 
@@ -108,6 +109,286 @@ Arguments cplus {R A A' B B'}.
 Arguments cseq {R A A' B B'}.
 Arguments cstar {R A B}.
 Hint Constructors dslF.
+
+Section Interpret.
+Fixpoint interp l r0 r1 (p : dslF l r0 r1) (T : pTree r0) 
+         (f : forall x y,  l x y -> forall (T0 : pTree x), pRel0 T0 T -> post y T0) {struct p}:
+  post r1 T. 
+refine(
+match p in dslF _ x y return r0 = x -> r1 = y -> post r1 T  with
+| guard l r0 r1 p0 => fun HQ HQ' => _ (*Do at least one case to force coq to destruct *)
+| _ => _ 
+end Logic.eq_refl Logic.eq_refl).
+all:clear p;intros;subst.
+(*move: T f. apply:pTree_case=>//. intros. inv_eq. move: f. simpl. rewrite <- eq_regex. Set Printing All.
+ clear_eq.*) 
+dp T f.
+dp p f.
+exists (p_inl p)=>//=.  
+exists (p_inr (p_inl p))=>//=.
+exists (p_inr (p_inr p))=>//=.
+
+dp T f.
+exists (p_inl (p_inl p))=>//.
+dp p f.
+exists (p_inl (p_inr p))=>//.
+exists (p_inr p)=>//.
+
+dp T f.
+exists (p_inr p)=>//.
+exists (p_inl p)=>//=.
+
+dp T f.
+dp p f.
+exists p=>//.
+exists (p_inr T)=>//.
+
+dp T f.
+exists p=>//.
+exists p=>//.
+
+exists (p_inl T)=>//.
+
+dp T f.
+dp p0 f.
+exists (p_pair p0 (p_pair p2 p1))=>//=. ssa. lia. rewrite catA //.
+
+dp T f.
+dp p1 f.
+exists (p_pair (p_pair p0 p1) p2)=>//=. ssa. lia. rewrite catA //.
+
+dp T f.
+dp p1 f.
+exists (p_pair p_tt p0)=>//=. ssa. lia. rewrite cats0 //.
+
+dp T f.
+dp p0 f.
+exists (p_pair p1 p_tt)=>//=. ssa. lia. rewrite cats0 //.
+
+dp T f.
+dp p0 f.
+exists p1=>//=.
+
+exists (p_pair p_tt T)=>//=. 
+
+dp T f.
+dp p1 f.
+
+dp T f.
+
+dp T f. dp p0 f.
+dp T f.
+
+dp T f. dp p1 f.
+exists (p_inl (p_pair p0 p))=>//=.
+exists (p_inr (p_pair p0 p))=>//=.
+
+dp T f. dp p f.
+exists (p_pair p0 (p_inl p1))=>//=.
+dp p f.
+exists (p_pair  p0 (p_inr p1))=>//=.
+
+dp T f. dp p0 f.
+exists (p_inl (p_pair p p1))=>//=.
+exists (p_inr (p_pair p p1))=>//=.
+
+dp T f. dp p f.
+exists (p_pair (p_inl p0) p1)=>//=.
+
+dp p f.
+exists (p_pair (p_inr p0) p1)=>//=.
+
+dp T f.
+dp p f.
+exists (p_fold (p_inl p_tt))=>//=.
+dp p f.
+exists (p_fold (p_inr (p_pair p0 p1))). ssa.
+
+dp T f. 
+exists p. ssa.
+
+
+(*One-size induction*)
+clear f interp.
+move: T. apply: pTree_1size_rect.
+intros. dp u X. dp p X. dp p X.
+exists (p_fold (p_inl p_tt))=>//=.
+dp p X. 
+dp p0 X. dp p X.
+move: (X p1)=>/=. rewrite /pRel1 /=.
+have: pTree_1size p1 < 1 + pTree_1size p1. lia. 
+move=>Hsize. move/(_ Hsize). case=>x Hx.
+exists x. ssa. 
+move: (X p1)=>/=. rewrite /pRel1 /=.
+have: pTree_1size p1 < pTree_1size p + pTree_1size p1. move: (pTree_1size1 p). lia.
+move=>Hsize. move/(_ Hsize). case=>x Hx.
+exists (p_fold (p_inr (p_pair p x))). ssa. lia. rewrite H0//.
+
+(*One-size induction*)
+clear f interp.
+move: T. apply: pTree_1size_rect.
+intros. dp u X. dp p X. dp p X.
+exists (p_fold (p_inl p_tt))=>//=.
+dp p X. 
+move: (X p1)=>/=. rewrite /pRel1 /=.
+have: pTree_1size p1 < pTree_1size p0 + pTree_1size p1.  move:(pTree_1size1 p0). lia.
+move=>Hsize. move/(_ Hsize). case=>x Hx.
+exists (p_fold (p_inr (p_pair (p_inr p0) x))). ssa. lia. rewrite H0//.
+
+exists T. ssa.
+
+case: (interp _ _ _ d T f)=> T' HT'. 
+have:  (forall x y ,
+         l x y -> forall T0 : pTree x, pRel0 T0 T' -> post y T0).
+intros. eapply f. eauto. move: H. rewrite /pRel0. ssa. lia. move=>Hf. 
+case: (interp _ _ _ d0 T' Hf)=>T2 HT2.  
+exists T2. ssa. lia. rewrite H2 H0 //.
+
+move: (interp _ _ _ d)=>H0.  
+move: (interp _ _ _ d0)=>H1.  
+
+dp T f. 
+have: (forall x y, l x y -> forall T0 : pTree x, pRel0 T0 p -> post y T0).
+intros. eapply f. eauto. done. 
+move=>Hf0. 
+case: (H0 p Hf0)=>T0 HT0.  
+exists (p_inl T0)=>//. 
+
+have: (forall x y, l x y -> forall T0 : pTree x, pRel0 T0 p -> post y T0).
+intros. eapply f. eauto. done. move=>Hf.
+case: (H1 p Hf)=>T1 HT1. 
+exists (p_inr T1)=>//. 
+
+move: (interp _ _ _ d)=>H0.
+move: (interp _ _ _ d0)=>H1. 
+dp T f.
+have: (forall x y,   l x y  -> forall T0 : pTree x, pRel0 T0 p0 -> post y T0).
+intros. eapply f. eauto. move: H. rewrite /pRel0 //=. lia. move=>Hf0.
+have: (forall x y, l x y -> forall T0 : pTree x, pRel0 T0 p1 -> post y T0).
+intros. eapply f. eauto. move: H. rewrite /pRel0 //=. lia. move=>Hf1.
+
+case: (H0 p0 Hf0) =>T0' HT0'.
+case: (H1 p1 Hf1) =>T1' HT1'.
+exists (p_pair T0' T1')=>//=. ssa. lia. rewrite H4 H2 //. 
+
+
+move: (interp _ _ _ d) f. 
+(*One-size induction*)
+clear interp d. 
+move: T. apply: pTree_1size_rect.
+intros. dp2 u f X. dp2 p f X. dp2 p f X.
+exists (p_fold (p_inl p_tt))=>//=.
+dp2 p f X. 
+have: (forall x y, l x y -> forall T0 : pTree x, pRel0 T0 p0 -> post y T0).
+intros. eapply f. eauto. move: H. rewrite /pRel0 //=. lia. 
+move=>Hf.
+case: (interp p0 Hf)=> x Hx. 
+have: pRel1 p1 (p_fold (p_inr (p_pair p0 p1))). rewrite /pRel1 //=. move: (pTree_1size1 p0). lia.
+move=>Hsize.
+have: (forall x0 y,
+    l x0 y -> forall T0 : pTree x0, pRel0 T0 p1 -> post y T0).
+intros. eapply f. eauto. move: H. rewrite /pRel0 /=.  lia.
+move=>Hf'.
+case: (X p1 Hsize interp Hf')=>x' Hx'. 
+exists (p_fold (p_inr (p_pair x x'))). ssa. lia. rewrite H0 H2//.
+clear interp.
+have: forall a, a \in l ->  forall T0 : pTree (r0 a), pRel0 T0 T -> post (r1 a) T0.
+intros. apply f.  apply p0. done. done.  clear f p0=> f.
+move : l T f. elim.
+ssa. exfalso. clear f. rewrite big_nil in T. inv T.
+intros.
+move: T f. 
+simpl. rewrite !big_cons.
+intros.
+dp T f. dp p f. dp p0 f.
+have: post (r1 a) p1. 
+apply:f. done. rewrite /pRel0. ssa.
+case. ssa.  exists ((p_inl (p_pair (p_singl a) x))). ssa. rewrite H0 //.
+have: (forall a0 : A, a0 \in l -> forall T0 : pTree (r0 a0), pRel0 T0 p -> post (r1 a0) T0).
+intros. apply f. rewrite !inE H. lia. done.
+move=> f2.
+move: (X p f2).
+case. ssa.
+exists (p_inr x). ssa.
+Defined.
+
+(*Custom Acc because our type index changes over time*)
+Inductive Acc2  (r : regex) (T : pTree r) : Prop :=  Acc2_intro : (forall r' (T' : pTree r'), pRel0 T' T -> Acc2  T') -> Acc2 T.
+
+Lemma pTree_0size_rect
+     : forall P : forall r, pTree r -> Type,
+       (forall r (u  : pTree r), (forall r' (u' : pTree r'), pRel0 u' u -> P _ u') -> P _ u) ->
+       forall r (p : pTree r), P r p.
+Proof.
+move=> P  Hsize r u. 
+have: Acc2 u. 
+clear Hsize. 
+move Heq : (pTree_0size u)=>n. move: n Heq.
+suff : forall n : nat, pTree_0size u <= n -> Acc2 u.
+intros. eauto.
+move=>n. move: n r u.
+elim.
+intros. con. intros. rewrite /pRel0 in H0. lia.
+intros. con. intros. apply/H. rewrite /pRel0 in H1. lia.
+move=>Hacc.
+move: r u Hacc Hsize. apply: Acc2_rect.
+intros.  apply/Hsize. intros. apply/X. done.
+auto.
+Defined.
+
+
+(*Lemma pTree_0size_rect2
+     : forall (P : forall r, pTree r -> Type),
+       (forall r (u  : pTree r), (forall r' (u' : pTree r'), pRel0 u' u -> P _ u') -> P _ u) ->
+       forall r (p : pTree r), P r p.
+Proof.
+move=> P  Hsize r u. 
+have: Acc pRel0 u. clear Hsize. 
+move Heq : (pTree_0size u)=>n. move: n Heq. 
+suff : forall n : nat, pTree_0size u <= n -> Acc (fun p' p  => pRel0 p' p) u.
+intros. eauto.
+move=>n. elim: n u.
+intros. con. intros. rewrite /pRel0 in H0. lia.
+intros. con. intros. apply/H. rewrite /pRel0 in H1. lia.
+move=>Hacc.
+move: u Hacc Hsize. 
+apply: Acc_rect.
+intros.  apply/Hsize. intros. apply/X. done.
+auto.
+Defined.*)
+
+Definition interp_wrap r0 r1 (p : dsl_co r0 r1) (T : pTree r0) : post r1 T. 
+move: r0 T r1 p.
+apply:(@pTree_0size_rect (fun r0 (T : pTree r0) => forall r1, dsl_co r0 r1 -> post r1 T)).
+intros. destruct X0.
+eapply interp. apply d. 
+intros.  apply X. done. done.
+Qed.
+
+
+Lemma dsl_sound : forall c0 c1, dsl_co c0 c1 -> (forall s, Match s c0 -> Match s c1).
+Proof.
+move=> c0 c1 d s Hmatch. 
+case: (exists_pTree Hmatch) => x /eqP Hf. subst.
+case: (interp_wrap d x). ssa. rewrite H0.
+rewrite -uflatten_to_upTree.
+apply pTree_Match. apply:to_typing.
+Qed.
+
+
+(*Extraction Inline  solution_left.
+Extraction Inline  solution_right.
+Extraction Inline  simplification_heq.
+Extraction Inline pTree_0size_rect.
+Extraction Inline pTree_1size_rect.
+Extraction Inline pTree_case.
+Extraction Implicit interp [ 3 4].
+Extraction Implicit p_pair [ 1].
+
+Extraction interp.
+Extraction pTree_case.*)
+
+End Interpret.
 
 Section DSL_Complete.
 
@@ -482,7 +763,6 @@ lct2. apply:untagL.
 apply:tagL.
 eauto. done.
 Qed.
-
 
 
 Inductive bisimilarity_gen bisim : @regex A -> regex -> Prop :=

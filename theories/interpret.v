@@ -1,4 +1,25 @@
-Section Interpret.
+From HB Require Import structures.
+Require Import Program. 
+From Equations Require Import Equations.  
+From mathcomp Require Import all_ssreflect zify.
+Require Import Relation_Definitions Setoid.
+From deriving Require Import deriving. 
+Require Import Paco.paco.
+Require Import Coq.btauto.Btauto.
+Require Import ConstructiveEpsilon.
+Require Import Numbers.BinNums.
+Require Import PArith.BinPos.
+From Containment Require Import  tactics utils regex pred modules constructiveEps enum (*dsl_module*) dsl extensional_partial.
+Set Implicit Arguments.
+Set Maximal Implicit Insertion.
+
+Let inE := tactics.inE.
+
+
+Module IndInterp (M : FModule).
+Module CM := Constructive M.
+Module FM := IndDSL M.
+Import M FM CM.
 
 Fixpoint pTree_0size r  (p : pTree r) := 
 match p with 

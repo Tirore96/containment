@@ -3,8 +3,14 @@ From Containment Require Import tactics utils regex.
 Set Implicit Arguments.
 Set Maximal Implicit Insertion.
 
+Module Type FModule.
+Parameter (A : finType).
+End FModule.
+
+
 Module Type PredL.
-Parameter A : finType.
+Include FModule.
+(*Parameter A : finType.*)
 Implicit Type (r : @regex A).
 Implicit Type (l : @pder A).
 Implicit Type (s : @trace A).
@@ -31,7 +37,8 @@ Axiom P_empt :  forall r0 r1, forall s, P s (r0 _+_ Empt) (r1 _+_ Empt) <-> P s 
 End PredL.
 
 Module Type Pred.
-Parameter A : finType.
+Include FModule.
+(*Parameter A : finType.*)
 Implicit Type (r : @regex A).
 Implicit Type (l : @pder A).
 Implicit Type (s : @trace A).
@@ -57,12 +64,9 @@ Axiom P_undup : forall l0 l1, (forall s, P s (\big[Plus/Empt]_(i <- l0) i) (\big
 Axiom P_empt :  forall r0 r1, forall s, P s (r0 _+_ Empt) (r1 _+_ Empt) <-> P s r0 r1. *)
 End Pred.
 
-Module Type FModule.
-Parameter (A : finType).
-End FModule.
 
 Module EquivF (M : FModule) <: PredL.
-Definition A := M.A. 
+Include M.
 Definition P s (l0 l1 : @pder A) := Match s (\big[Plus/Empt]_(a <- l0) a) <-> Match s (\big[Plus/Empt]_(a <- l1) a).
 Definition Pb := (fun ( l0 l1 : @pder A) => has nu l0 == has nu l1).
 
@@ -98,7 +102,7 @@ End EquivF.
 
 
 Module ContainsF (M : FModule) <: PredL.
-Definition A := M.A. 
+Include M.
 Definition P s (l0 l1 : @pder A) := Match s (\big[Plus/Empt]_(a <- l0) a) -> Match s (\big[Plus/Empt]_(a <- l1) a).
 Definition Pb := (fun ( l0 l1 : @pder A) => has nu l0 ==> has nu l1).
 
@@ -175,8 +179,8 @@ Qed.
 End MyPredF2.*)
 
 
-Module Type Axiom_Type (M : FModule).
-Import M.
+(*Module Type Axiom_Type (M : FModule).
+Include M.
 Parameter dsl: (@regex A ->  @regex A -> Type) -> @regex A -> @regex A -> Type. 
 Parameter Add : (@regex A ->  @regex A -> Type) -> (@regex A) -> (@regex A) ->(@regex A -> @regex A -> Type). 
 
@@ -234,3 +238,4 @@ Axiom dsl_var : forall a A B,   R A B -> dsl R (Event a _;_ A) (Event a _;_  B).
 Axiom dsl_fix : forall A B,  dsl (Add R A B) A B -> dsl R A B.
 End AxiomSection.
 End Axiom_Type.
+*)

@@ -362,6 +362,7 @@ Qed.
 
 
 
+
 (*Definition bisim_proj R r0 r1 (H: bisimilarity_gen R r0 r1) :=
 match H with 
 | bisimilarity_con _ _ H0 H1 => H0
