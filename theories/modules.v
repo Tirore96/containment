@@ -173,3 +173,64 @@ have: Match s (r0 _+_ Empt). con. done. move/H. move=>HH. inv HH. inv H3.
 intros. inv H0. con. eauto. inv H3.
 Qed.
 End MyPredF2.*)
+
+
+Module Type Axiom_Type (M : FModule).
+Import M.
+Parameter dsl: (@regex A ->  @regex A -> Type) -> @regex A -> @regex A -> Type. 
+Parameter Add : (@regex A ->  @regex A -> Type) -> (@regex A) -> (@regex A) ->(@regex A -> @regex A -> Type). 
+
+Axiom dsl_mon : forall l l' E F, dsl l E F -> (forall x y, l x y -> l' y x) ->  dsl l' E F.
+
+Section AxiomSection.
+Variable (R :  (@regex A -> @regex A -> Type )).
+Axiom shuffle : forall A B C, dsl R ((A _+_ B) _+_ C) (A _+_ (B _+_ C)).
+Axiom shuffleinv : forall A B C,  dsl R (A _+_ (B _+_ C)) ((A _+_ B) _+_ C).
+Axiom retag : forall A B, dsl R (A _+_ B) (B _+_ A).
+Axiom untagL : forall A, dsl R (Empt _+_ A) A.
+Axiom untagLinv : forall A, dsl R A  (Empt _+_ A).
+Axiom untag : forall A, dsl R (A _+_ A)  A.
+Axiom tagL : forall A B, dsl R A  (A _+_ B ).
+
+Axiom assoc : forall A B C, dsl R ((A _;_ B) _;_ C)  (A _;_ (B _;_ C)). 
+Axiom associnv : forall A B C, dsl R (A _;_ (B _;_ C))   ((A _;_ B) _;_ C).
+
+Axiom swap : forall A,  dsl R (A _;_ Eps)  (Eps _;_ A). 
+Axiom swapinv : forall A, dsl R(Eps _;_ A)  (A _;_ Eps). 
+
+Axiom proj : forall A, dsl R (Eps _;_ A)  A. 
+Axiom projinv : forall A, dsl R A (Eps _;_ A). 
+
+Axiom abortR : forall A, dsl R (A _;_ Empt)  Empt.
+Axiom abortRinv : forall A, dsl R Empt   (A _;_ Empt).
+
+Axiom abortL : forall A, dsl R (Empt _;_ A)   Empt. 
+Axiom abortLinv : forall A, dsl R Empt    (Empt _;_ A).
+
+Axiom distL : forall A B C, dsl R (A _;_ (B _+_ C))  ((A _;_ B) _+_ (A _;_ C)).
+Axiom distLinv : forall A B C, dsl R  ((A _;_ B) _+_ (A _;_ C)) (A _;_ (B _+_ C)).
+
+Axiom distR : forall A B C, dsl R ((A _+_ B) _;_ C)  ((A _;_ C) _+_ (B _;_ C)).
+Axiom distRinv : forall A B C, dsl R ((A _;_ C) _+_ (B _;_ C))   ((A _+_ B) _;_ C).
+
+Axiom wrap : forall A, dsl R (Eps _+_ (A _;_ Star A))  (Star A).
+Axiom wrapinv : forall A, dsl R (Star A)  (Eps _+_ (A _;_ Star A)).
+
+Axiom drop : forall A, dsl R  (Star (Eps _+_ A))  (Star A).
+Axiom dropinv : forall A, dsl R (Star A)  (Star (Eps _+_ A)).
+Axiom cid : forall A, dsl R A A. 
+
+(*Axiom ci_sym A B (H: A =R=B) : B =R=A*)
+Axiom ctrans : forall A B C, dsl R  A B ->  dsl R B C -> dsl R A C.
+Axiom cplus : forall A A' B B',  dsl R A A'  -> dsl R B B' -> dsl R  (A _+_ B) (A' _+_ B').
+Axiom cseq : forall A A' B B', dsl R A A' -> dsl R B B' ->  dsl R (A _;_ B) (A' _;_ B').
+Axiom cstar : forall A B, dsl R  A B -> dsl R (Star A)  (Star B).
+(*Axiom rule_cfix r r' (p  : dsl R dsl) : dsl R r  r' ~> p[d (cfix p) .: dsl R var_dsl] ->  r  r' ~> (cfix p) (*guarded p otherwise unsound*)*)
+(*| guard a A B  : R A B -> dsl R ((Event a) _;_ A)  ((Event a) _;_ B)*)
+(*| dsl_var a A B n : PTree.get n R = Some (A,B) -> dsl R ((Event a) _;_ A) ((Event a) _;_ B) *)
+Axiom dsl_var : forall a A B,   R A B -> dsl R (Event a _;_ A) (Event a _;_  B). 
+
+(*without summation as that was due to productivity checker, not needed for inductive definition*)
+Axiom dsl_fix : forall A B,  dsl (Add R A B) A B -> dsl R A B.
+End AxiomSection.
+End Axiom_Type.

@@ -360,29 +360,7 @@ Qed.
 
 
 
-Inductive contains_gen bisim : regex -> regex -> Prop :=
- contains_con c0 c1 (H0: forall e, bisim (e \ c0) (e \ c1) : Prop ) (H1: nu c0 -> nu c1) : contains_gen bisim c0 c1.
-Lemma contains_gen_mon: monotone2 contains_gen. 
-Proof.
-unfold monotone2. intros.  constructor. inversion IN. intros.
-auto. inversion IN. auto.  
-Qed.
-Hint Resolve contains_gen_mon : paco.
 
-
-
-Definition Contains c0 c1 := paco2 contains_gen bot2 c0 c1.
-Hint Unfold  Contains : core.
-
-Lemma Contains_der : forall c0 c1, Contains c0 c1 -> forall e,  Contains (e \ c0) (e \ c1).
-Proof.
-intros. punfold H.  inv H. move: (H0 e). case. done. done.
-Qed.
-
-Lemma Contains_nu : forall c0 c1, Contains c0 c1 ->  nu ( c0) -> nu ( c1).
-Proof.
-intros. punfold H.  inv H. eauto. 
-Qed.
 
 (*Definition bisim_proj R r0 r1 (H: bisimilarity_gen R r0 r1) :=
 match H with 

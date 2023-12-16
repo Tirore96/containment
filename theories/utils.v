@@ -171,6 +171,16 @@ Arguments uniq_pair {A}.
 
 Definition is_sub {A: eqType} (l0 l1 : seq A) := forall x, x \in l0 -> x \in l1.
 
+Definition is_sub_bool {A : eqType} (l0 l1 : seq A) := all (fun x => x \in l1) l0. 
+Lemma is_subP : forall (A : eqType) (l0 l1 : seq A), is_sub l0 l1 <-> is_sub_bool l0 l1.
+Proof.
+intros. split. 
+rewrite /is_sub. intros. apply/allP. intro. eauto.
+move/allP.  eauto.
+Qed.
+
+
+
 (*Inductive Forall3 {A B C : Type} (R : A -> B -> C -> Prop) : seq A -> seq B -> seq C ->  Prop :=
     Forall3_nil : Forall3 R [::] [::] [::]
   | Forall3_cons : forall (x : A) (y : B) (z: C) (l : seq A) (l' : seq B) (l'' : seq C),
