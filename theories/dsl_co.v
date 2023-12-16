@@ -16,67 +16,64 @@ Set Maximal Implicit Insertion.
 Let inE := tactics.inE.
 
 
-Module IndDSL (M : FModule).
+Module CoDSL (M : FModule).
+(*Module CM := Constructive M.*)
 Module PM := ContainsF M.
-Module CM := Constructive M.
 Module EM := ExtensionalPartial PM.
-Import M CM EM.
+Import M PM EM.
+Inductive dslF (R: regex -> regex -> Type) : regex -> regex -> Type := 
+| shuffle A B C : dslF R ((A _+_ B) _+_ C) (A _+_ (B _+_ C))
+| shuffleinv A B C : dslF R (A _+_ (B _+_ C)) ((A _+_ B) _+_ C)
+| retag A B: dslF R (A _+_ B) (B _+_ A)
+| untagL A : dslF R (Empt _+_ A) A
+| untagLinv A: dslF R A  (Empt _+_ A)
+| untag A : dslF R (A _+_ A)  A
+| tagL A B : dslF R A  (A _+_ B )
 
-Inductive dsl (R: seq (@regex A * regex)) : regex -> regex -> Type := 
-| shuffle A B C : dsl R ((A _+_ B) _+_ C) (A _+_ (B _+_ C))
-| shuffleinv A B C : dsl R (A _+_ (B _+_ C)) ((A _+_ B) _+_ C)
-| retag A B: dsl R (A _+_ B) (B _+_ A)
-| untagL A : dsl R (Empt _+_ A) A
-| untagLinv A: dsl R A  (Empt _+_ A)
-| untag A : dsl R (A _+_ A)  A
-| tagL A B : dsl R A  (A _+_ B )
+| assoc A B C : dslF R ((A _;_ B) _;_ C)  (A _;_ (B _;_ C)) 
+| associnv A B C : dslF R (A _;_ (B _;_ C))   ((A _;_ B) _;_ C)
 
-| assoc A B C : dsl R ((A _;_ B) _;_ C)  (A _;_ (B _;_ C)) 
-| associnv A B C : dsl R (A _;_ (B _;_ C))   ((A _;_ B) _;_ C)
+| swap A :  dslF R (A _;_ Eps)  (Eps _;_ A) 
+| swapinv A : dslF R(Eps _;_ A)  (A _;_ Eps) 
 
-| swap A :  dsl R (A _;_ Eps)  (Eps _;_ A) 
-| swapinv A : dsl R(Eps _;_ A)  (A _;_ Eps) 
+| proj A : dslF R (Eps _;_ A)  A 
+| projinv A : dslF R A (Eps _;_ A) 
 
-| proj A : dsl R (Eps _;_ A)  A 
-| projinv A : dsl R A (Eps _;_ A) 
+| abortR A : dslF R (A _;_ Empt)  Empt 
+| abortRinv A : dslF R Empt   (A _;_ Empt) 
 
-| abortR A : dsl R (A _;_ Empt)  Empt 
-| abortRinv A : dsl R Empt   (A _;_ Empt) 
+| abortL A : dslF R (Empt _;_ A)   Empt 
+| abortLinv A : dslF R Empt    (Empt _;_ A)
 
-| abortL A : dsl R (Empt _;_ A)   Empt 
-| abortLinv A : dsl R Empt    (Empt _;_ A)
+| distL A B C : dslF R (A _;_ (B _+_ C))  ((A _;_ B) _+_ (A _;_ C))
+| distLinv A B C : dslF R  ((A _;_ B) _+_ (A _;_ C)) (A _;_ (B _+_ C))
 
-| distL A B C : dsl R (A _;_ (B _+_ C))  ((A _;_ B) _+_ (A _;_ C))
-| distLinv A B C : dsl R  ((A _;_ B) _+_ (A _;_ C)) (A _;_ (B _+_ C))
+| distR A B C : dslF R ((A _+_ B) _;_ C)  ((A _;_ C) _+_ (B _;_ C))
+| distRinv A B C : dslF R ((A _;_ C) _+_ (B _;_ C))   ((A _+_ B) _;_ C)
 
-| distR A B C : dsl R ((A _+_ B) _;_ C)  ((A _;_ C) _+_ (B _;_ C))
-| distRinv A B C : dsl R ((A _;_ C) _+_ (B _;_ C))   ((A _+_ B) _;_ C)
+| wrap A : dslF R (Eps _+_ (A _;_ Star A))  (Star A)
+| wrapinv A : dslF R (Star A)  (Eps _+_ (A _;_ Star A))
 
-| wrap A : dsl R (Eps _+_ (A _;_ Star A))  (Star A)
-| wrapinv A : dsl R (Star A)  (Eps _+_ (A _;_ Star A))
-
-| drop A : dsl R  (Star (Eps _+_ A))  (Star A)
-| dropinv A : dsl R (Star A)  (Star (Eps _+_ A))
-| cid A : dsl R A A 
+| drop A : dslF R  (Star (Eps _+_ A))  (Star A)
+| dropinv A : dslF R (Star A)  (Star (Eps _+_ A))
+| cid A : dslF R A A 
 
 (*| ci_sym A B (H: A =R=B) : B =R=A*)
-| ctrans A B C  : dsl R  A B ->  dsl R B C -> dsl R A C
-| cplus A A' B B'  : dsl R A A'  -> dsl R B B' -> dsl R  (A _+_ B) (A' _+_ B')
-| cseq A A' B B'  : dsl R A A' -> dsl R B B' ->  dsl R (A _;_ B) (A' _;_ B')
-| cstar A B: dsl R  A B -> dsl R (Star A)  (Star B)
-(*| rule_cfix r r' (p  : dsl R dsl) : dsl R r  r' ~> p[d (cfix p) .: dsl R var_dsl] ->  r  r' ~> (cfix p) (*guarded p otherwise unsound*)*)
-(*| guard a A B  : R A B -> dsl R ((Event a) _;_ A)  ((Event a) _;_ B)*)
-(*| dsl_var a A B n : PTree.get n R = Some (A,B) -> dsl R ((Event a) _;_ A) ((Event a) _;_ B) *)
-| dsl_var a A B :   (A,B) \in R -> dsl R (Event a _;_ A) (Event a _;_  B) 
-
-(*without summation as that was due to productivity checker, not needed for inductive definition*)
-| dsl_fix A B : dsl ((A,B):: R) A B -> dsl R A B.
-
-(*| dsl_fix A B n : PTree.get n R = None -> dsl (PTree.set n (A,B) R) A B -> dsl R A B.*)
+| ctrans A B C  : dslF R  A B ->  dslF R B C -> dslF R A C
+| cplus A A' B B'  : dslF R A A'  -> dslF R B B' -> dslF R  (A _+_ B) (A' _+_ B')
+| cseq A A' B B'  : dslF R A A' -> dslF R B B' ->  dslF R (A _;_ B) (A' _;_ B')
+| cstar A B: dslF R  A B -> dslF R (Star A)  (Star B)
+(*| cfix r r' (p  : dslF R dslF) : dslF R r  r' p[d (cfix p) .: dslF R var_dslF] ->  r  r' (cfix p) (*guarded p otherwise unsound*)*)
+(*| guard a A B  : R A B -> dslF R ((Event a) _;_ A)  ((Event a) _;_ B)*)
+| guard (F F' : A -> regex)  : (forall a, R (F a) (F' a)) -> dslF R (\big[Plus/Empt]_(a: A) ((Event a) _;_ F a))
+                                                          (\big[Plus/Empt]_(a: A) ((Event a) _;_ F' a)).
 (**)
-Notation "c0 < ⟨ R ⟩ = c1" := (dsl R c0 c1)(at level 63).
-
-Hint Constructors dsl : dsl.
+Hint Constructors dslF.
+CoInductive dsl_co : regex -> regex -> Type := 
+| Co_build A B : (dslF dsl_co) A B -> dsl_co A B.
+Hint Constructors dsl_co.
+Notation "c0 < ⟨ R ⟩ = c1" := (dslF R c0 c1)(at level 63).
+Hint Constructors dslF : dsl.
 Arguments shuffle {R A B C}.
 Arguments shuffleinv {R A B C}.
 Arguments retag {R A B}.
@@ -107,245 +104,9 @@ Arguments ctrans {R A B C}.
 Arguments cplus {R A A' B B'}.
 Arguments cseq {R A A' B B'}.
 Arguments cstar {R A B}.
-Arguments dsl_var {R a A B}.
+(*Arguments dsl_var {R a A B}.*)
 (*Arguments guard {R a A B}.*)
-Arguments dsl_fix {R A B}.
-Hint Constructors dsl.
-
-
-Section Interpret.
-Fixpoint interp l r0 r1 (p : dsl l r0 r1) (T : pTree r0) 
-         (f : forall x y,  (x,y) \in l -> forall (T0 : pTree x), pRel0 T0 T -> post y T0) {struct p}:
-  post r1 T. 
-refine(
-match p in dsl _ x y return r0 = x -> r1 = y -> post r1 T  with
-| dsl_fix r0 r1 p0 => fun HQ HQ' => _ (*Do at least one case to force coq to destruct *)
-| _ => _ 
-end Logic.eq_refl Logic.eq_refl).
-all:clear p;intros;subst.
-(*move: T f. apply:pTree_case=>//. intros. inv_eq. move: f. simpl. rewrite <- eq_regex. Set Printing All.
- clear_eq.*) 
-dp T f.
-dp p f.
-exists (p_inl p)=>//=.  
-exists (p_inr (p_inl p))=>//=.
-exists (p_inr (p_inr p))=>//=.
-
-dp T f.
-exists (p_inl (p_inl p))=>//.
-dp p f.
-exists (p_inl (p_inr p))=>//.
-exists (p_inr p)=>//.
-
-dp T f.
-exists (p_inr p)=>//.
-exists (p_inl p)=>//=.
-
-dp T f.
-dp p f.
-exists p=>//.
-exists (p_inr T)=>//.
-
-dp T f.
-exists p=>//.
-exists p=>//.
-
-exists (p_inl T)=>//.
-
-dp T f.
-dp p0 f.
-exists (p_pair p0 (p_pair p2 p1))=>//=. ssa. lia. rewrite catA //.
-
-dp T f.
-dp p1 f.
-exists (p_pair (p_pair p0 p1) p2)=>//=. ssa. lia. rewrite catA //.
-
-dp T f.
-dp p1 f.
-exists (p_pair p_tt p0)=>//=. ssa. lia. rewrite cats0 //.
-
-dp T f.
-dp p0 f.
-exists (p_pair p1 p_tt)=>//=. ssa. lia. rewrite cats0 //.
-
-dp T f.
-dp p0 f.
-exists p1=>//=.
-
-exists (p_pair p_tt T)=>//=. 
-
-dp T f.
-dp p1 f.
-
-dp T f.
-
-dp T f. dp p0 f.
-dp T f.
-
-dp T f. dp p1 f.
-exists (p_inl (p_pair p0 p))=>//=.
-exists (p_inr (p_pair p0 p))=>//=.
-
-dp T f. dp p f.
-exists (p_pair p0 (p_inl p1))=>//=.
-dp p f.
-exists (p_pair  p0 (p_inr p1))=>//=.
-
-dp T f. dp p0 f.
-exists (p_inl (p_pair p p1))=>//=.
-exists (p_inr (p_pair p p1))=>//=.
-
-dp T f. dp p f.
-exists (p_pair (p_inl p0) p1)=>//=.
-
-dp p f.
-exists (p_pair (p_inr p0) p1)=>//=.
-
-dp T f.
-dp p f.
-exists (p_fold (p_inl p_tt))=>//=.
-dp p f.
-exists (p_fold (p_inr (p_pair p0 p1))). ssa.
-
-dp T f. 
-exists p. ssa.
-
-
-(*One-size induction*)
-clear f interp.
-move: T. apply: pTree_1size_rect.
-intros. dp u X. dp p X. dp p X.
-exists (p_fold (p_inl p_tt))=>//=.
-dp p X. 
-dp p0 X. dp p X.
-move: (X p1)=>/=. rewrite /pRel1 /=.
-have: pTree_1size p1 < 1 + pTree_1size p1. lia. 
-move=>Hsize. move/(_ Hsize). case=>x Hx.
-exists x. ssa. 
-move: (X p1)=>/=. rewrite /pRel1 /=.
-have: pTree_1size p1 < pTree_1size p + pTree_1size p1. move: (pTree_1size1 p). lia.
-move=>Hsize. move/(_ Hsize). case=>x Hx.
-exists (p_fold (p_inr (p_pair p x))). ssa. lia. rewrite H0//.
-
-(*One-size induction*)
-clear f interp.
-move: T. apply: pTree_1size_rect.
-intros. dp u X. dp p X. dp p X.
-exists (p_fold (p_inl p_tt))=>//=.
-dp p X. 
-move: (X p1)=>/=. rewrite /pRel1 /=.
-have: pTree_1size p1 < pTree_1size p0 + pTree_1size p1.  move:(pTree_1size1 p0). lia.
-move=>Hsize. move/(_ Hsize). case=>x Hx.
-exists (p_fold (p_inr (p_pair (p_inr p0) x))). ssa. lia. rewrite H0//.
-
-exists T. ssa.
-
-case: (interp _ _ _ d T f)=> T' HT'. 
-have:  (forall x y ,
-         (x, y) \in l -> forall T0 : pTree x, pRel0 T0 T' -> post y T0).
-intros. eapply f. eauto. move: H0. rewrite /pRel0. ssa. lia. move=>Hf. 
-case: (interp _ _ _ d0 T' Hf)=>T2 HT2.  
-exists T2. ssa. lia. rewrite H2 H0 //.
-
-move: (interp _ _ _ d)=>H0.  
-move: (interp _ _ _ d0)=>H1.  
-
-dp T f. 
-have: (forall x y, (x, y) \in l -> forall T0 : pTree x, pRel0 T0 p -> post y T0).
-intros. eapply f. eauto. done. 
-move=>Hf0. 
-case: (H0 p Hf0)=>T0 HT0.  
-exists (p_inl T0)=>//. 
-
-have: (forall x y, (x,y) \in l -> forall T0 : pTree x, pRel0 T0 p -> post y T0).
-intros. eapply f. eauto. done. move=>Hf.
-case: (H1 p Hf)=>T1 HT1. 
-exists (p_inr T1)=>//. 
-
-move: (interp _ _ _ d)=>H0.
-move: (interp _ _ _ d0)=>H1. 
-dp T f.
-have: (forall x y,  (x,y) \in l  -> forall T0 : pTree x, pRel0 T0 p0 -> post y T0).
-intros. eapply f. eauto. move: H2. rewrite /pRel0 //=. lia. move=>Hf0.
-have: (forall x y, (x, y) \in l -> forall T0 : pTree x, pRel0 T0 p1 -> post y T0).
-intros. eapply f. eauto. move: H2. rewrite /pRel0 //=. lia. move=>Hf1.
-
-case: (H0 p0 Hf0) =>T0' HT0'.
-case: (H1 p1 Hf1) =>T1' HT1'.
-exists (p_pair T0' T1')=>//=. ssa. lia. rewrite H4 H2 //. 
-
-
-move: (interp _ _ _ d) f. 
-(*One-size induction*)
-clear interp d. 
-move: T. apply: pTree_1size_rect.
-intros. dp2 u f X. dp2 p f X. dp2 p f X.
-exists (p_fold (p_inl p_tt))=>//=.
-dp2 p f X. 
-have: (forall x y, (x, y) \in l -> forall T0 : pTree x, pRel0 T0 p0 -> post y T0).
-intros. eapply f. eauto. move: H0. rewrite /pRel0 //=. lia. 
-move=>Hf.
-case: (interp p0 Hf)=> x Hx. 
-have: pRel1 p1 (p_fold (p_inr (p_pair p0 p1))). rewrite /pRel1 //=. move: (pTree_1size1 p0). lia.
-move=>Hsize.
-have: (forall x0 y,
-    (x0, y) \in l -> forall T0 : pTree x0, pRel0 T0 p1 -> post y T0).
-intros. eapply f. eauto. move: H0. rewrite /pRel0 /=.  lia.
-move=>Hf'.
-case: (X p1 Hsize interp Hf')=>x' Hx'. 
-exists (p_fold (p_inr (p_pair x x'))). ssa. lia. rewrite H0 H2//.
-
-dp T f. dp p0 f. 
-have : pRel0 p1 (p_pair (p_singl s) p1). rewrite /pRel0 /=. lia.
-move=>Hrel.
-move: (f s0 s1 i p1 Hrel).
-case. move=> x Hflat. ssa. 
-exists (p_pair (p_singl s) x). 
-ssa. f_equal. done. 
-
-move : T f.
-eapply (@pTree_0size_rect r0 (fun (T : pTree r0) => (forall x y,(x,y) \in l -> forall (T0 : pTree x), pRel0 T0 T -> post y T0) -> post r1 T)).
-move=> Hin IH Hf.
-eapply (@interp _ _ _ p0 Hin). 
-intros.
-rewrite !inE in H.
-destruct ((x,y) == (r0, r1)) eqn:Heqn.
-case/eqP : Heqn. intros. subst.
-eapply IH.  done.
-move=> x' y' Hl T1 Hrel. eapply Hf. apply Hl. 
-move: H0 Hrel. rewrite /pRel0. lia. 
-simpl in H. 
-eapply Hf. apply H. apply H0.
-Defined.
-
-
-
-Lemma dsl_sound : forall c0 c1, dsl nil c0 c1 -> (forall s, Match s c0 -> Match s c1).
-Proof.
-move=> c0 c1 d s Hmatch. 
-case: (exists_pTree Hmatch) => x /eqP Hf. subst.
-have: (forall  (x0 y : regex),
-    (x0, y) \in nil -> forall T0 : pTree x0, pRel0 T0 x -> post y T0).
-intros. done. move=>Hp.
-move: (interp d x Hp). 
-case. intros. ssa. rewrite H0. rewrite -uflatten_to_upTree.
-apply pTree_Match. apply:to_typing.
-Qed.
-
-
-(*Extraction Inline  solution_left.
-Extraction Inline  solution_right.
-Extraction Inline  simplification_heq.
-Extraction Inline pTree_0size_rect.
-Extraction Inline pTree_1size_rect.
-Extraction Inline pTree_case.
-Extraction Implicit interp [ 3 4].
-Extraction Implicit p_pair [ 1].
-
-Extraction interp.
-Extraction pTree_case.*)
-
-End Interpret.
+(*Arguments dsl_fix {R A B}.*)
 
 Section DSL_Complete.
 
@@ -430,7 +191,7 @@ Ltac lcp2 := apply:cplus2.
 Ltac lcs1 := apply:cseq1.
 Ltac lcs2 := apply:cseq2.
 Ltac lcst1 := apply:cstar1.
-Print dsl.
+
 Lemma split_plus_l : forall R (B: eqType) l (P P' : B -> regex),
 \big[Plus/Empt]_(a <- l) (P a _+_ P' a) <⟨R⟩= \big[Plus/Empt]_(a <- l) (P a) _+_ \big[Plus/Empt]_(a <- l) (P' a) .  
 Proof.
@@ -508,7 +269,7 @@ Hint Resolve eps_c_l.
 
 Definition ex_coerce (l: seq A) (F0 F1 : A -> @regex A) R  := forall a, a \in l -> R (F0 a) (F1 a).
 
-Lemma eq_big_plus_c : forall (l : seq A) F1 F2 R, ex_coerce l F1 F2 (dsl R) ->
+Lemma eq_big_plus_c : forall (l : seq A) F1 F2 R, ex_coerce l F1 F2 (dslF R) ->
    \big[Plus/Empt]_(i <- l) (F1 i) <⟨R⟩= \big[Plus/Empt]_(i <- l) (F2 i). 
 Proof.
 move=> + F1 F2 R. 
@@ -559,8 +320,9 @@ Proof.
 elim=>//=. move=> a _. rewrite !big_nil //. 
 move=> a l IH a0 /=. rewrite !inE. move/andP=>[] Hneq Hin.
 rewrite !big_cons. rewrite (negbTE Hneq).  move: (IH _ Hin). intros.
-lct2. apply:untag. lcp1. eauto. eauto. 
-Qed.
+lct2. apply:untag. lcp1. eauto. eauto.
+Qed. 
+
 
 Lemma big_event_notin_r R : forall l a, a \notin l -> Empt  <⟨R⟩= \big[Plus/Empt]_(i <- l) ((Event i)_;_(i \ Event a))  . 
 Proof.
@@ -617,9 +379,10 @@ rewrite /o. case Hcase: (nu c)=>//. eauto.
 Qed.
 
 
-Lemma derive_unfold_coerce : forall c, dsl nil c (o c _+_ \big[Plus/Empt]_(a : A) (Event a _;_ a \ c))  *
-                                   dsl nil (o c _+_ \big[Plus/Empt]_(a : A) (Event a _;_ a \ c)) c.
+Lemma derive_unfold_coerce : forall R c, dslF R c (o c _+_ \big[Plus/Empt]_(a : A) (Event a _;_ a \ c))  *
+                                   dslF R (o c _+_ \big[Plus/Empt]_(a : A) (Event a _;_ a \ c)) c.
 Proof.
+move=> R.
 elim;try solve [eauto].
 - con. eauto. rewrite /o /=. lct2. lct2. apply:untagL. apply:retag. 
   lcp1. lcid. lct1.  apply:eq_big_plus_c. intro. intros. apply:abortR. apply: plus_empt_l. 
@@ -696,19 +459,19 @@ Qed.
 
 
 
-Lemma derive_unfold_coerce_l : forall c,  dsl nil c (o c _+_ \big[Plus/Empt]_(a : A) (Event a _;_ a \ c)). 
+Lemma derive_unfold_coerce_l : forall R c,  dslF R c (o c _+_ \big[Plus/Empt]_(a : A) (Event a _;_ a \ c)). 
 Proof.
-intros. destruct (derive_unfold_coerce c). done.
+intros. destruct (derive_unfold_coerce R c). done.
 Qed.
 
-Lemma derive_unfold_coerce_r : forall c, dsl nil (o c _+_ \big[Plus/Empt]_(a : A) (Event a _;_ a \ c)) c.
+Lemma derive_unfold_coerce_r : forall R c, dslF R (o c _+_ \big[Plus/Empt]_(a : A) (Event a _;_ a \ c)) c.
 Proof.
-intros. destruct (derive_unfold_coerce c). done.
+intros. destruct (derive_unfold_coerce R c). done.
 Qed.
 
 
 
-Lemma nu_imp_coerce_aux : forall r0 r1, (nu r0 -> nu r1) ->  o r0 <⟨nil⟩= o r1. 
+Lemma nu_imp_coerce_aux : forall R r0 r1, (nu r0 -> nu r1) ->  o r0 <⟨R⟩= o r1. 
 Proof.
 intros. destruct (nu r0) eqn:Heqn. rewrite /o Heqn H //. econ. lcid. 
 rewrite /o Heqn.
@@ -718,14 +481,35 @@ apply:tagL.
 eauto. done.
 Qed.
 
-Lemma big_plus_coerce : forall (l : seq A) F0 F1 R, (forall a, a \in l ->  (F0 a,F1 a) \in R) ->
+(*Lemma big_plus_coerce : forall (l : seq A) F0 F1 R, (forall a, a \in l ->  R (F0 a) (F1 a)) ->
  (\big[Plus/Empt]_(a <- l) (Event a _;_ F0 a)) <⟨R⟩=  (\big[Plus/Empt]_(a <- l) (Event a _;_ F1 a)).  
 Proof.
 elim;ssa. rewrite !big_nil. eauto.
 rewrite !big_cons. lcp1.  
-have: a \in a::l. done. move/H. 
+have: a \in a::l. done. move/X0. move=>HH.  Print guard.
 ssa. apply X. eauto.
-Qed.
+Qed.*)
+
+
+Locate Bisimilarity.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 Lemma Empt_Eps : forall L, Empt < ⟨ L ⟩ = Eps.
 Proof.
@@ -737,6 +521,11 @@ Lemma Empt_r : forall L r, Empt < ⟨ L ⟩ = r.
 Proof.
 intros. lct1. apply:tagL. 2: { lct1. apply:retag. eauto. } 
 Qed.
+
+
+
+
+
 
 
 Lemma o_lP : forall l l' L, (has nu l -> has nu l') ->  o_l l <⟨ L ⟩ = o_l l'.
@@ -913,17 +702,6 @@ lct1. apply/tagL.
      apply c_eq_derive_pd_l1. done. } 
 Qed.
 
-Lemma dsl_mon : forall l l' E F, dsl l E F -> is_sub_bool l l' ->  dsl l' E F.
-Proof.
-move=> l l' E F p. 
-elim: p l';auto with dsl;simpl;intros.
-apply:ctrans. eauto. eauto.
-apply:dsl_var. move/is_subP : H=>Hsub. apply Hsub. done.
-apply:dsl_fix. apply:X. ssa.
-apply/is_subP. move/is_subP : H.
-intro. intro. move/H. rewrite !inE. move=>->//. lia.
-Qed.
-
 Lemma decomp_p1 : forall l L ,  \big[Plus/Empt]_(i <- l) i <⟨L⟩= (o_l l) _+_ \big[Plus/Empt]_(a : A) (Event a _;_ \big[Plus/Empt]_(i <- pd_l a l) i ). 
 Proof.
 intros. apply/dsl_mon. apply/decomp_p1_aux. eauto.
@@ -1068,6 +846,3 @@ Lemma c_eq_completeness : forall (c0 c1 : regex), contains_r c0 c1 -> c0 <⟨nil
 Proof. move=> c0 c1. move/equiv_r_plus. move/Bisim_co_ind. move/bisim_complete.
 move/bisim_c_eq. rewrite !big_cons !big_nil. eauto.
 Qed.
-
-End DSL_Complete.
-End IndDSL.
