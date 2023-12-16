@@ -328,6 +328,13 @@ apply/equiv_r_trans. 2: { apply/equiv_r_empt. }  done.
 intros. apply/equiv_r_trans. apply/equiv_r_empt.
 apply/equiv_r_trans. 2: { apply/equiv_r_sym. apply/equiv_r_empt. }  done.
 Qed.
+Lemma big_derive : forall (l : pder) e, e \ \big[Plus/Empt]_(i <- l) i = \big[Plus/Empt]_(i <- map (derive e)l) i.
+Proof.
+elim;ssa.
+rewrite !big_nil //.
+rewrite !big_cons //=. f_equal. done.
+Qed.
+
 
 End Regex.
 Arguments regex {A}.

@@ -169,6 +169,7 @@ Qed.
 Definition uniq_pair (A : eqType) (pp  : (seq A) * (seq A)):= uniq pp.1 && uniq pp.2.
 Arguments uniq_pair {A}.
 
+Definition is_sub {A: eqType} (l0 l1 : seq A) := forall x, x \in l0 -> x \in l1.
 
 (*Inductive Forall3 {A B C : Type} (R : A -> B -> C -> Prop) : seq A -> seq B -> seq C ->  Prop :=
     Forall3_nil : Forall3 R [::] [::] [::]

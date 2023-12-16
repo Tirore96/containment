@@ -9,7 +9,7 @@ Require Import Coq.btauto.Btauto.
 Require Import ConstructiveEpsilon.
 Require Import Numbers.BinNums.
 Require Import PArith.BinPos.
-From Containment Require Import  tactics utils regex pred modules constructiveEps.
+From Containment Require Import  tactics utils regex pred modules constructiveEps enum extensional_partial.
 Set Implicit Arguments.
 Set Maximal Implicit Insertion.
 
@@ -24,7 +24,10 @@ End ContainerM.*)
 
 Module MyDSL (M : FModule).
 Module CM := Constructive M.
-Import M CM.
+Module PM := ContainsF M.
+Module EM := ExtensionalPartial PM.
+Import M CM EM.
+(*Import M CM PM EM.*)
 Inductive dsl (R: seq (@regex A * regex)) : regex -> regex -> Type := 
 | shuffle A B C : dsl R ((A _+_ B) _+_ C) (A _+_ (B _+_ C))
 | shuffleinv A B C : dsl R (A _+_ (B _+_ C)) ((A _+_ B) _+_ C)
@@ -77,8 +80,6 @@ Inductive dsl (R: seq (@regex A * regex)) : regex -> regex -> Type :=
 
 (*| dsl_fix A B n : PTree.get n R = None -> dsl (PTree.set n (A,B) R) A B -> dsl R A B.*)
 (**)
-Set Printing Coercions.
-Check dsl_var.
 Notation "c0 < ⟨ R ⟩ = c1" := (dsl R c0 c1)(at level 63).
 
 
@@ -155,392 +156,103 @@ Arguments dsl_var {R a A B}.
 Arguments dsl_fix {R A B}.
 
 
-Section Interpret.
 
-Fixpoint pTree_0size r  (p : pTree r) := 
-match p with 
-| p_tt => 0
-| p_singl _ => 1
-| p_inl _ _ p0 => pTree_0size p0
-| p_inr _ _ p1 => pTree_0size p1
-| p_pair  _ _ p0 p1 => (pTree_0size p0) + (pTree_0size p1)
-| p_fold  _ p0 => (pTree_0size p0) 
-end.
 
-Fixpoint pTree_1size r  (p : pTree r) := 
-match p with 
-| p_tt => 1 
-| p_singl _ => 1
-| p_inl _ _ p0 => pTree_1size p0
-| p_inr _ _ p1 => pTree_1size p1
-| p_pair  _ _ p0 p1 => (pTree_1size p0) + (pTree_1size p1)
-| p_fold  _ p0 => (pTree_1size p0) 
-end.
-
-
-Definition pRel (r : regex) (p' p : pTree r) := pTree_0size p' < pTree_0size p.
-Definition pRel0 (r' r : regex) (p' : pTree r') (p : pTree r) := pTree_0size p' < pTree_0size p.
-Definition pRel1 (r' r : regex) (p' : pTree r') (p : pTree r) := pTree_1size p' < pTree_1size p.
-
-
-
-Lemma pTree_0size_rect
-     : forall (r: regex) (P : pTree r -> Type),
-       (forall (u  : pTree r), (forall u' : pTree r, pRel u' u -> P u') -> P u) ->
-       forall (p : pTree r), P p.
-Proof.
-move=> r P  Hsize u. 
-have: Acc pRel u. clear Hsize. 
-move Heq : (pTree_0size u)=>n. move: n Heq.
-suff : forall n : nat, pTree_0size u <= n -> Acc (fun p' p : pTree r => pRel p' p) u.
-intros. eauto.
-move=>n. elim: n u.
-intros. con. intros. rewrite /pRel in H0. lia.
-intros. con. intros. apply/H. rewrite /pRel in H1. lia.
-move=>Hacc.
-move: u Hacc Hsize. apply: Acc_rect.
-intros.  apply/Hsize. intros. apply/X. done.
-auto.
-Defined.
-
-Lemma pTree_1size_rect
-     : forall (r: regex) (P : pTree r -> Type),
-       (forall (u  : pTree r), (forall u' : pTree r, pRel1 u' u -> P u') -> P u) ->
-       forall (p : pTree r), P p.
-Proof.
-move=> r P  Hsize u. 
-have: Acc pRel1 u. clear Hsize. 
-move Heq : (pTree_1size u)=>n. move: Heq.
-wlog: u n / pTree_1size u <= n. intros. apply/H. 2:eauto. lia.
-move=> + _.
-elim: n u.
-intros. con. intros. rewrite /pRel1 in H0. lia.
-intros. con. intros. apply/H. rewrite /pRel1 in H1. lia.
-move=>Hacc.
-move: u Hacc Hsize. apply: Acc_rect.
-intros.  apply/Hsize. intros. apply/X. done.
-auto.
-Defined.
-
-
-Definition post (r0 r1 : regex) (T : pTree r0) := 
-  { T' : pTree r1 | pTree_0size T' <= pTree_0size  T /\ pflatten T = pflatten T' }. 
-
-Lemma pTree_0size0 : forall r (p : pTree r), pTree_0size p = 0 -> pflatten p = nil.
-Proof.
-move=> r.
-elim;ssa. have: pTree_0size p = 0 by lia. move/H=>->/=. 
-apply:H0. lia.
-Qed.
-
-
-Lemma pTree_1size1 : forall r (p : pTree r), 0 < pTree_1size p. 
-Proof.
-move=> r.
-elim;ssa.  lia.
-Qed.
-
-Lemma pTree_false : forall r (p : pTree r), pTree_1size p <= 0 -> False. 
-Proof.
-intros. move: (pTree_1size1 p). lia.
-Qed.
-
-(* ala https://jamesrwilcox.com/dep-destruct.html*)
-Lemma pTree_case : forall (r : regex) (P : pTree r -> Type), (forall (pf :  Eps = r), P (@eq_rect _ _ pTree p_tt _ pf)) -> 
-                                                       (forall a (pf : Event a = r), P (@eq_rect _ _ pTree (p_singl a) _ pf)) -> 
-                                                       (forall r0 r1 (pf : r0 _+_ r1 = r) (p : pTree r0), 
-                                                           P (@eq_rect _ _ pTree (p_inl p) _ (pf))) -> 
-                                                       (forall r0 r1 (pf : r0 _+_ r1 = r) (p : pTree r1), 
-                                                           P (@eq_rect _ _ pTree (p_inr p) _ (pf))) -> 
-                                                       (forall r0 r1 (pf :r0 _;_ r1 = r) (p0 : pTree r0)(p1: pTree r1), 
-                                                           P (@eq_rect _ _ pTree (p_pair p0 p1) _ ( pf))) -> 
-                                                       (forall r0  (pf : Star r0 = r) (p : pTree (Eps _+_ r0 _;_ Star r0)),
-                                                           P (@eq_rect _ _ pTree (p_fold p) _ (pf))) -> 
-                                                       (forall p, P p).
-Proof.
-intros.
-destruct p eqn:?. 
-move: (X Logic.eq_refl)=>//. 
-move: (X0 a Logic.eq_refl)=>//=.
-move: (X1 r0 r1 Logic.eq_refl p0)=>//=.
-move: (X2 _ _ Logic.eq_refl p0)=>//.
-move: (X3 _ _ Logic.eq_refl p0_1 p0_2)=>//.
-move: (X4 _ Logic.eq_refl p0)=>//.
-Qed.
-
-
-Ltac dep_destruct p :=
-  pattern p; apply pTree_case; clear p; intros;try discriminate.
-
-
-Hint Constructors pTree : pTree.
-
-Lemma regex_dec : forall (x y : @regex A), { x = y} + { x <> y }.
-Proof. 
-intros. de (eqVneq x y)=>//. constructor 2. apply/eqP=>//.
-Qed.
-Definition eq_regex r0 := @Eqdep_dec.eq_rect_eq_dec _ regex_dec r0 pTree.
-Ltac inv_eq := match goal with 
-                   | [H : _ = _ |- _] => inv H
-                 end.
-Ltac clear_eq := match goal with 
-                   | [H : ?x = ?x |- _] => clear H
-                 end.
-
-
-Ltac dp T f := move: T f;apply:pTree_case=>//; intros; inv_eq; move:f; rewrite <- eq_regex;clear_eq=>f. 
-Ltac dp2 T f f' := move: T f f';apply:pTree_case=>//; intros; inv_eq; move:f f'; rewrite <- eq_regex;clear_eq=>f f'. 
-Fixpoint interp l r0 r1 (p : dsl l r0 r1) (T : pTree r0) 
-         (f : forall x y,  (x,y) \in l -> forall (T0 : pTree x), pRel0 T0 T -> post y T0) {struct p}:
-  post r1 T. 
-refine(
-match p in dsl _ x y return r0 = x -> r1 = y -> post r1 T  with
-| dsl_fix r0 r1 p0 => fun HQ HQ' => _ (*Do at least one case to force coq to destruct *)
-| _ => _ 
-end Logic.eq_refl Logic.eq_refl).
-all:clear p;intros;subst.
-dp T f.
-dp p f.
-exists (p_inl p)=>//=.  
-exists (p_inr (p_inl p))=>//=.
-exists (p_inr (p_inr p))=>//=.
-
-dp T f.
-exists (p_inl (p_inl p))=>//.
-dp p f.
-exists (p_inl (p_inr p))=>//.
-exists (p_inr p)=>//.
-
-dp T f.
-exists (p_inr p)=>//.
-exists (p_inl p)=>//=.
-
-dp T f.
-dp p f.
-exists p=>//.
-exists (p_inr T)=>//.
-
-dp T f.
-exists p=>//.
-exists p=>//.
-
-exists (p_inl T)=>//.
-
-dp T f.
-dp p0 f.
-exists (p_pair p0 (p_pair p2 p1))=>//=. ssa. lia. rewrite catA //.
-
-dp T f.
-dp p1 f.
-exists (p_pair (p_pair p0 p1) p2)=>//=. ssa. lia. rewrite catA //.
-
-dp T f.
-dp p1 f.
-exists (p_pair p_tt p0)=>//=. ssa. lia. rewrite cats0 //.
-
-dp T f.
-dp p0 f.
-exists (p_pair p1 p_tt)=>//=. ssa. lia. rewrite cats0 //.
-
-dp T f.
-dp p0 f.
-exists p1=>//=.
-
-exists (p_pair p_tt T)=>//=. 
-
-dp T f.
-dp p1 f.
-
-dp T f.
-
-dp T f. dp p0 f.
-dp T f.
-
-dp T f. dp p1 f.
-exists (p_inl (p_pair p0 p))=>//=.
-exists (p_inr (p_pair p0 p))=>//=.
-
-dp T f. dp p f.
-exists (p_pair p0 (p_inl p1))=>//=.
-dp p f.
-exists (p_pair  p0 (p_inr p1))=>//=.
-
-dp T f. dp p0 f.
-exists (p_inl (p_pair p p1))=>//=.
-exists (p_inr (p_pair p p1))=>//=.
-
-dp T f. dp p f.
-exists (p_pair (p_inl p0) p1)=>//=.
-
-dp p f.
-exists (p_pair (p_inr p0) p1)=>//=.
-
-dp T f.
-dp p f.
-exists (p_fold (p_inl p_tt))=>//=.
-dp p f.
-exists (p_fold (p_inr (p_pair p0 p1))). ssa.
-
-dp T f. 
-exists p. ssa.
-
-
-(*One-size induction*)
-clear f interp.
-move: T. apply: pTree_1size_rect.
-intros. dp u X. dp p X. dp p X.
-exists (p_fold (p_inl p_tt))=>//=.
-dp p X. 
-dp p0 X. dp p X.
-move: (X p1)=>/=. rewrite /pRel1 /=.
-have: pTree_1size p1 < 1 + pTree_1size p1. lia. 
-move=>Hsize. move/(_ Hsize). case=>x Hx.
-exists x. ssa. 
-move: (X p1)=>/=. rewrite /pRel1 /=.
-have: pTree_1size p1 < pTree_1size p + pTree_1size p1. move: (pTree_1size1 p). lia.
-move=>Hsize. move/(_ Hsize). case=>x Hx.
-exists (p_fold (p_inr (p_pair p x))). ssa. lia. rewrite H0//.
-
-(*One-size induction*)
-clear f interp.
-move: T. apply: pTree_1size_rect.
-intros. dp u X. dp p X. dp p X.
-exists (p_fold (p_inl p_tt))=>//=.
-dp p X. 
-move: (X p1)=>/=. rewrite /pRel1 /=.
-have: pTree_1size p1 < pTree_1size p0 + pTree_1size p1.  move:(pTree_1size1 p0). lia.
-move=>Hsize. move/(_ Hsize). case=>x Hx.
-exists (p_fold (p_inr (p_pair (p_inr p0) x))). ssa. lia. rewrite H0//.
-
-exists T. ssa.
-
-case: (interp _ _ _ d T f)=> T' HT'. 
-have:  (forall x y ,
-         (x, y) \in l -> forall T0 : pTree x, pRel0 T0 T' -> post y T0).
-intros. eapply f. eauto. move: H0. rewrite /pRel0. ssa. lia. move=>Hf. 
-case: (interp _ _ _ d0 T' Hf)=>T2 HT2.  
-exists T2. ssa. lia. rewrite H2 H0 //.
-
-move: (interp _ _ _ d)=>H0.  
-move: (interp _ _ _ d0)=>H1.  
-
-dp T f. 
-have: (forall x y, (x, y) \in l -> forall T0 : pTree x, pRel0 T0 p -> post y T0).
-intros. eapply f. eauto. done. 
-move=>Hf0. 
-case: (H0 p Hf0)=>T0 HT0.  
-exists (p_inl T0)=>//. 
-
-have: (forall x y, (x,y) \in l -> forall T0 : pTree x, pRel0 T0 p -> post y T0).
-intros. eapply f. eauto. done. move=>Hf.
-case: (H1 p Hf)=>T1 HT1. 
-exists (p_inr T1)=>//. 
-
-move: (interp _ _ _ d)=>H0.
-move: (interp _ _ _ d0)=>H1. 
-dp T f.
-have: (forall x y,  (x,y) \in l  -> forall T0 : pTree x, pRel0 T0 p0 -> post y T0).
-intros. eapply f. eauto. move: H2. rewrite /pRel0 //=. lia. move=>Hf0.
-have: (forall x y, (x, y) \in l -> forall T0 : pTree x, pRel0 T0 p1 -> post y T0).
-intros. eapply f. eauto. move: H2. rewrite /pRel0 //=. lia. move=>Hf1.
-
-case: (H0 p0 Hf0) =>T0' HT0'.
-case: (H1 p1 Hf1) =>T1' HT1'.
-exists (p_pair T0' T1')=>//=. ssa. lia. rewrite H4 H2 //. 
-
-
-move: (interp _ _ _ d) f. 
-(*One-size induction*)
-clear interp d. 
-move: T. apply: pTree_1size_rect.
-intros. dp2 u f X. dp2 p f X. dp2 p f X.
-exists (p_fold (p_inl p_tt))=>//=.
-dp2 p f X. 
-have: (forall x y, (x, y) \in l -> forall T0 : pTree x, pRel0 T0 p0 -> post y T0).
-intros. eapply f. eauto. move: H0. rewrite /pRel0 //=. lia. 
-move=>Hf.
-case: (interp p0 Hf)=> x Hx. 
-have: pRel1 p1 (p_fold (p_inr (p_pair p0 p1))). rewrite /pRel1 //=. move: (pTree_1size1 p0). lia.
-move=>Hsize.
-have: (forall x0 y,
-    (x0, y) \in l -> forall T0 : pTree x0, pRel0 T0 p1 -> post y T0).
-intros. eapply f. eauto. move: H0. rewrite /pRel0 /=.  lia.
-move=>Hf'.
-case: (X p1 Hsize interp Hf')=>x' Hx'. 
-exists (p_fold (p_inr (p_pair x x'))). ssa. lia. rewrite H0 H2//.
-
-dp T f. dp p0 f. 
-have : pRel0 p1 (p_pair (p_singl s) p1). rewrite /pRel0 /=. lia.
-move=>Hrel.
-move: (f s0 s1 i p1 Hrel).
-case. move=> x Hflat. ssa. 
-exists (p_pair (p_singl s) x). 
-ssa. f_equal. done. 
-
-move : T f.
-eapply (@pTree_0size_rect r0 (fun (T : pTree r0) => (forall x y,(x,y) \in l -> forall (T0 : pTree x), pRel0 T0 T -> post y T0) -> post r1 T)).
-move=> Hin IH Hf.
-eapply (@interp _ _ _ p0 Hin). 
-intros.
-rewrite !inE in H.
-destruct ((x,y) == (r0, r1)) eqn:Heqn.
-case/eqP : Heqn. intros. subst.
-eapply IH.  done.
-move=> x' y' Hl T1 Hrel. eapply Hf. apply Hl. 
-move: H0 Hrel. rewrite /pRel0. lia. 
-simpl in H. 
-eapply Hf. apply H. apply H0.
-Defined.
-
-
-
-Lemma dsl_sound : forall c0 c1, dsl nil c0 c1 -> (forall s, Match s c0 -> Match s c1).
-Proof.
-move=> c0 c1 d s Hmatch. 
-case: (exists_pTree Hmatch) => x /eqP Hf. subst.
-have: (forall  (x0 y : regex),
-    (x0, y) \in nil -> forall T0 : pTree x0, pRel0 T0 x -> post y T0).
-intros. done. move=>Hp.
-move: (interp d x Hp). 
-case. intros. ssa. rewrite H0. rewrite -uflatten_to_upTree.
-apply pTree_Match. apply:to_typing.
-Qed.
-
-
-(*Extraction Inline  solution_left.
-Extraction Inline  solution_right.
-Extraction Inline  simplification_heq.
-Extraction Inline pTree_0size_rect.
-Extraction Inline pTree_1size_rect.
-Extraction Inline pTree_case.
-Extraction Implicit interp [ 3 4].
-Extraction Implicit p_pair [ 1].
-
-Extraction interp.
-Extraction pTree_case.*)
-
-End Interpret.
-
-
-
-
+Section CoinductiveDSL.
+Inductive dslF (R: @regex A -> regex -> Type) : regex -> regex -> Type := 
+| co_shuffle A B C : dslF R ((A _+_ B) _+_ C) (A _+_ (B _+_ C))
+| co_shuffleinv A B C : dslF R (A _+_ (B _+_ C)) ((A _+_ B) _+_ C)
+| co_retag A B: dslF R (A _+_ B) (B _+_ A)
+| co_untagL A : dslF R (Empt _+_ A) A
+| co_untagLinv A: dslF R A  (Empt _+_ A)
+| co_untag A : dslF R (A _+_ A)  A
+| co_tagL A B : dslF R A  (A _+_ B )
+
+| co_assoc A B C : dslF R ((A _;_ B) _;_ C)  (A _;_ (B _;_ C)) 
+| co_associnv A B C : dslF R (A _;_ (B _;_ C))   ((A _;_ B) _;_ C)
+
+| co_swap A :  dslF R (A _;_ Eps)  (Eps _;_ A) 
+| co_swapinv A : dslF R(Eps _;_ A)  (A _;_ Eps) 
+
+| co_proj A : dslF R (Eps _;_ A)  A 
+| co_projinv A : dslF R A (Eps _;_ A) 
+
+| co_abortR A : dslF R (A _;_ Empt)  Empt 
+| co_abortRinv A : dslF R Empt   (A _;_ Empt) 
+
+| co_abortL A : dslF R (Empt _;_ A)   Empt 
+| co_abortLinv A : dslF R Empt    (Empt _;_ A)
+
+| co_distL A B C : dslF R (A _;_ (B _+_ C))  ((A _;_ B) _+_ (A _;_ C))
+| co_distLinv A B C : dslF R  ((A _;_ B) _+_ (A _;_ C)) (A _;_ (B _+_ C))
+
+| co_distR A B C : dslF R ((A _+_ B) _;_ C)  ((A _;_ C) _+_ (B _;_ C))
+| co_distRinv A B C : dslF R ((A _;_ C) _+_ (B _;_ C))   ((A _+_ B) _;_ C)
+
+| co_wrap A : dslF R (Eps _+_ (A _;_ Star A))  (Star A)
+| co_wrapinv A : dslF R (Star A)  (Eps _+_ (A _;_ Star A))
+
+| co_drop A : dslF R  (Star (Eps _+_ A))  (Star A)
+| co_dropinv A : dslF R (Star A)  (Star (Eps _+_ A))
+| co_cid A : dslF R A A 
+
+(*| ci_sym A B (H: A =R=B) : B =R=A*)
+| co_ctrans A B C  : dslF R  A B ->  dslF R B C -> dslF R A C
+| co_cplus A A' B B'  : dslF R A A'  -> dslF R B B' -> dslF R  (A _+_ B) (A' _+_ B')
+| co_cseq A A' B B'  : dslF R A A' -> dslF R B B' ->  dslF R (A _;_ B) (A' _;_ B')
+| co_cstar A B: dslF R  A B -> dslF R (Star A)  (Star B)
+(*| cfix r r' (p  : dslF R dslF) : dslF R r  r' p[d (cfix p) .: dslF R var_dslF] ->  r  r' (cfix p) (*guarded p otherwise unsound*)*)
+(*| guard a A B  : R A B -> dslF R ((Event a) _;_ A)  ((Event a) _;_ B)*)
+
+(*We need this to be a sum because Coq disallows fix in cofix*)
+| co_guard a A B  : R A B  -> dslF R ((Event a) _;_ A)  ((Event a) _;_ B).
+(**)
+
+(*parameterized gfp*)
+Inductive sumboolT (A B : Type) : Type := 
+ | leftT : A -> sumboolT A B
+ | rightT : B -> sumboolT A B.
+Definition bot2T (r0 r1 : @regex A) := False.
+Definition rU {A B : Type} (R0 R1 : A -> B-> Type)  := fun r0 r1 => sumboolT (R0 r0 r1) (R1 r0 r1).
+
+CoInductive dsl_co (R: @regex A -> @regex A -> Type) : regex -> regex -> Type := 
+| Co_fold A B : (dslF (rU (dsl_co R) R)) A B -> dsl_co R A B.
+Hint Constructors dsl_co.
+End CoinductiveDSL.
+Arguments co_shuffle {R A B C}.
+Arguments co_shuffleinv {R A B C}.
+Arguments co_retag {R A B}.
+Arguments co_untagL {R A}.
+Arguments co_untagLinv {R A}.
+Arguments co_untag {R A}.
+Arguments co_tagL {R A B}.
+Arguments co_assoc {R A B C}.
+Arguments co_associnv {R A B C}.
+Arguments co_swap {R A}.
+Arguments co_swapinv {R A}.
+Arguments co_proj {R A}.
+Arguments co_projinv {R A}.
+Arguments co_abortR {R A}.
+Arguments co_abortRinv {R A}.
+Arguments co_abortL {R A}.
+Arguments co_abortLinv {R A}.
+Arguments co_distL {R A B C}.
+Arguments co_distLinv {R A B C}.
+Arguments co_distR {R A B C}.
+Arguments co_distRinv {R A B C}.
+Arguments co_wrap {R A}.
+Arguments co_wrapinv {R A}.
+Arguments co_drop {R A}.
+Arguments co_dropinv {R A}.
+Arguments co_cid {R A}.
+Arguments co_ctrans {R A B C}.
+Arguments co_cplus {R A A' B B'}.
+Arguments co_cseq {R A A' B B'}.
+Arguments co_cstar {R A B}.
+Hint Constructors dslF.
 
 Section DSL_Complete.
 
-(*Lemma unf0 d : mu_height d = 0 -> full_unf d = d. 
-Proof.
-rewrite /full_unf. move=>->//. 
-Qed.
-Ltac t0 := exact:unf0.
-
-Hint Resolve unf0.*)
-
-
-
-(*Definition proj_proof {A : Type} {P : A -> Prop}  (H : { x| P x}) : P (proj_sig H)  :=
-match H with 
-| exist x H => H
-end.*)
 Ltac pp := intros;apply:proj2_sig.
 Hint Constructors dsl. 
 
@@ -1073,263 +785,37 @@ have: a \in a::l. done. move/H.
 ssa. apply X. eauto.
 Qed.
 
-
-
-
-(*Inductive contains2_gen bisim : regex -> regex -> Prop :=
- contains2_con c0 c1 (H0: Forall (fun e => bisim (e \ c0) (e \ c1)) (index_enum A)) (H1: nu c0 -> nu c1) : contains2_gen bisim c0 c1.
-
-
-Lemma contains2_gen_mon: monotone2 contains2_gen. 
+Lemma Empt_Eps : forall L, Empt < ⟨ L ⟩ = Eps.
 Proof.
-unfold monotone2. intros.  constructor. inversion IN. 
-elim: H0;ssa. inv IN.
+intros. lct1. apply:tagL. 2: { lct1. apply:retag. eauto. } 
 Qed.
-Hint Resolve contains2_gen_mon : paco.*)
+Hint Resolve Empt_Eps.
 
-
-
-(*Definition Contains2 r0 r1 := paco2 contains2_gen bot2 r0 r1.
-
-Lemma Contains2_der : forall c0 c1, Contains c0 c1 -> Forall (fun e => Contains2 (e \ c0) (e \ c1)) (index_enum A).
+Lemma Empt_r : forall L r, Empt < ⟨ L ⟩ = r.
 Proof.
-intros. punfold H.  inv H. 
-clear H. elim:H0;ssa. con. inv H.  done.
+intros. lct1. apply:tagL. 2: { lct1. apply:retag. eauto. } 
 Qed.
 
 
-Lemma Contains2_nu : forall c0 c1, Contains2 c0 c1 ->  nu ( c0) -> nu ( c1).
+Lemma o_lP : forall l l' L, (has nu l -> has nu l') ->  o_l l <⟨ L ⟩ = o_l l'.
 Proof.
-intros. punfold H.  inv H. eauto. 
+intros. rewrite /o_l. case_if;ssa. 
+rewrite H //. case_if=>//.
 Qed.
 
-*)
-
-
-(*Definition contains c c' := forall s, Match s c -> Match s c'.*)
-
-Lemma contains_derive : forall c c' e, contains c c' -> contains (e \ c) (e \ c').  
+Lemma nu_false : nu (\big[Plus/Empt]_(a : A) (Event a _;_ Empt)) = false.
 Proof.
-move => c c' e. rewrite /equiv. move=> HM s. rewrite -!deriveP. apply/HM.
+move: (index_enum A)=> l.
+elim: l;ssa.
+rewrite !big_nil. ssa.
+rewrite !big_cons. ssa.
 Qed.
 
-
-Inductive contains_gen bisim : regex -> regex -> Prop :=
- contains_con c0 c1 (H0: forall e, bisim (e \ c0) (e \ c1) : Prop ) (H1: nu c0 -> nu c1) : contains_gen bisim c0 c1.
-
-
-
-Definition Contains c0 c1 := paco2 contains_gen bot2 c0 c1.
-Hint Unfold  Contains : core.
-
-Lemma contains_gen_mon: monotone2 contains_gen. 
+Lemma nu_has : forall (l : @pder A), nu (\big[Plus/Empt]_(i <- l) i) = has nu l.
 Proof.
-unfold monotone2. intros.  constructor. inversion IN. intros.
-auto. inversion IN. auto.  
+elim;ssa. rewrite !big_nil. done.
+rewrite !big_cons. ssa. f_equal. done.
 Qed.
-Hint Resolve contains_gen_mon : paco.
-
-
-Theorem contains1 : forall c0 c1, contains c0 c1 -> Contains c0 c1.
-Proof.
-pcofix CIH. intros. pfold. constructor.
-- intros. right. apply CIH.  apply/contains_derive=>//.
-- move=>Hnu. have: Match nil c0. apply/Match_nil_nu=>//.
-  move/H0. move/nuP=>//. 
-Qed.
-
-
-
-Theorem contains2 : forall c0 c1, Contains c0 c1 -> contains c0 c1. 
-Proof.
-move=> c0 c1 HC s. 
-elim: s c0 c1 HC.
-- move=> c0 c1. sunfold. case. move=> ce c3 HC Hnu HC'. apply/nuP/Hnu/nuP=>//.
-- move=> a l IH c0 c1. sunfold. elim.
-  move=> c2 c3 /(_ a) [] // HC _. rewrite !deriveP. apply/IH=>//.
-Qed.
-
-
-Theorem containsP : forall c0 c1, contains c0 c1 <-> Contains c0 c1.
-Proof.
-move=> c0 c1. con. apply/contains1. apply/contains2.
-Qed.
-
-
-
-
-Hint Resolve undup_uniq.
-Unset Implicit Arguments.
-
-(*Less effecient, fix this later*)
-Equations containsb (pp : pder * pder) (visited : seq (pder * pder) ) : bool by wf (r_measure visited pp) := 
- containsb pp visited  with (dec (pp \in visited)) => {
-  containsb _  _ (in_left) := true;
-  containsb pp visited (in_right) with (dec (uniq_pair pp)) => { 
-        containsb pp visited _ (in_left) := ((has nu pp.1) ==> (has nu pp.2)) && 
-                                        (foldInAll (index_enum A) (fun e _ => containsb (pair_pd_l e (pp)) (pp::visited)));
-        containsb pp visited _ (in_right) := false }
- }.
-Next Obligation.
-apply/ltP. apply:measure_lt. done. rewrite e0 //. 
-Defined.
-
-(*Effecient but awkard for proofs*)
-Equations containsb2 (pp : pder * pder) (visited : seq (pder * pder) ) (H : uniq_pair pp) : bool by wf (r_measure visited pp) := 
- containsb2 pp visited H  with (dec (pp \in visited)) => {
-  containsb2 _  _ _ (in_left) := true;
-  containsb2 pp visited _ (in_right) := ((has nu pp.1) ==> (has nu pp.2)) && 
-                                           (foldInAll (index_enum A) (fun e _ => containsb2 (pair_pd_l e pp) (pp::visited) _));
- }.
-Next Obligation. 
-apply/andP.
-con. simpl. rewrite /pd_l. done.  simpl. rewrite /pd_l. done.
-Defined.
-Next Obligation.
-apply/ltP. apply:measure_lt. done. rewrite e0 //. 
-Defined.
-Set Implicit Arguments.
-
-Lemma containsb12 : forall pp visited (H : uniq_pair pp), containsb pp visited -> containsb2 pp visited H.
-Proof.
-intros. funelim (containsb pp visited).
-simp containsb2. simpl. rewrite Heq. simpl. done.
-simp containsb2. rewrite Heq0. simpl.
-rewrite -Heqcall in H1. ssa.
-rewrite !foldInAllP in H3 *. 
-apply/allP. intro. intros. move: (allP H3 _ H1). move/H. move/inP: H1=>H1'. move/(_ H1')=>Hall.
-apply Hall. rewrite -Heqcall in H0. done.
-Qed.
-
-Lemma containsb21 : forall pp visited (H : uniq_pair pp), containsb2 pp visited H -> containsb pp visited.
-Proof.
-intros. funelim (containsb pp visited). rewrite -Heqcall. done.
-rewrite -Heqcall. simp containsb2 in H1. rewrite Heq0 in H1. ssa.
-rewrite !foldInAllP in H3 *. 
-apply/allP. intro. intros. move: (allP H3 _ H1). move/H. move/inP: H1=>H1'. move/(_ H1')=>Hall.
-apply Hall.  clear H0.
-rewrite e1 in H. done.
-Qed.
-
-Lemma containsb_iff : forall pp visited (H : uniq_pair pp), containsb pp visited <-> containsb2 pp visited H.
-Proof.
-intros. split. apply:containsb12. apply:containsb21.
-Qed.
-
-Inductive contains_ind_gen contains : pder -> pder-> Prop :=
- contains_con3 l0 l1 (H0: forall e, contains (pd_l e l0) (pd_l e l1) : Prop ) (H1: has nu l0 -> has nu l1) : contains_ind_gen contains l0 l1.
-
-Definition ContainsInd l0 l1 := paco2 contains_ind_gen bot2 l0 l1.
-Hint Unfold  ContainsInd : core.
-
-Lemma contains_ind_gen_mon: monotone2 contains_ind_gen. 
-Proof.
-unfold monotone2. intros.  constructor. inversion IN. intros.
-auto. inversion IN. auto.  
-Qed.
-Hint Resolve contains_ind_gen_mon : paco.
-
-Lemma containsb_complete_aux : forall l0 l1 l_v, uniq_pair (l0,l1) ->  ContainsInd l0 l1 ->  containsb  (l0,l1) l_v. 
-Proof. 
-intros. funelim (containsb  (l0,l1) l_v).  rewrite -Heqcall. ssa.
-rewrite -Heqcall. ssa. 
-punfold H1.  inv H1. apply/eqP=>//. apply/eqP. apply/implyP. done.
-rewrite foldInAllP. apply/allP=> x xIn. 
-apply:H. apply/inP. eauto.  simpl. 
-rewrite /uniq_pair /pd_l. ssa.
-punfold H1. inv H1. case: (H2 x)=>//. con. 
-done. rewrite  e1 in H. done.
-Qed.
-
-
-Definition containsb_wrap (l l' : pder) := containsb (undup l,undup l') nil.
-
-Theorem equiv_rInd2 : forall l l', ContainsInd l l' -> contains ( (\big[Plus/Empt]_(i <- l) i))  (\big[Plus/Empt]_(i <- l') i).
-Proof.
-move=> l0 l1 HC s. 
-elim: s l0 l1  HC.
-- move=> c0 c1. sunfold. case. move=> ce c3 HC HC'. intros. apply/Match_has_nu_iff/HC'/Match_has_nu_iff.  done.
-- move=> a l IH c0 c1. sunfold. elim.
-  move=> c2 c3 /(_ a) [] // HC _. 
-  rewrite !deriveP2. rewrite /pd_sum. rewrite !pd_plus //.
-  apply/IH=>//. 
-Qed.
-
-Lemma derive_pd_l2 : forall l e, contains (e \ \big[Plus/Empt]_(i <- l) i) 
-                                   (\big[Plus/Empt]_(i <- pd_l e l) i).
-Proof.
-intros. intro.  move: (derive_pd_l l e s). case. ssa.
-Qed.
-
-Lemma derive_pd_l3 : forall l e, contains  (\big[Plus/Empt]_(i <- pd_l e l) i)  (e \ \big[Plus/Empt]_(i <- l) i) .
-Proof.
-intros. intro.  move: (derive_pd_l l e s). case. ssa.
-Qed.
-
-Lemma contains_r_trans : forall r0 r1 r2, contains r0 r1 -> contains r1 r2 -> contains r0 r2.
-Proof.
-intros. intro. eauto. 
-Qed.
-
-Theorem Contains_co_ind : forall l l', Contains (\big[Plus/Empt]_(i <- l) i) (\big[Plus/Empt]_(i <- l') i) -> ContainsInd l l'.
-Proof.
-pcofix CIH. intros. punfold H0. inv H0. pfold. con. intros.
-right. apply/CIH. 
-destruct (H1 e)=>//. apply/containsP. move/containsP : H.
-intros. 
-apply/contains_r_trans.
-apply:derive_pd_l3.
-apply/contains_r_trans.
-2: { apply:derive_pd_l2. } done.
-rewrite !nu_has in H2. done.
-Qed.
-
-Lemma Contains_contains : forall l l', ContainsInd l l' <-> contains (\big[Plus/Empt]_(i <- l) i) (\big[Plus/Empt]_(i <- l') i). 
-Proof.
-intros. split. apply/equiv_rInd2. move/containsP/Contains_co_ind=>//.
-Qed.
-
-Lemma containsb_complete : forall l0 l1, ContainsInd l0 l1 ->  containsb_wrap l0 l1.
-Proof.
-intros. apply:containsb_complete_aux. rewrite /uniq_pair. ssa. 
-apply/Contains_contains.
-intro. rewrite !Match_big_undup. move: s. apply/Contains_contains=>//.
-Qed.
-
-
-
-
-Lemma c_eq_undup1 : forall l L,  \big[Plus/Empt]_(i <- (undup l)) i <⟨L⟩=  \big[Plus/Empt]_(i <- l) i.
-Proof.
-elim;ssa.
-case_if.  rewrite !big_cons. 
-lct2. lcp1. lcid. apply:X. clear X.
-elim: l a H;ssa. 
-rewrite !inE in H. destruct (eqVneq a0 a).   subst. ssa.
-
-case_if. eauto. rewrite /= !big_cons.
-apply:ctrans2. apply:ctrans2. apply:shuffle. lcp1. apply:tagL. lcid.  
-lcp1. done. done.
-ssa.
-case_if=>//. lct2. apply:retag. eauto.
-rewrite !big_cons. lct2. apply:retag. eauto.
-rewrite !big_cons. eauto.
-Qed.
-
-(*Lemma c_eq_undup2 : forall l L, \big[Plus/Empt]_(i <- l) i  <⟨L⟩=  \big[Plus/Empt]_(i <- (undup l)) i.  
-Proof.
-elim;ssa.
-case_if.  rewrite H. rewrite !big_cons. clear H.
-elim: l a H0;ssa. 
-rewrite !inE in H0. de (orP H0). norm_eqs. rewrite !big_cons. 
-apply:c2_trans. 2: { apply:c2_trans.  2: { apply:c2_plus_assoc. }  apply:c2_plus_ctx. apply:c2_sym. apply:c2_plus_idemp. apply:c2_refl. } 
-apply:c2_plus_ctx. done. done. rewrite !big_cons.
-rewrite -c2_plus_assoc.
-rewrite [a0 _+_ a] c2_plus_comm.
-rewrite c2_plus_assoc. rewrite -(H a0) //. 
-rewrite !big_cons.
-apply:c2_plus_ctx. done. done.
-Qed.*)
 
 Lemma c_eq_cat1 : forall l0 l1 L,  \big[Plus/Empt]_(i <- l0 ++ l1) i <⟨L⟩=  \big[Plus/Empt]_(i <- l0) i _+_  \big[Plus/Empt]_(i <- l1) i.
 Proof.
@@ -1363,52 +849,286 @@ lct2. apply:factor_seq_r_r. apply:cseq. done. done.
 Qed.
 
 Lemma c_eq_derive_pd_l2 : forall c L a, \big[Plus/Empt]_(i <- pd a c) i <⟨ L ⟩ =  a \ c.
-Proof. Admitted.
-
-Lemma dsl_mon : forall T0 T1 r0 r1, dsl T0 r0 r1 -> (forall p v, PTree.get p T0 = Some v -> PTree.get p T1 = Some v) -> dsl T1 r0 r1.
 Proof.
-move=> T0 T1 r0 r1 d.
-elim: d T1;auto.
-intros. apply:ctrans. apply X. eauto. apply X0. eauto.
-intros. apply:dsl_var. eauto.
-intros.
-have: forall (p : positive), PTree.get p T1 = None -> PTree.get p R = None.
-intros. destruct (PTree.get p R) eqn:Heqn. apply H in Heqn. rewrite Heqn in H0. done. done.
-move=>Hnone.
-apply:dsl_fix. apply:Hnone.
-
-
-Lemma decomp_p1 : forall l L,  \big[Plus/Empt]_(i <- l) i <⟨L⟩= (o_l l) _+_ \big[Plus/Empt]_(a : A) (Event a _;_ \big[Plus/Empt]_(i <- pd_l a l) i ). 
-Proof. 
-intros.  
-lct1. 
-Check derive_unfold_coerce_l.
-apply:derive_unfold_coerce_r.
-rewrite (derive_unfold2 L (\big[Plus/Empt]_(i <- l) i)). 
-apply:c2_plus_ctx.
-rewrite /o_l.
-destruct (has nu _) eqn:Heqn.
-elim: l Heqn. rewrite big_nil //=.
-ssa. rewrite big_cons /= /o /=.
-destruct (nu _) eqn:Heqn2.  ssa. ssa. 
-elim: l Heqn;ssa. rewrite big_nil //=. 
-rewrite big_cons //=. rewrite /o //=. 
-move/negP/negP: Heqn. rewrite negb_or. ssa.
-rewrite (negbTE H0) /=.
-have: has nu l = false. apply/negP/negP=>//. 
-move/H. rewrite /o. done.
-move: (index_enum A)=> l2.
-elim: l2 l. intros.  rewrite !big_nil //=. 
-ssa. rewrite !big_cons. 
-apply:c2_plus_ctx.
-apply:c2_seq_ctx. done.
-rewrite big_derive. rewrite /pd_l.
-rewrite c_eq_undup. 
-clear H.
-elim: l0. rewrite !big_nil. ssa.
-ssa. rewrite !big_cons. rewrite c_eq_cat.
-apply:c2_plus_ctx;ssa. clear H.
-rewrite c_eq_derive_pd_l //. done.
+elim;ssa; try solve [ rewrite !big_nil //=].
+case_if. norm_eqs. rewrite eqxx //= !big_cons big_nil. lct1. apply retag. eauto.
+rewrite eq_sym H big_nil //=.
+lct1. apply:c_eq_cat1.
+lcp1. done. done.
+case_if. lct1. apply:c_eq_cat1. lcp1. rewrite map_big_plus.
+lct1. apply:factor_seq_r_l. apply:cseq. done. done. done.
+rewrite map_big_plus.
+lct1. apply:factor_seq_r_l. apply:cseq. done. done. 
+rewrite map_big_plus.
+lct1. apply:factor_seq_r_l. apply:cseq. done. done. 
 Qed.
 
-Lemma decomp_p2 : forall l L,  (o_l l) _+_ \big[Plus/Empt]_(a : A) (Event a _;_ \big[Plus/Empt]_(i <- pd_l a l) i )  <⟨L⟩=.  \big[Plus/Empt]_(i <- l) i 
+
+Lemma c_eq_undup1 : forall l L,  \big[Plus/Empt]_(i <- (undup l)) i <⟨L⟩=  \big[Plus/Empt]_(i <- l) i.
+Proof.
+elim;ssa.
+case_if.  rewrite !big_cons. 
+lct2. lcp1. lcid. apply:X. clear X.
+elim: l a H;ssa. 
+rewrite !inE in H. destruct (eqVneq a0 a).   subst. ssa.
+
+case_if. eauto. rewrite /= !big_cons.
+apply:ctrans2. apply:ctrans2. apply:shuffle. lcp1. apply:tagL. lcid.  
+lcp1. done. done.
+ssa.
+case_if=>//. lct2. apply:retag. eauto.
+rewrite !big_cons. lct2. apply:retag. eauto.
+rewrite !big_cons. eauto.
+Qed.
+
+Lemma c_eq_undup2 : forall l L, \big[Plus/Empt]_(i <- l) i  <⟨L⟩=  \big[Plus/Empt]_(i <- (undup l)) i.  
+Proof.
+elim;ssa. rewrite !big_cons.
+case_if.  lct2. apply:X.
+clear X.
+elim: l a H;ssa. 
+rewrite !inE in H. 
+destruct (eqVneq a0 a). subst. rewrite !big_cons.
+lct1. apply shuffleinv. lcp1. eauto. eauto. 
+simpl. rewrite !big_cons. lct1. apply shuffleinv.
+lct1. lcp1. apply retag. lcid. lct1. apply shuffle. lcp1. lcid. apply:X. done.
+rewrite !big_cons. eauto.
+Qed.
+
+Lemma big_plus1 : forall a F, F a <⟨nil⟩= a \ \big[Plus/Empt]_a0 (Event a0 _;_ F a0).
+Proof.
+move=> a.
+have: a \in index_enum A by done. 
+move : (index_enum A)=>l.
+elim: l;ssa. rewrite !big_cons. rewrite !inE in H. simpl.
+destruct (eqVneq a a0). subst. 
+lct2. lcp1. apply:projinv.  lcid. eauto.
+lct1. apply X. ssa. eauto.
+Qed.
+
+Lemma big_event_notin_lF R : forall (l : seq A) a (F : A -> regex), a \notin l ->   a \ \big[Plus/Empt]_(i <- l) (Event i _;_ (F i)) <⟨R⟩= Empt . 
+Proof.
+elim=>//=;ssa. rewrite !big_nil //.
+rewrite  !inE in H.  ssa.
+rewrite !big_cons. ssa.  rewrite eq_sym (negbTE H0). 
+lct1. lcp1. instantiate (1:= Empt). eauto. apply:X. done. eauto.
+Qed.
+
+Lemma big_plus2 : forall a F, a \ \big[Plus/Empt]_a0 (Event a0 _;_ F a0) <⟨nil⟩=  F a.
+Proof.
+move=> a.
+have: a \in index_enum A by done. 
+move : (index_enum A)=>l.
+elim: l;ssa. rewrite !big_cons. rewrite !inE in H. 
+destruct (eqVneq a a0). subst. rewrite /= eqxx. 
+lct1. lcp1. apply proj. lcid. 
+destruct (a0 \in l) eqn:Heqn. lct2. apply untag.  
+lct2. lcp1.  apply X.  done. lcid. eauto. 
+lct1. lcp1. lcid. apply:big_event_notin_lF. rewrite Heqn. done.
+eauto.
+
+simpl. rewrite eq_sym (negbTE i).
+lct1. lcp1. instantiate (1:= Empt). eauto. apply:X. ssa.
+eauto.
+Qed.
+
+
+Definition is_sub_bool {A : eqType} (l0 l1 : seq A) := all (fun x => x \in l1) l0. 
+Lemma is_subP : forall (A : eqType) (l0 l1 : seq A), is_sub l0 l1 <-> is_sub_bool l0 l1.
+Proof.
+intros. split. 
+rewrite /is_sub. intros. apply/allP. intro. eauto.
+move/allP.  eauto.
+Qed.
+
+Lemma dsl_mon : forall l l' E F, dsl l E F -> is_sub_bool l l' ->  dsl l' E F.
+Proof.
+move=> l l' E F p. 
+elim: p l';auto with dsl;simpl;intros.
+apply:ctrans. eauto. eauto.
+apply:dsl_var. move/is_subP : H=>Hsub. apply Hsub. done.
+apply:dsl_fix. apply:X. ssa.
+apply/is_subP. move/is_subP : H.
+intro. intro. move/H. rewrite !inE. move=>->//. lia.
+Defined.
+
+
+
+
+
+Lemma decomp_p1_aux : forall l ,  \big[Plus/Empt]_(i <- l) i <⟨nil⟩= (o_l l) _+_ \big[Plus/Empt]_(a : A) (Event a _;_ \big[Plus/Empt]_(i <- pd_l a l) i ). 
+Proof. 
+intros. 
+rewrite /pd_l. 
+suff:   \big[Plus/Empt]_(i <- l) i < ⟨ [::] ⟩ =
+  o_l l _+_ \big[Plus/Empt]_a (Event a _;_ \big[Plus/Empt]_(i <- (flatten [seq pd a i | i <- l])) i).
+intros. lct1. apply:X. lcp1. lcid.
+apply eq_big_plus_c. intro. ssa. lcs1. lcid. 
+lct2. apply c_eq_undup2. done.
+lct1. apply:derive_unfold_coerce_l. 
+lct2. apply:derive_unfold_coerce_r.
+lcp1. 
+rewrite /o_l /o. rewrite nu_has. 
+destruct (has nu _) eqn:Heqn. simpl. done. simpl. eauto.
+
+apply/eq_big_plus_c.
+intro. ssa. apply:cseq. done.
+lct1. apply/tagL. 
+2: { lct1. apply/retag. lcp1. lcid. rewrite !big_derive. 
+     lct2. apply:big_plus1. 
+     elim: l;ssa. 
+     rewrite !big_cons. lct2. apply c_eq_cat2. lcp1. 
+     apply c_eq_derive_pd_l1. done. } 
+Qed.
+
+Lemma decomp_p1 : forall l L ,  \big[Plus/Empt]_(i <- l) i <⟨L⟩= (o_l l) _+_ \big[Plus/Empt]_(a : A) (Event a _;_ \big[Plus/Empt]_(i <- pd_l a l) i ). 
+Proof.
+intros. apply/dsl_mon. apply/decomp_p1_aux. eauto.
+Qed.
+
+Lemma nu_plus : forall (A' : Type)l (F : A' -> @regex A), nu(\big[Plus/Empt]_(a <- l) (F a)) = has (fun x => nu (F x)) l.
+Proof.
+move=> A'.
+elim;ssa. rewrite !big_nil. ssa.
+rewrite !big_cons. simpl. f_equal. done.
+Qed.
+
+Lemma has_xpred0 : forall (A : Type) (l : seq A), has xpred0 l = false.
+Proof.
+move=> A. elim;ssa.
+Qed.
+
+
+Lemma decomp_p2_aux : forall l,  (o_l l) _+_ \big[Plus/Empt]_(a : A) (Event a _;_ \big[Plus/Empt]_(i <- pd_l a l) i )  <⟨nil⟩=  \big[Plus/Empt]_(i <- l) i.
+Proof. 
+intros. 
+rewrite /pd_l. 
+suff: 
+  o_l l _+_ \big[Plus/Empt]_a (Event a _;_ \big[Plus/Empt]_(i <- (flatten [seq pd a i | i <- l])) i)  < ⟨ [::] ⟩ =  \big[Plus/Empt]_(i <- l) i.
+intros. lct2. apply:X. lcp1. lcid.
+apply eq_big_plus_c. intro. ssa. lcs1. lcid. 
+lct2. apply c_eq_undup1. done.
+lct1. apply:derive_unfold_coerce_l. 
+lct2. apply:derive_unfold_coerce_r.
+lcp1. 
+rewrite /o_l /o. rewrite nu_has. 
+destruct (has nu _) eqn:Heqn. simpl. done. simpl. 
+rewrite nu_plus. simpl. rewrite has_xpred0. done.
+apply/eq_big_plus_c.
+intro. ssa. apply:cseq. done.
+have: a \ o_l l = Empt. 
+rewrite /o_l. case_if;ssa.
+move=>->. lct1. apply untagL.
+rewrite !big_derive. 
+lct1. apply:big_plus2. 
+     elim: l;ssa. 
+     rewrite !big_cons. lct1. apply c_eq_cat1. lcp1. 
+     apply c_eq_derive_pd_l2. done. 
+Qed.
+
+Lemma decomp_p2 : forall l L,  (o_l l) _+_ \big[Plus/Empt]_(a : A) (Event a _;_ \big[Plus/Empt]_(i <- pd_l a l) i )  <⟨L⟩=  \big[Plus/Empt]_(i <- l) i.
+Proof.
+intros. apply/dsl_mon. apply/decomp_p2_aux. eauto.
+Qed.
+
+(*To avoid universe inconsistency we create a type similar to sumbool*)
+
+Check @reachable.
+
+(*Parameter  (V : @vType A) (l : @nType A) (H : D_bisim V l)  (Hnot: l\notin V). 
+Check (D_bisim_proj H Hnot).*)
+(*l\notin V -> reachable PM.Pb H = *)
+(*                                                              (PM.Pb l.1 l.2) && (allP (fun (a : A) => @reachable _ (l::V) (pair_pd_l a l) PM.Pb (D_bisim_proj H a)) (index_enum A)).
+*)
+
+Lemma reachable_simp : forall V l (H : D_bisim V l) (Hnot: l\notin V), reachable PM.Pb H = 
+                                                              (PM.Pb l.1 l.2) && (all (fun (a : A) => reachable  PM.Pb (D_bisim_proj H Hnot a)) (index_enum A)).
+Proof.
+intros. destruct H.  ssa. exfalso.
+rewrite i in Hnot. done. ssa. rewrite (negbTE Hnot) /=. ssa.
+Qed.
+
+Fixpoint proof_irrel  V l (H H' : D_bisim V l) {struct H} : reachable PM.Pb H = reachable PM.Pb H'.
+Proof.
+refine (
+match H in D_bisim V' l' return V' = V -> l' = l -> reachable PM.Pb H = reachable PM.Pb H' with 
+| Db_stop x y z => fun HQ HQ' =>_
+| Db_next x y z a b => fun HQ HQ'=> _
+end Logic.eq_refl Logic.eq_refl).
+ssa;subst.  destruct H'; ssa.
+destruct (Utils.dec _). done. f_equal. 
+apply/eq_in_all. intro. ssa.
+destruct (Utils.dec _). done. 
+f_equal. apply/eq_in_all.  intro. ssa. subst.
+destruct H'. exfalso. rewrite i in z. ssa.
+ssa.
+destruct (Utils.dec _). done. 
+f_equal. apply/eq_in_all. intro. ssa.
+Qed.
+
+Fixpoint EQ_complete_aux p (V : seq (@pder A * @pder A)) (H : D_bisim V p) {struct H} : forall (L : seq (@regex A * @regex A)),
+    (forall x y, (x,y) \in V ->  (\big[Plus/Empt]_(i <- x) i, \big[Plus/Empt]_(i <- y) i) \in L) -> 
+                                                         reachable PM.Pb H -> 
+                                                        sumboolT (((\big[Plus/Empt]_(i <- p.1) i), (\big[Plus/Empt]_(i <- p.2) i)) \in L)
+                                                                 ((\big[Plus/Empt]_(i <- p.1) i) <⟨L⟩= (\big[Plus/Empt]_(i <- p.2) i)).
+simpl. ssa.
+destruct (p \in V) eqn:Heqn. left.
+apply/H0. de p.
+have: p \notin V. lia.
+move=>Hnot.
+move: (D_bisim_proj H Hnot)=>HD. clear Heqn.
+right.
+apply dsl_fix.
+apply:ctrans. apply:decomp_p1. 
+apply:ctrans. 2: {  apply:decomp_p2. } 
+move: H1.
+rewrite reachable_simp //. ssa.
+apply:cplus. apply:(@dsl_mon nil)=>//. apply:o_lP.  move/implyP:H2=>Himp. apply/Himp.
+destruct p. ssa.
+move  HeqL':  ((\big[Plus/Empt]_(i <- p) i, \big[Plus/Empt]_(i <- p0) i) :: L) => L'.
+suff: forall a, Event a _;_  \big[Plus/Empt]_(i <- pd_l a p) i <⟨L'⟩= Event a _;_  \big[Plus/Empt]_(i <- pd_l a p0) i.
+intros. clear H H2 H3 HeqL'.
+move: X.
+move:(index_enum A)=> lA.
+elim: lA. 
+ssa. rewrite !big_nil. done.
+ssa. rewrite !big_cons. lcp1. done.
+apply/X. done. 
+intros. 
+move Heq : ( \big[Plus/Empt]_(i <- pd_l a p) i) => r0.
+move Heq2 : ( \big[Plus/Empt]_(i <- pd_l a p0) i) => r1.
+suff:    
+sumboolT ((r0,r1) \in L') (r0 <⟨L'⟩=r1).
+intros. destruct X. apply:dsl_var. done.
+apply:cseq. done. done. 
+move:(EQ_complete_aux _ _ (HD a))=>//= HH. 
+subst. apply HH. intros.
+rewrite !inE in H1. de (orP H1). norm_eqs. inv H4. rewrite eqxx //. auto.
+erewrite proof_irrel.
+apply (allP H3). done.
+Qed.
+
+
+
+Lemma bisim_c_eq : forall l l', reachable_wrap l l' PM.Pb ->  (\big[Plus/Empt]_(i <- l) i) <⟨nil⟩= (\big[Plus/Empt]_(i <- l') i).
+Proof.
+intros. apply (@EQ_complete_aux _ _ _ nil) in H. destruct H. done. simpl in d.
+lct1. apply c_eq_undup2. 
+lct2. apply c_eq_undup1. done. 
+ssa.
+Qed.
+
+Lemma equiv_r_plus : forall (c0 c1 : @regex A), contains_r c0 c1 -> contains_r (\big[Plus/Empt]_(i <- c0::nil) i)  (\big[Plus/Empt]_(i <- c1::nil) i).
+Proof.
+intros. intro. ssa. move: H0. rewrite !big_cons !big_nil. intros. inv H0;eauto. con. apply/H. done.
+inv H3.
+Qed.
+
+(*Lemma c_eq_soundness_alternative_proof : forall (c0 c1 : regex), c0 <⟨nil⟩= c1 ->  equiv_r c0 c1.
+Proof. move=> c0 c1. move/c_eq_ind_coind. move/bisim_soundness. move/equivP=>//.
+Qed.*)
+
+Lemma c_eq_completeness : forall (c0 c1 : regex), contains_r c0 c1 -> c0 <⟨nil⟩= c1.
+Proof. move=> c0 c1. move/equiv_r_plus. move/Bisim_co_ind. move/bisim_complete.
+move/bisim_c_eq. rewrite !big_cons !big_nil. eauto.
+Qed.

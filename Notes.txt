@@ -550,10 +550,54 @@ Proving this equivalent to an effecient procedure should be fine, because we hav
 Paper might be the shortest proof of regex decidability.
 I think it is the shortest one, approx 880 lines of code
 
+We don't use equations because Wf assumes functional extensionality and we don't need it.
+
+So a major problem in showing completeness for the coinductive dsl is Coq's guardedness condition,
+no fix in cofix. Notice to show completeness of the inductive system, we had to do an induction on
+the alphabet. The Coq guardedness checker does not allow this inside a cofix (which we naturally would have)
+as completeness statement : contains r0 r1 -> co_dsl r0 r1, is naturally by outer cofix, antimorov decomposition
+followed by induction. This highligts the proof for the axiomatization of equivalence. 
+To show completeness of the coinductive system, we do not need to do it directly. It suffices to show,
+co_dsl r0 r1 -> Bisimilar r0 r1 -> contains r0 r1. Since this proof is also by coinduction, but we use 
+the paco fixpoint (since Bisimilar is in Prop, rather than type), we can do induction under coinduction.
+
+This however means we cannot show soundenss of inductive dsl by translating to coinductive dsl
+Define translation from indctuvei to coinductive dsl
+
+
+Another insight:
+In the diagram, the top arrow going right is by antimorov decomposition with partial derivatives.
+Using the partial der is important for finiteness, since we are mapping to an inductive type
+
+The bottom arrow going left is by antimorov decomposition with standard derivatives,
+Using the standard is simpler, and finiteness is not important since we are mapping to a coinductive type
+
+To show translation from inductive to coinductive, we follow the approach in the proof, using 
+parameterized coinduction. Without it, the guardedness checker did not accept it
+
+
 
 Todos if time:
 Simplify axioms of pred.v
 Parameterize decision procedure over set implementation
+Explore the idea of partial/standard derivative in relation to induction/coinduction
+
+Wait with this proof until completeness of coinductive dsl completeness
+equality
+(*Lemma c_eq_soundness_alternative_proof : forall (c0 c1 : regex), c0 <⟨nil⟩= c1 ->  equiv_r c0 c1.
+Proof. move=> c0 c1. move/c_eq_ind_coind. move/bisim_soundness. move/equivP=>//.
+Qed.*)
 
 
-We don't use equations because Wf assumes functional extensionality and we don't need it.
+
+Idea:
+See if it is posible to do parameterized coinduction "light weight" without paco, 
+because paco doesn't allow it on Type, propose new technique if succesful!
+
+Idea for the paper:
+What we are doig is simulating parameterized coinduction in various ways. 
+Not simulating, we are doing finitary parameterized coinduction,
+that is paco F R, where R is finite. 
+If R is finite and F is invertible, we should be able to decide it.
+We are writing our proofs for characterizing equivalecne of regex nice and neat,
+and now we "simulate" the 
