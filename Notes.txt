@@ -615,3 +615,16 @@ practical reasons we don't mechanise from the same functor.
 We would need the relation in the functor to be instantiated for both Props and lists.
 We would not be able to have all rules on the same level, we need the fix rule to add to the context.
 We just describe this informally. So now the coding part of the projection is done!
+
+
+
+
+Random thought:
+The point of this porject was an intentional view of proofs, how the proof is shaped matters! The motivation for this is bit coded strings.
+The proofs matter because the can be translated to mappings on parse trees. Since every effecient mapping, most likely, will be of grabmeyer shape, why do we even bother to axiomatize the system.
+Why not just have ACI plus derivatives (grabmeyer)? 
+Because that system is not a declarative description of an interpreter on parse trees. 
+Grabmeyer performs antimorov decomposition at every step, what is the computational interpretation of this?
+The decomposition is sound because it follows the laws for regular languages. 
+Restricting the axioms to be of algebraic form (which in computer science means "compositional"), let's each rule be interpreted as an operational on parse trees.
+
