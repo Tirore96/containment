@@ -19,7 +19,7 @@
 
 \bibliographystyle{plainurl}% the mandatory bibstyle
 
-\title{Dummy title hello} %TODO Please add
+\title{Dummy title hello234} %TODO Please add
 
 %\titlerunning{Dummy short title} %TODO optional, please use if title is longer than one line
 
@@ -64,278 +64,1068 @@
 \SeriesVolume{42}
 \ArticleNo{23}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{proof}
 
 \begin{document}
+\include{macros}
 
 \maketitle
 
 %TODO mandatory: add short abstract of the document
 \begin{abstract}
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent convallis orci arcu, eu mollis dolor. Aliquam eleifend suscipit lacinia. Maecenas quam mi, porta ut lacinia sed, convallis ac dui. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse potenti. 
 \end{abstract}
 
-\section{Typesetting instructions -- Summary}
-\label{sec:typesetting-summary}
-
-LIPIcs is a series of open access high-quality conference proceedings across all fields in informatics established in cooperation with Schloss Dagstuhl. 
-In order to do justice to the high scientific quality of the conferences that publish their proceedings in the LIPIcs series, which is ensured by the thorough review process of the respective events, we believe that LIPIcs proceedings must have an attractive and consistent layout matching the standard of the series.
-Moreover, the quality of the metadata, the typesetting and the layout must also meet the requirements of other external parties such as indexing service, DOI registry, funding agencies, among others. The guidelines contained in this document serve as the baseline for the authors, editors, and the publisher to create documents that meet as many different requirements as possible. 
-
-Please comply with the following instructions when preparing your article for a LIPIcs proceedings volume. 
-\paragraph*{Minimum requirements}
-
-\begin{itemize}
-\item Use pdflatex and an up-to-date \LaTeX{} system.
-\item Use further \LaTeX{} packages and custom made macros carefully and only if required.
-\item Use the provided sectioning macros: \verb+\section+, \verb+\subsection+, \verb+\subsubsection+, \linebreak \verb+\paragraph+, \verb+\paragraph*+, and \verb+\subparagraph*+.
-\item Provide suitable graphics of at least 300dpi (preferably in PDF format).
-\item Use BibTeX and keep the standard style (\verb+plainurl+) for the bibliography.
-\item Please try to keep the warnings log as small as possible. Avoid overfull \verb+\hboxes+ and any kind of warnings/errors with the referenced BibTeX entries.
-\item Use a spellchecker to correct typos.
-\end{itemize}
-
-\paragraph*{Mandatory metadata macros}
-Please set the values of the metadata macros carefully since the information parsed from these macros will be passed to publication servers, catalogues and search engines.
-Avoid placing macros inside the metadata macros. The following metadata macros/environments are mandatory:
-\begin{itemize}
-\item \verb+\title+ and, in case of long titles, \verb+\titlerunning+.
-\item \verb+\author+, one for each author, even if two or more authors have the same affiliation.
-\item \verb+\authorrunning+ and \verb+\Copyright+ (concatenated author names)\\
-The \verb+\author+ macros and the \verb+\Copyright+ macro should contain full author names (especially with regard to the first name), while \verb+\authorrunning+ should contain abbreviated first names.
-\item \verb+\ccsdesc+ (ACM classification, see \url{https://www.acm.org/publications/class-2012}).
-\item \verb+\keywords+ (a comma-separated list of keywords).
-\item \verb+\relatedversion+ (if there is a related version, typically the ``full version''); please make sure to provide a persistent URL, e.\,g., at arXiv.
-\item \verb+\begin{abstract}...\end{abstract}+ .
-\end{itemize}
-
-\paragraph*{Please do not \ldots} %Do not override the \texttt{\seriesstyle}-defaults}
-Generally speaking, please do not override the \texttt{lipics-v2021}-style defaults. To be more specific, a short checklist also used by Dagstuhl Publishing during the final typesetting is given below.
-In case of \textbf{non-compliance} with these rules Dagstuhl Publishing will remove the corresponding parts of \LaTeX{} code and \textbf{replace it with the \texttt{lipics-v2021} defaults}. In serious cases, we may reject the LaTeX-source and expect the corresponding author to revise the relevant parts.
-\begin{itemize}
-\item Do not use a different main font. (For example, the \texttt{times} package is forbidden.)
-\item Do not alter the spacing of the \texttt{lipics-v2021.cls} style file.
-\item Do not use \verb+enumitem+ and \verb+paralist+. (The \texttt{enumerate} package is preloaded, so you can use
- \verb+\begin{enumerate}[(a)]+ or the like.)
-\item Do not use ``self-made'' sectioning commands (e.\,g., \verb+\noindent{\bf My+ \verb+Paragraph}+).
-\item Do not hide large text blocks using comments or \verb+\iffalse+ $\ldots$ \verb+\fi+ constructions. 
-\item Do not use conditional structures to include/exclude content. Instead, please provide only the content that should be published -- in one file -- and nothing else.
-\item Do not wrap figures and tables with text. In particular, the package \texttt{wrapfig} is not supported.
-\item Do not change the bibliography style. In particular, do not use author-year citations. (The
-\texttt{natbib} package is not supported.)
-\end{itemize}
-
-\enlargethispage{\baselineskip}
-
-This is only a summary containing the most relevant details. Please read the complete document ``LIPIcs: Instructions for Authors and the \texttt{lipics-v2021} Class'' for all details and don't hesitate to contact Dagstuhl Publishing (\url{mailto:publishing@dagstuhl.de}) in case of questions or comments:
-\href{http://drops.dagstuhl.de/styles/lipics-v2021/lipics-v2021-authors/lipics-v2021-authors-guidelines.pdf}{\texttt{http://drops.dagstuhl.de/styles/lipics-v2021/\newline lipics-v2021-authors/lipics-v2021-authors-guidelines.pdf}}
-
-\section{Lorem ipsum dolor sit amet}
-
-Lorem ipsum dolor sit amet, consectetur adipiscing elit \cite{DBLP:journals/cacm/Knuth74}. Praesent convallis orci arcu, eu mollis dolor. Aliquam eleifend suscipit lacinia. Maecenas quam mi, porta ut lacinia sed, convallis ac dui. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse potenti. Donec eget odio et magna ullamcorper vehicula ut vitae libero. Maecenas lectus nulla, auctor nec varius ac, ultricies et turpis. Pellentesque id ante erat. In hac habitasse platea dictumst. Curabitur a scelerisque odio. Pellentesque elit risus, posuere quis elementum at, pellentesque ut diam. Quisque aliquam libero id mi imperdiet quis convallis turpis eleifend. 
-
-\begin{lemma}[Lorem ipsum]
-\label{lemma:lorem}
-Vestibulum sodales dolor et dui cursus iaculis. Nullam ullamcorper purus vel turpis lobortis eu tempus lorem semper. Proin facilisis gravida rutrum. Etiam sed sollicitudin lorem. Proin pellentesque risus at elit hendrerit pharetra. Integer at turpis varius libero rhoncus fermentum vitae vitae metus.
-\end{lemma}
-
-\begin{proof}
-Cras purus lorem, pulvinar et fermentum sagittis, suscipit quis magna.
-
-
-\proofsubparagraph*{Just some paragraph within the proof.}
-Nam liber tempor cum soluta nobis eleifend option congue nihil imperdiet doming id quod mazim placerat facer possim assum. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.
-\begin{claim}
-content...
-\end{claim}
-\begin{claimproof}
-content...
-    \begin{enumerate}
-        \item abc abc abc \claimqedhere{}
-    \end{enumerate}
-\end{claimproof}
-
-\end{proof}
-
-\begin{corollary}[Curabitur pulvinar, \cite{DBLP:books/mk/GrayR93}]
-\label{lemma:curabitur}
-Nam liber tempor cum soluta nobis eleifend option congue nihil imperdiet doming id quod mazim placerat facer possim assum. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.
-\end{corollary}
-
-\begin{proposition}\label{prop1}
-This is a proposition
-\end{proposition}
-
-\autoref{prop1} and \cref{prop1} \ldots
-
-\subsection{Curabitur dictum felis id sapien}
-
-Curabitur dictum \cref{lemma:curabitur} felis id sapien \autoref{lemma:curabitur} mollis ut venenatis tortor feugiat. Curabitur sed velit diam. Integer aliquam, nunc ac egestas lacinia, nibh est vehicula nibh, ac auctor velit tellus non arcu. Vestibulum lacinia ipsum vitae nisi ultrices eget gravida turpis laoreet. Duis rutrum dapibus ornare. Nulla vehicula vulputate iaculis. Proin a consequat neque. Donec ut rutrum urna. Morbi scelerisque turpis sed elit sagittis eu scelerisque quam condimentum. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Aenean nec faucibus leo. Cras ut nisl odio, non tincidunt lorem. Integer purus ligula, venenatis et convallis lacinia, scelerisque at erat. Fusce risus libero, convallis at fermentum in, dignissim sed sem. Ut dapibus orci vitae nisl viverra nec adipiscing tortor condimentum \cite{DBLP:journals/cacm/Dijkstra68a}. Donec non suscipit lorem. Nam sit amet enim vitae nisl accumsan pretium. 
-
-\begin{lstlisting}[caption={Useless code.},label=list:8-6,captionpos=t,float,abovecaptionskip=-\medskipamount]
-for i:=maxint to 0 do 
-begin 
-    j:=square(root(i));
-end;
-\end{lstlisting}
-
-\subsection{Proin ac fermentum augue}
-
-Proin ac fermentum augue. Nullam bibendum enim sollicitudin tellus egestas lacinia euismod orci mollis. Nulla facilisi. Vivamus volutpat venenatis sapien, vitae feugiat arcu fringilla ac. Mauris sapien tortor, sagittis eget auctor at, vulputate pharetra magna. Sed congue, dui nec vulputate convallis, sem nunc adipiscing dui, vel venenatis mauris sem in dui. Praesent a pretium quam. Mauris non mauris sit amet eros rutrum aliquam id ut sapien. Nulla aliquet fringilla sagittis. Pellentesque eu metus posuere nunc tincidunt dignissim in tempor dolor. Nulla cursus aliquet enim. Cras sapien risus, accumsan eu cursus ut, commodo vel velit. Praesent aliquet consectetur ligula, vitae iaculis ligula interdum vel. Integer faucibus faucibus felis. 
-
-\begin{itemize}
-\item Ut vitae diam augue. 
-\item Integer lacus ante, pellentesque sed sollicitudin et, pulvinar adipiscing sem. 
-\item Maecenas facilisis, leo quis tincidunt egestas, magna ipsum condimentum orci, vitae facilisis nibh turpis et elit. 
-\end{itemize}
-
-\begin{remark}
-content...
-\end{remark}
-
-\section{Pellentesque quis tortor}
-
-Nec urna malesuada sollicitudin. Nulla facilisi. Vivamus aliquam tempus ligula eget ornare. Praesent eget magna ut turpis mattis cursus. Aliquam vel condimentum orci. Nunc congue, libero in gravida convallis \cite{DBLP:conf/focs/HopcroftPV75}, orci nibh sodales quam, id egestas felis mi nec nisi. Suspendisse tincidunt, est ac vestibulum posuere, justo odio bibendum urna, rutrum bibendum dolor sem nec tellus. 
-
-\begin{lemma} [Quisque blandit tempus nunc]
-Sed interdum nisl pretium non. Mauris sodales consequat risus vel consectetur. Aliquam erat volutpat. Nunc sed sapien ligula. Proin faucibus sapien luctus nisl feugiat convallis faucibus elit cursus. Nunc vestibulum nunc ac massa pretium pharetra. Nulla facilisis turpis id augue venenatis blandit. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.
-\end{lemma}
-
-Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
-
-\section{Morbi eros magna}
-
-Morbi eros magna, vestibulum non posuere non, porta eu quam. Maecenas vitae orci risus, eget imperdiet mauris. Donec massa mauris, pellentesque vel lobortis eu, molestie ac turpis. Sed condimentum convallis dolor, a dignissim est ultrices eu. Donec consectetur volutpat eros, et ornare dui ultricies id. Vivamus eu augue eget dolor euismod ultrices et sit amet nisi. Vivamus malesuada leo ac leo ullamcorper tempor. Donec justo mi, tempor vitae aliquet non, faucibus eu lacus. Donec dictum gravida neque, non porta turpis imperdiet eget. Curabitur quis euismod ligula. 
-
-
-%%
-%% Bibliography
-%%
-
-%% Please use bibtex, 
-
-\bibliography{lipics-v2021-sample-article}
-
-\appendix
-
-\section{Styles of lists, enumerations, and descriptions}\label{sec:itemStyles}
-
-List of different predefined enumeration styles:
-
-\begin{itemize}
-\item \verb|\begin{itemize}...\end{itemize}|
-\item \dots
-\item \dots
-%\item \dots
-\end{itemize}
-
-\begin{enumerate}
-\item \verb|\begin{enumerate}...\end{enumerate}|
-\item \dots
-\item \dots
-%\item \dots
-\end{enumerate}
-
-\begin{alphaenumerate}
-\item \verb|\begin{alphaenumerate}...\end{alphaenumerate}|
-\item \dots
-\item \dots
-%\item \dots
-\end{alphaenumerate}
-
-\begin{romanenumerate}
-\item \verb|\begin{romanenumerate}...\end{romanenumerate}|
-\item \dots
-\item \dots
-%\item \dots
-\end{romanenumerate}
-
-\begin{bracketenumerate}
-\item \verb|\begin{bracketenumerate}...\end{bracketenumerate}|
-\item \dots
-\item \dots
-%\item \dots
-\end{bracketenumerate}
-
-\begin{description}
-\item[Description 1] \verb|\begin{description} \item[Description 1]  ...\end{description}|
-\item[Description 2] Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
-\item[Description 3]  \dots
-%\item \dots
-\end{description}
-
-\cref{testenv-proposition} and \autoref{testenv-proposition} ...
-
-\section{Theorem-like environments}\label{sec:theorem-environments}
-
-List of different predefined enumeration styles:
-
-\begin{theorem}\label{testenv-theorem}
-Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
-\end{theorem}
-
-\begin{lemma}\label{testenv-lemma}
-Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
-\end{lemma}
-
-\begin{corollary}\label{testenv-corollary}
-Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
-\end{corollary}
-
-\begin{proposition}\label{testenv-proposition}
-Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
-\end{proposition}
-
-\begin{conjecture}\label{testenv-conjecture}
-Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
-\end{conjecture}
-
-\begin{observation}\label{testenv-observation}
-Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
-\end{observation}
-
-\begin{exercise}\label{testenv-exercise}
-Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
-\end{exercise}
-
-\begin{definition}\label{testenv-definition}
-Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
+\section{Introduction}
+\section{Preliminaries}
+\begin{definition}
+A and B are language equivalent iff $\forall s, s \in A \iff s \in B$
+\end{definition}
+\section{Slow coercions without dsl}
+\section{Axiomatizing language equivalence}
+One presentation of rule
+\begin{definition}[Grabmeyer vague definition]
+\begin{displaymath}
+\infer{\Gamma \vdash A \approx B}{\myo{A} = \myo{B} & \forall a, \Gamma A \approx B \vdash \derive{A}{a} \approx \derive{B}{a}}
+\end{displaymath}
 \end{definition}
 
-\begin{example}\label{testenv-example}
-Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
-\end{example}
+Another presentation of rule
+\begin{definition}[Grabmeyer precise definition]
+\begin{displaymath}
+\infer{(A,B) \in F(R)}{\myo{A} \approx \myo{B} & \forall a, (\derive{A}{a},\derive{B}{a}) \in R}
+\end{displaymath}
+$A \approx B  \triangleq (A,B) \in gfp(F)$
+\end{definition}
 
-\begin{note}\label{testenv-note}
-Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
-\end{note}
+\begin{definition}[Inductive rules]
+We use the following notation:\\
+With $R : \regex  \rightarrow \regex \rightarrow \prop$ we write:
+$A = B$ for $(A,B) \in F(R)$ when rules do not mention $R$. Only the last rule uses $R$.
+\label{definition:coinductive:axiomatization}
+\begin{displaymath}
+\begin{array}{llll}
+\myaxiom{A + B + C}{A + (B + C)} \qquad  
+\myaxiom{A + B}{B + A} \qquad 
+\myaxiom{A + 0}{A} \qquad
+\myaxiom{A + A}{A} \qquad
+\\\\
+\myaxiom{A \times B \times C}{A \times (B \times C)} \qquad
+\myaxiom{1 \times A}{A} \qquad
+\myaxiom{A \times 1}{A} \qquad 
+\myaxiom{0 \times A}{0} \qquad
+\\\\
+\myaxiom{A \times 0}{0} \qquad
+\myaxiom{A \times (B + C)} {A \times B + A \times C} \qquad
+\myaxiom{(A + B)\times C}{A \times C + B \times C}
+\\\\
+\myaxiom{1 + A \times A^*}{A^* } \qquad 
+\myaxiom{A}{A}\qquad
+\infer{\eqBodyE{A}{B}}{\eqBodyE{B}{A}}\qquad
+\infer{\eqBodyE{A}{C}}{\eqBodyE{A}{B} & \eqBodyE{B}{C}}\qquad
+\\\\
+\infer{\eqBodyE{A + B}{ C + D}}
+  {\eqBodyE{A}{C} & \eqBodyE{B}{D}}\qquad
+\infer{\eqBodyE{A \times B}{ C \times D}}
+  {\eqBodyE{A}{C} & \eqBodyE{B}{D}}\qquad
+\myaxiom{(1 + A)^*}{A^*} \qquad 
+\infer{\eqBodyE{A^*}{B^*}}
+  {\eqBodyE{A}{B}} 
+\\\\
+\infer[fix]{(aA,aB) \in F(R)}{(A,B) \in R}
+\end{array}
+\end{displaymath}
+\end{definition}
 
-\begin{note*}
-Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
-\end{note*}
+\begin{definition}[Coinductive rules] \label{definition:inductive:axiomatization}
+We now obtain an inductive axiomatization $\eqBodyG A B$ by taking from \ref{definition:inductive:axiomatization} all rules except for \rulename{fix}-rule, together with the two rules below.
+\begin{displaymath}
+\myaxiomE{\Gamma , A = B}{aA}{aB} \qquad
+\infer{\Gamma \vdash A = B}{\Gamma, A = B \vdash A = B}
+\end{displaymath}
+\end{definition}
+\section{Axiomatizing language containment}
+\section{Interpretation}
+\section{Synthesis}
+\section{Related work and discussion}
+\section{diagram}
+\includegraphics[width=\linewidth]{imgs/diagram.jpg}
 
-\begin{remark}\label{testenv-remark}
-Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
-\end{remark}
+\section{brain storm paper story}
+There are many related bits here, I try to write the overall story and next will create the sections in this document.
+We start from the coinductive equivalence from the thesis. This is sound and complete wrt to language equivalence. coinductive equivalence can be given inductively, why is this important? [Answer:?]. How novel are the rules?
+Wait, first I will read the Notes and add interesting stuff.\\
+Notes have been skimmed and categorized.\\
 
-\begin{remark*}
-Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
-\end{remark*}
+Our goal is effecient coercions on parse trees with applications for string compression. 
+Existing work by Brandt and Henglein formalize this using a powerful fix rule, whose soundness they ensure by instantiating it with a proper side condition. This side condition makes the coercion proofs less compositional and thus harder (as well as more expensive) to synthesize. This side condition checks for contractiveness. We derive a similar coercion system with a much weaker (but compositional) fixpoint rule that both simplifies (and makes more effecient) the synthesis of coercions, and implies contractiveness. The system is inspired by parameterized coinduction and allows us simple intepretation (our definition is good for simple termination arguments) and synthesis. These simple approaches would not have worked in Brandt and Henglein's origina system [detail why].\\\\
+We derive this inductive coercion system in the following steps: 
+\begin{enumerate}
+\item The coercion system is an axiomatization of language containment, which can be obtained by adding a few rules to axiomatizations of language equivalence. Starting with Grabmeyer's coinductive characterization, we prove it equivalent to another coinductive characterization that is free of operational notions. 
+\item We then prove this equivalent to an inductive version of this (why is it important to go inductive? Depends on the performance between the two dsls). 
+\item The inductive system for language equivalence is the altered to create one for language containment, and we go from Prop to Type.
+\end{enumerate}
 
-\begin{claim}\label{testenv-claim}
-Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
-\end{claim}
 
-\begin{claim*}\label{testenv-claim2}
-Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
-\end{claim*}
+\section{Reading the Notes}
 
-\begin{proof}
-Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
-\end{proof}
 
-\begin{claimproof}
-Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
-\end{claimproof}
+\subsection{Motivation for dsl and project overall}
+\begin{verbatim}
+Why do we need DSL?
+Showing containment proofs corresponds to a trace-preserving 
+gallina function on parse trees (indexed by regular expressions) is very quick.
+This would be a characterization of containment with a single rule (f : [r] -> [r']) and (forall s, flat(s) = flat (f s))
+We defined encode/decode functions betwen Match derivation and pTrees, so by completeness, f always exists 
+when a containment is derivable. Decode has no practical use because it is terribly slow (encode is linear).
+The point of the DSL is to synthesise effecient functions, by translating the coinductive proof steps
+directly into a function, with use of decode!
+Can a coinductive proof tree be translated to a typed dsl, or even directly interpreted?
+
+
+
+Summary:
+We want to synthesize coercions.
+Therefore no coinductive syntax for dsl (cannot be synthesised) [Wrong!]
+binders generated with autosubst disallows dsl with regex indices, so extrinsic dsl (coercion system)[Later did intrinsic without autosubst]
+Therefore extrinsic parse trees (interpreter does not have access to input/output regex types)
+
+We want to synthesize effecient coercions.
+Interpretation with unfolding is ineffecient, pattern matching and unfolding is repeated.
+Interpretation without unfolding is challenging, one approach that could handle nested fixpoint interpeted
+effeciently is:
+
+interp : coerce r0 r1 -> r0 -> r1
+
+interp : dsl (pT -> pT) -> pT -> pT
+
+[.] : (pT -> pT) -> pT -> pT
+f = interp [p]
+f : (pT -> pT) -> pT -> pT
+fix f : pT -> pT
+
+f = inter p
+fix f
+interp [fix f. p]
+
+interp : dsl -> 
+        (forall p, (nat -> forall p', |p'| < |p| -> pT) -> pT) ->
+         (forall p, (nat -> forall p', |p'| < |p| -> pT) -> pT) 
+
+
+
+This is complicated because we work with open terms
+
+For now, we keep unfolding interpretation
+Write the function graph, do structural recursion on graph
+
+
+
+
+
+
+Motivation for paper:
+
+We would like 
+F <= F' |- E;F <= E;F'
+Not possible though, fx E = eps then proj and projinv will let us derive antyhing
+
+
+
+Our bisimilarity relation is basically Grabmeyers system without ACI,making the bisimulation infinitary,
+using partial derivatives and the enumeration closure essentially gives the grabmeyer system.
+
+
+
+
+Idea:
+Fritz and Nielsens system could replace our rules,
+the disjunct S1 \/ S3 gives rise to two rules, the first looking very much like our fix.
+The second one is used to derive the extra star rules, and 
+I think our rules might be parametrically complete as well (but for finite languages) [I think not now]
+
+The other system codes Salomaa and Grabmeyer using S1, which breaks parametric completeness by o(c).
+S2 is a better side condition
+
+
+Kozen system is parametetrically complete for infinite languages, and by S2 so is the coercion system, but 
+it yields slow (quadratic runtime) programs for star a * star star a <= star a. 
+Using S1 they can simulate grabmeyer for linear time programs. They loose parametricity (and supporting infinite languages) 
+
+
+Simulating bisimilarity using fixpoints means we are creating many fixpoints.
+Synthesizing the dsl, means synthesising the proof of the property for such a generated dsl which will take long, quadratic in the size of the dsl, which is bounded by number of distinct derivatives pi(..).
+For large alphabets, the side condition is  expensive
+Even their antimorov decomposition uses the S3 rules which checks closedness of d, again linear time.
+Proof synthesis is really slow!
+
+Their general (parameterized) fixpoint is bad from a computational interpretation viewpoint:
+For effecient grabmeyer programs, testing S1 is ineffecient.
+S1 loses parametric completeness. 
+Problem arise from restricting use of fix. It should always be allowed. 
+Discharing the assumption should be guarded (compositional, effecient, parametric)
+
+Parameterized fixrule is not compositional nor parametric.
+dsl cannot be corecursively defined because we must check how 
+
+Pitch:
+We present a new sound/complete axiomatization of regular expression equivalence replacing Salomaa's last rule with a coinductively motivated rule. The system can be represented inductively but also coinductively, and the two formulations are equivalent. Unlike previous systems with coindctuively motivated rules, our rules have no operational notions nor side conditions for when the "coinduction principle" can be invoked.
+
+Inspired from Henglein and Nielsen, we transform our new axiomatization into a new coercion system, interpreting proofs of containments as coercion functions on parsetrees. 
+Freeing our rules from side conditions an operational notions, we achieve faster proof synthesis of effecient coercions, that can be derived parametrically.
+Our guarded use of coinduction hypotheses additionally translates to a natural termination measures for computational interpretation.
+We present both inductive and coinductive flavors of our coercion systems, with the former naturally giving rise to an effecient interpreter, and in the latter case, an ineffecient lazy-evaluation interpreter
+
+
+Maybe parametericity becomes important for bit coded strings with mu types? free variables X?
+
+
+
+
+Paper might be the shortest proof of regex decidability.
+I think it is the shortest one, approx 880 lines of code
+
+We don't use equations because Wf assumes functional extensionality and we don't need it.
+
+
+
+
+
+Random thought:
+The point of this porject was an intentional view of proofs, how the proof is shaped matters! The motivation for this is bit coded strings.
+The proofs matter because the can be translated to mappings on parse trees. Since every effecient mapping, most likely, will be of grabmeyer shape, why do we even bother to axiomatize the system.
+Why not just have ACI plus derivatives (grabmeyer)? 
+Because that system is not a declarative description of an interpreter on parse trees. 
+Grabmeyer performs antimorov decomposition at every step, what is the computational interpretation of this?
+The decomposition is sound because it follows the laws for regular languages. 
+Restricting the axioms to be of algebraic form (which in computer science means "compositional"), let's each rule be interpreted as an operational on parse trees.
+\end{verbatim}
+
+
+\subsection{Related work and discussion}
+\begin{verbatim}
+Containment proofs can be reduced to showing there exists a coercion from one type to the other.
+Should this coercion be written in gallina or DSL?
+The difference is Gallina allows coerions that does not preserve the underlying string, which is bad.
+For any bad coercion, there exists a good coercion interpreted from our DSL, so we do not lack expressivity in proving containments from coercions
+Could make sense from a usability point of view. The dsl is awkward to program in
+
+Coercive subtyping vs subsubptive subtyping:
+Subsumptive way destroys canonicity, bad for subtyping in type theory. Not relevant for our application
+Coercive approach is good for effeciency, for a typing s : T, we can always retrieve string by flatten(s). 
+This is not the case for subsumptive way, s : T is weaker, it means exists T', T <= T for which s : T (without use of subsumption rule), to retrieve s, we must determine T', traversing the derivation of s : T, flatten(s) is no longer linear
+
+Is this in any way related to mailbox programming: specifying the inbox by a regular expression?
+
+
+
+
+
+Implementation:
+This paper has zero-cost coercions
+https://www.microsoft.com/en-us/research/wp-content/uploads/2016/07/coercible.pdf?from=https://research.microsoft.com/en-us/um/people/simonpj/papers/ext-f/coercible.pdf&type=exact
+
+Haskell bitlibrary:
+https://hackage.haskell.org/package/bitvec
+
+
+Extra work:
+Consider implementing unfolding interpretation anyways and see code extraction and evaluate.
+Maybe not interesting as unfolding is expensive for large nested fixpoints
+
+
+
+
+Discussion with Fritz:
+- Unfolding interpretation is ineffecient
+- Bitcoding is equi-recursive
+- sum rule not necessary
+- Programming languages with coercive subtyping?
+- Rules like drop take linear time
+
+
+
+
+
+
+
+Discussion notes:
+- star ctx and eps eliminiation rules are fixpoints themselves,
+  cannot be coded using our fix rule, because it is "obviously terminating"
+  Fix rule + two "hardcoded" fixpoints is enough to derive r = o(r) + sigma ....
+  Think more about these rules, realizing they are fixpoints themselves,
+  does this change the way they can be presented?
+
+  Proving  (Star (Eps _+_ A)) <T= (Star A) ~>drop_i
+  uses size_induction (using 1-size), termination of interpretation 
+  is using event-size. What is happening here?
+
+- Two notions of guarded
+ * full_unf d <> cfix ...
+ * variable occurs only inside guard (*allows decreasing measure*)
+ Maybe the second notion could replace the first,
+ but that would mean changing the proof of full_unf_idemp
+
+- Type deriven interpretation vs untyped
+ * untyped reduces number of parameters
+   complicates inductive definition of domain
+   nested call in transitivity, domain of this call
+   has two restrictions
+   ** size of T may not increase
+   ** for well typed dsl and input parse tree, the
+      domain 
+
+- untyped interpretation:
+  Trying to define inductive domain loosely in the transitivity case
+  This does not work, the purpose of T in inductive domain
+  is to resolve +, following T, will let the dsl
+  bottom out in a base rule eventually
+  
+  Defining the inductive domain to permissively, means it can never be derived,
+  and the function never called
+
+
+- Not gonna do it, but it would be interesting to do a type driven interpretation,
+  mapping typing derivations to typing derivations.
+  More cases in the computation graph could be omitted: But then 
+  coercions map type derivations to type derivations, meaning we could easily just have
+  intrinsically typed parse trees, but since the dsl is still extrinisically typed 
+  maybe INEQ judgments need to be added in the computation graph? sounds messy
+  Update: We don't have a computation graph, so this could have worked.
+  Not, extrinsically typed dsl would need INEQ supplied to the procedure.
+  If DSL was intrinsically typed, this approach could work, but it isn't due to equi-recursive typing of DSL
+
+- It seems bragga method does not work with nested 
+  structural recursion on parse tree. 
+  With the proof (H: D_dom (Star c) T) 
+  we now structurally recurse on T,
+  actually, the pattern matches just need to be on D_dom syntax
+  rather than parse tree. Of course we cannot, because that would be Prop -> Set,
+  or what, since we go to Prop -> Type maybe fine?
+
+  
+- Solution: Define inductive predicate in terms of dsl and a fuel size n.
+  Crucially, fuel is an upper bound of number of recursive calls to 
+  a guard term. Unlike computation graph approach, we have simple
+  definition for transitivity, D_dom c0 n -> D_dom c1 n -> D_dom (trans c0 c1) n
+  Solution is a mix of Bragga method + standard fuel approach
+  D_dom d n is really an inductive proof derived by chopping off derivations in invPred d 
+  why the functor has been applied up to n times
+  
+
+- Intentional proofs
+  The bragga method is very fitting for our setting, because we have intentional proofs,
+  we care about which proof we use, because it impacts the simplification behaviour 
+  during our other proofs. 
+
+
+
+
+
+
+Applications in ITP23: https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.ITP.2023.27
+
+Paco cannot be used for gfp of syntax,
+paco type: paco2
+     : forall (T0 : Type) (T1 : T0 -> Type), (rel2 T0 T1 -> rel2 T0 T1) -> rel2 T0 T1 -> rel2 T0 T1
+rel2 definition:
+rel2 =
+fun (T0 : Type) (T1 : T0 -> Type) => forall x0 : T0, T1 x0 -> Prop
+     : forall T0 : Type, (T0 -> Type) -> Type
+
+It takes a relation going to Prop!
+
+
+
+
+The bragga method seems to origin here:
+https://link-springer-com.ep.ituproxy.kb.dk/content/pdf/10.1007/3-540-39185-1_3.pdf
+
+Found it through Yves Bertot:
+https://pdf.sciencedirectassets.com/272990/1-s2.0-S1571066108X00325/1-s2.0-S1571066108003320/main.pdf?X-Amz-Security-Token=IQoJb3JpZ2luX2VjEEoaCXVzLWVhc3QtMSJGMEQCIGc1UbrIiDGXZCF7n5gNRVuINkU3S4mlnpM5okQ3sTVRAiALrKup1gjaRBffrva78Ixg9qXDnPs%2F2CG1BFd7hIqbeSq8BQiy%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F8BEAUaDDA1OTAwMzU0Njg2NSIMYcc2NYeX89eN%2B%2FoAKpAFZ57wZJ6yUZyiYoVDuhWwDySYeAqiYH0WYCoVU%2FevWc5I5mO%2BfY4vtlRdSRKo4PD3C5Ul4W8rLltQeDMxqBb8KI06JuQpACv3YqgWW3ebtWtawrdAyXmlOeMC8GEHDX8v5RUqGTp94%2FSTgsyY4E%2BQ3NJoRp4xc1URBI5tEWLZ5l%2Fs%2Fbd8a9LPZcD93rSvm7bmGr1RC63xVE6BzwGQQuCFGFJqxkvjETROSxakQsQ5w%2BlRJg7weVNKVMu88Y8AydUato9RMhdiJ52gBxQOJm88RlYjEegY1C%2Bhrh0PzRDglZ7jsPBK%2BOV5XYPC5HImSTFkmDfWSlGFz9QUXmh6UD6qFAI3YX2XYmFYQBKjHKOzqcUNcym9Fd2FdARHbScnQ6H1%2F3%2F2sQlY41GVY2GvajdpVMxcjQApFQ%2FD8%2FBaqNhraj%2Bhr00B0yS6rzA0VxOY%2FIgFQQcZNKJwg1fnIkIIMEnxTJ3JWrrVj%2Bew8vvMlCKF%2FzpuxKL6w8VSJp5GW%2BFG2dTXujVJGHIUFcYqMu5m%2B6RsJv0vzlbRfQSUns5SHGMm5TTU8ALc%2BhMzwiYpgKJLC5bAghkas0kpQrk%2FHcwRpfZlRAjy8DVCjAZ34%2FP9E7hGKlAHvgSS3UjyQ8frXKrqShhmyXzw1riU7RPeA7spgnZRZ%2FZfNGZCwJLcSYsZEgsPNyY%2FhXX8Wc0coKx8eiuJt3BYqg2yeZUnnZGyhWKbXRNI1CTa8kZ6BJ6%2Bb%2BYLRWba42DniwtTO1kKW%2BB%2Ffa%2B3uRoyNSTKETqPlvtSLkFxJciz4Ejh1xj7irxBXinIRRbIr9IHaIUyGSkCUO%2BSFbdStnHgWe5mBB5PyvQQJFfqhzBEQTNIKiK3T7Os%2FXyFbc1xBx4wmN7JqwY6sgH9k4ABZt5KDdPr90Z5tEUqqgjMSzdJqxoFNXz1wpp%2BiwaA%2BqSjWOWUOT9owvwjuiUYRo%2FfbFEcZJ3ZX%2FwZUZdISL3bQW4%2BUR8NU2f498ZaSpg%2BQIVBl4Due95tfWJ8%2BzcX5JyCE6dY7LVmb7yIQFG1kGUhb18ktQS5JGqVTx0RmRKnpamp1ApNTBIOuSj9SE7sZSIYG4ddcZhsv8RguOk2Z6q5hDnTkP%2BeOFQN5h9up8S4&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20231208T012254Z&X-Amz-SignedHeaders=host&X-Amz-Expires=300&X-Amz-Credential=ASIAQ3PHCVTY5Z3HVWMH%2F20231208%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Signature=1494c853c77c39524979fb0dd67ce070d08b927aa24dafba48aa0fa85c0972fe&hash=9c3daf9e2faf0f2c214a0e288c7a4a235f8cb58085d17f9610f3264c08b475db&host=68042c943591013ac2b2430a89b270f6af2c76d8dfd086a07176afe7c76c2c61&pii=S1571066108003320&tid=spdf-f6f6659e-7cf5-4754-9436-085531efc72b&sid=b5c8cc4c9acc9849c48ae3564652e5211f36gxrqb&type=client&tsoh=d3d3LnNjaWVuY2VkaXJlY3QuY29t&ua=010d585c5355505451&rr=8321332fee5123ad&cc=gb
+
+
+
+
+
+Paper idea:
+Relate coinductive rules to stream equivalence mod tau
+
+
+
+
+
+
+
+Relating axiomatization to Fritz and Nielsen,
+The condition on D is that it is called directly under an event.
+Would the instantiation of this condition be suffecient in Fritz system?
+Probably not: 
+I was correct, it is not possible as it would disallow deriving star context and epsilon through fix with S2.
+Relating our system to theirs, they code Salomaas rules (which are nearly ours), using S1 \/ S3 for fix rule.
+S1 corresponds to our fix rule. S3, corresponds to our star and epsilon rule.
+
+
+Notes about henglein and nielsens papers:
+Salooma already realised that antimorov decomposition only requires weak equivalence plus epsilon elimination
+Our system is Salomaas, replacing his last rule by two rules!
+
+Our system is similar to S1 of the restrictions to the fix rule.
+
+Questions:
+S3 is not satisfied in 3.3.1, but it can be if we call c after the recursive call
+
+Thoughts:
+The difference between our system and the other is that they encode star and epsilon elimination with fix instantiated by S3. S3 is not a compositional property of dsl, it requires the fixpoint 
+to be declared and called (f) in fix f. (id + id ; f) ; d
+In our setting it looks like
+
+F <= F' |- E;F <= E;F'
+
+
+
+
+Explore the idea of partial/standard derivative in relation to induction/coinduction
+
+\end{verbatim}
+
+\subsection{implementation detials}
+\begin{verbatim}
+Inductive dsl interpretation:
+Define it without conformity, using tactics to do it. 
+Benefit of intrinsically typed dsl and parse trees, eauto can synthesize the implementation
+
+
+Reminders:
+bisim is less effecient because of uniqueness test right now, fix later
+Effecient approach assumes input lists are unique, which gives a restricted induction principle, you need to reason about equality of proofs.
+
+
+Using dependent destruction now, remove later 
+
+
+
+
+Idea:
+See if it is posible to do parameterized coinduction "light weight" without paco, 
+because paco doesn't allow it on Type, propose new technique if succesful!
+This failed for inductively defined functors
+
+\end{verbatim}
+
+
+\subsection{dsl representaiton}
+\begin{verbatim}
+From induxctive to coinductive dsl:
+Benefit of no exotic terms.
+Being mixed inductive/coinductive, termination of interpretation can be shown by induction.
+Inconvenient as a programming language. Possibly ineffecient for decision procedure certifying containment with coercion 
+Can be related to inductive syntax ala unraveling if necessary
+
+Inductive syntax uses binders from autosubst disallowing intrinsically typed terms, 
+would complicate interpretation, as a proof of well-typedness must be interpeted to coerion.
+By the fix rule, the typing rule would necessarily be coinductive (or inductive with explicit visited list maybe?) 
+Intrinsic typing allows stating the coercion system faithfully to Henglein & Nielsen,
+reordering their judgment c : E <= F, to E <= F ~> c, let's us compactly state the judgment simply as
+P c, where (c : dsl E F).
+
+
+Hmmm.
+The coercion system is a type system, but we use intrinsic typing, so why do we care about the coercion system?
+Our dsl is our coercion system
+
+Accidentally implemented equi-recursion by translating star to list without any fold/unfold operations.
+Although parse trees become smaller, matching them to their regular expressions can involve backtracking
+since sum rules can be confused with fold
+Actually there is not confusion with sum rules because proof terms inl T and cons a T are distinct, but
+it lets us express the empty string as nil and tt, which is bad. Why is it important we avoid this?
+
+Shallow vs deep embedding of regex as types
+The shallow approach of as_type(r) has reached it's limit, cannot compute the size of a parse_tree 
+because it is not an inductive definition.
+Replace as_type(r) with (T : treeOf r), solving the issue
+
+Intrsinsically typed dsl vs coercion system:
+The coercion system restricts the shape of the dsl, otherwise using fx counters, the dsl itself might
+be too expressive. What's an example of a program that's not derivable in coercion system?
+There is no example, I have proved that all programs can be derived.
+The coercion system is defined with paco, which disallows the judgment from living in Type.
+Using Coq's Coinductive directive instead and switching from Prop to Type, directly yields our intrinsicially typed dsl
+
+Summation in equivalence rules:
+Summation not necessary, should be removed
+
+Why is intrinsic typing of dsl and parse trees important:
+DSL programs are restricted to well-typed, making interpretation a total function on dsls
+Using extrinsic typnig, the interpretation would be on a derivation of the dsl.
+Derivation would need to be in Type.
+We used both representations, extrinsic gave us the flexibility of writing a generator,
+This let us go from Match to pTree
+
+
+
+extrinsically typed DSL:
+Will be necessary for effeciently building DSL. Going from Prop to Type is computationally expensive, large search space,
+Building coinductive DSL requires going through Prop, (unless we define Functor without paco, going to Type and decide membership in ot
+
+Cannot find single argument for why we should use inductive dsl, it is not more effecient, we use inductive in session types because we need decidable equivalence
+
+
+
+
+
+
+
+Inductive vs Coinductive dsl:
+- Inductive is tricky because the existential witness is inductive, supposed to be derived from bisimilarity,
+  this requires inductive formulation of bisimilarity (my attempt with closed enum for partial derivatives),
+  the step from this to coinductive containment system seems large, so cut with an inductive containment system
+  Showing inductive to coinductive containment is like the proof of contractive /\ closed g <-> invPred g. Which was tricky.
+  All of this work would allow inductive dsl, which supports effecient (non-unfolding) interpretation.
+  As part of the complication lies in going from inductive to coinductive containment, it suggests only the inductive one should be used as the "main" system.
+  For inductive containment system, to choices are available: unfolding or non-unfolding? Environments seems to suggest non-unfolding (environment closes open terms),
+  but could environment + unfolding also work? 
+  It seems likely no, because we must show l |- inductive simulation r0 r1 -> exists d, l |- inductive containment r0 r1 d
+  but I'm not sure.
+
+  So there are more things in play here: Design space is inductive + environment vs coinductive AND unfolding vs non-unfolding.
+  non-unfolding is finite with open terms and must be inductive + environment, it is also a declarative description for an effecient interpreter 
+  unfolding and coinductive is the simplest approach, declarative description for a lazy evalation interpreter
+  non-unfolding coinductive does not make sense
+  unfolding inductive? Does this make sense? Benefits drawbacks? Declarative description for what kind of interpreter?
+
+
+Next steps:
+   - Invvestigate inductive + environment for equivalence, extending environment only in continuation of c_fix, (only place it is used in showing c** = c*
+   See theories/syntax2.v test2, which derive a** = a*
+   It thus seems possible to define the inference system inductively.
+   Future work is to redo the thesis project with this system
+   - Finish completeness for coinductive + unfolding
+
+
+
+
+Coinductive fix rule coercion vs c_eq:
+sum_fix rule is not necessary but might be exactly what we need for guardedness in completeness proof
+
+
+
+
+
+Idea for the paper:
+What we are doig is simulating parameterized coinduction in various ways. 
+Not simulating, we are doing finitary parameterized coinduction,
+that is paco F R, where R is finite. 
+If R is finite and F is invertible, we should be able to decide it.
+We are writing our proofs for characterizing equivalecne of regex nice and neat,
+and now we "simulate" the 
+
+
+
+Collect inductive and oincudctive dsl in module, instantiate with each rules
+Tried to modularize but it is inconvenient because we use list in one representation
+and a type in another
+
+
+
+The two systems are "fixpoints" of the same underlying functor, explore that on paper, but for 
+practical reasons we don't mechanise from the same functor. 
+We would need the relation in the functor to be instantiated for both Props and lists.
+We would not be able to have all rules on the same level, we need the fix rule to add to the context.
+We just describe this informally. So now the coding part of the projection is done!
+
+
+
+\end{verbatim}
+
+\subsection{parse trees}
+\begin{verbatim}
+Intrinsic parse trees:
+Being indexed by types, such as (p_inl r0 r1 p) they are not space effecient. Will not work when we go to bitcodings.
+Instead have extrinsic parse trees and intrinsic dsl.
+A main lemma is then forall (d : dsl r0 r1), with (interp p ) : upTree -> upTree, 
+then typing p r0 -> typing (interp d p) r1  
+Being extrinsic, interpreted dsls receving unexpected parse trees map to up_bot which is not typable
+
+\end{verbatim}
+
+\subsection{axiomatizations}
+\begin{verbatim}
+
+The inductice c_eq system can be shown sound wrt to the coinductive one quickly.
+Completeness is not as clear because the proof cannot be by coinduction, it must be on inductino on something.
+We use the bisimilarity to construction the proof, but we will need an inductive verison of bisimilarity,
+or some accessibility predicate that says finitely many pairs will be visited before we stop.
+If I can show the inductive rules can do the antimorov decomposition, then showing 
+equivalence between the inductive and coinductive c_eq systems reduces to decidability of bisimilarity.
+Therefore we need to do this twice, for both systems. Can we get away with doing it only for the inductive?
+
+Inductive c_eq -> Coinductive c_eq 
+
+Coinductive c_eq -> Bisimilarity
+
+Bisimilarity -> inductive bisimilarity (finitness of partial derivatives)
+
+inductive bisimilarity -> inductive c_eq 
+
+Yes! (we don't need derive_unfold for coinductive c_eq)
+
+
+
+
+
+Comparison between inductive/coidnuctive c_eq:
+Coinductive c_eq we know how to prove c_eq -> bisimilarity,
+relaxes r, does not have to be finite,
+
+So the current soundness path is:
+c_eq (ind) -> c_eq (co) -> bisim (co) -> language equivalence
+
+Why can't we just do c_eq (ind) -> language equivalence, by induction on c_eq.
+Because of the final rule! it is based on a coinduction principle. Since languange equivalence is not a coinductive definition, we need an equivalent relation with a coinduction principle to prove this.
+Since the explicit inductive list that c_eq is parameterized over is awkard to show implies bisimilarity,
+we go via the coinductive c_eq.
+So we use coinductive c_eq to go to bisimilarity,
+
+Code illustrating this:
+Lemma test_c_eq : forall l c0 c1, c_eq2 l c0 c1 -> (forall x y, (x,y) \in l -> (forall s, Match s x <-> Match s y)) -> (forall s, Match s c0 <-> Match s c1).
+Proof.
+move=> l c0 c1.
+elim.
+20: {  intros. suff: Match s c2 <-> Match s c3. admit. eauto. } 
+20: { intros. suff: Match s c2 <-> Match s c3. admit. apply:H0.
+intros. rewrite !inE in H0. de (orP H0). norm_eqs. inv H2.
+ apply:H1.
+Abort.
+
+
+
+
+
+
+
+So a major problem in showing completeness for the coinductive dsl is Coq's guardedness condition,
+no fix in cofix. Notice to show completeness of the inductive system, we had to do an induction on
+the alphabet. The Coq guardedness checker does not allow this inside a cofix (which we naturally would have)
+as completeness statement : contains r0 r1 -> co_dsl r0 r1, is naturally by outer cofix, antimorov decomposition
+followed by induction. This highligts the proof for the axiomatization of equivalence. 
+To show completeness of the coinductive system, we do not need to do it directly. It suffices to show,
+co_dsl r0 r1 -> Bisimilar r0 r1 -> contains r0 r1. Since this proof is also by coinduction, but we use 
+the paco fixpoint (since Bisimilar is in Prop, rather than type), we can do induction under coinduction.
+
+This however means we cannot show soundenss of inductive dsl by translating to coinductive dsl
+Define translation from indctuvei to coinductive dsl
+
+
+\end{verbatim}
+
+
+\subsection{interpretation}
+\begin{verbatim}
+Soundness:
+Use this trick: https://coq.inria.fr/doc/V8.18.0/stdlib/Coq.Logic.ConstructiveEpsilon.html
+Maybe it doesn't work, it turns H : exists a, P a into {a | P a} type, we want to turn (H : Match s r) into (H' : parse R)
+
+Alternative to constructive epsilon is to state Match in Type:
+Explored this in syntax2.v
+Got to coinductive characterization implies match equivalence, cannot destruct coinductive, it goes Prop,
+if functor for gfp goes to Type, then universe inconsistency. This does not happen when using Coinductive to take fixpoint, only happens for paco fixpoint, which requires Type index to increase. Using coinductive directive that is not necessary. 
+Can paco because used to take the gfp of a functor on Type?
+Extrinsic typing is just doing the same thing thing in two steps, mapping each typing constructor 
+to dsl constructor, allowing us to divorce syntax from meaningful programs.
+
+
+
+
+Interpretation:
+Interpreting using as_types was easy, Coq understands the input type,
+When using pTree r, pattern matching forgets this information, and we get unreachable cases,
+using dependent destruction we can define intepretaitons interactively, but proof terms are huge (not effecient)
+
+
+
+
+Interpretation:
+A coinductive seed that is continously matched on is ineffecient because we might need log2 n (n being number of operations), to fetch relevant gallina function. It is fine as a spec, but we need something faster.
+Does type indices in dsl affect performance?
+Define interpretation of extrinsic dsl as [fix p] =  [p] : (pTree -> pTree) -> pTree -> pTree |- 
+[fix. trans shuffle 0] : 
+[shuffle] : ?
+[0] : =
+[trans shuffle 0] = f : (nat -> pTree -> pTree) -> pTree -> pTree 
+
+f f
+
+f f' T = T
+
+
+
+
+
+
+
+
+
+
+
+Interpertation definition design:
+Two kinds of errrors, lacking fuel & typing errors, typing errors are reported first
+It is important D_dom does not depend on parse tree, to allow parse tree size induction
+
+Standard fuel approach would have required higher order function, using a wrapper to iterate in the continuation
+
+
+Maybe we don't need the constructive epsilon part.
+We can use this part as a comparison, by soundness of the EQ system, one can always construct 
+an ineffecient mapping on parse trees. 
+Structure of paper:
+Equational theory, weak fixpoint + context rules (allows us to show decomposition), comparison to incomplete axoimationzations, adding
+the fix rule gives completeness.
+By constructive proofs, this gives us an (ineffecient) translation on parse trees. We want an effecient one by directly interpreting rules of the containment
+
+Removing bot:
+Tried removing but, gave problems in showing
+interp_star_some_pair, during nested fixpoint it might be messy to return T, since a subterm could be untyped, making the function not be identity,
+but rather some outer context before going to identity.
+
+
+Proving decomosition for coercions uses a neat trick to make the derivations very similar to those for EQ:
+state exisistenail proofs using sig, allowing proofs to be destructed, giving concrete dsl values that can be resolved by eauto.
+This is necessary because existential cannot be introduced during proof. This makes the proof compositional, we do not 
+neeed to know to dsl a priori, analogy to parameterized coinduction?
+We also got extensional rewrite under sum!
+
+
+Derive unfold for coercions:
+Because of seq we must show both directions at the same time
+
+
+A coinductive proof might have more than finitely many remembered pairs in R. R is just a predicate, so 
+it does not need to be finite, using ACI we redo brozowski's finiteness argument
+
+
+We cannot use libraries like because our existential is inductive 
+https://drops.dagstuhl.de/storage/00lipics/lipics-vol141-itp2019/LIPIcs.ITP.2019.14/LIPIcs.ITP.2019.14.pdf
+
+
+
+
+
+
+Interpretation:
+One size is used to define interpretation of star rules, just like Henglein and Nielsen.
+The induction necessary to define this is interesting.
+We have outer structural recursion on the dsl syntax.
+Fix uses zero-size induction
+Star rules use one-size induction
+Mention in paper, how we simplified extracted code, inlining, avoiding jmeg equality, proof induction, bragga method
+Comment in paper on Obj.Magic occurences in interpretation.
+Use effecient data structure for inductive dsl (instead of list)
+So the ineffecient Equations bisim has a nice induction principle (no need for reasoning on equality of proofs).
+Proving this equivalent to an effecient procedure should be fine, because we have both inductino principles (for each procedure) availble
+\end{verbatim}
+
+\subsection{Random notes}
+\begin{verbatim}
+Paper note:
+A section discussing whether Match should be in Type or in Prop
+
+
+Side idea:
+Scoped de brujin captures openess of a term, could something similar be used for contractiveness?
+
+Declaring variables Parameters is important for deleting them from code extraction.
+
+They use equi-recursion in the bit coding case
+
+
+Remember to mention that decidability section reuses some code patterns from session type code
+
+
+\end{verbatim}
+
+
+
+\subsection{Questions}
+\begin{verbatim}
+Question:
+Is A7 from salooma present in Hengleins paper?
+We have essentially mechanised Grabmeyers work, and almost Salomaas 
+
+
+
+
+Unanswered questions:
+What is the relation between inductive and coinductive dsl? 
+relationship betewen inductive and coinductive c_eq is that coinductive is used to show 
+
+
+
+
+\end{verbatim}
+
+
+% \section{Typesetting instructions -- Summary}
+% \label{sec:typesetting-summary}
+
+% LIPIcs is a series of open access high-quality conference proceedings across all fields in informatics established in cooperation with Schloss Dagstuhl. 
+% In order to do justice to the high scientific quality of the conferences that publish their proceedings in the LIPIcs series, which is ensured by the thorough review process of the respective events, we believe that LIPIcs proceedings must have an attractive and consistent layout matching the standard of the series.
+% Moreover, the quality of the metadata, the typesetting and the layout must also meet the requirements of other external parties such as indexing service, DOI registry, funding agencies, among others. The guidelines contained in this document serve as the baseline for the authors, editors, and the publisher to create documents that meet as many different requirements as possible. 
+
+% Please comply with the following instructions when preparing your article for a LIPIcs proceedings volume. 
+% \paragraph*{Minimum requirements}
+
+% \begin{itemize}
+% \item Use pdflatex and an up-to-date \LaTeX{} system.
+% \item Use further \LaTeX{} packages and custom made macros carefully and only if required.
+% \item Use the provided sectioning macros: \verb+\section+, \verb+\subsection+, \verb+\subsubsection+, \linebreak \verb+\paragraph+, \verb+\paragraph*+, and \verb+\subparagraph*+.
+% \item Provide suitable graphics of at least 300dpi (preferably in PDF format).
+% \item Use BibTeX and keep the standard style (\verb+plainurl+) for the bibliography.
+% \item Please try to keep the warnings log as small as possible. Avoid overfull \verb+\hboxes+ and any kind of warnings/errors with the referenced BibTeX entries.
+% \item Use a spellchecker to correct typos.
+% \end{itemize}
+
+% \paragraph*{Mandatory metadata macros}
+% Please set the values of the metadata macros carefully since the information parsed from these macros will be passed to publication servers, catalogues and search engines.
+% Avoid placing macros inside the metadata macros. The following metadata macros/environments are mandatory:
+% \begin{itemize}
+% \item \verb+\title+ and, in case of long titles, \verb+\titlerunning+.
+% \item \verb+\author+, one for each author, even if two or more authors have the same affiliation.
+% \item \verb+\authorrunning+ and \verb+\Copyright+ (concatenated author names)\\
+% The \verb+\author+ macros and the \verb+\Copyright+ macro should contain full author names (especially with regard to the first name), while \verb+\authorrunning+ should contain abbreviated first names.
+% \item \verb+\ccsdesc+ (ACM classification, see \url{https://www.acm.org/publications/class-2012}).
+% \item \verb+\keywords+ (a comma-separated list of keywords).
+% \item \verb+\relatedversion+ (if there is a related version, typically the ``full version''); please make sure to provide a persistent URL, e.\,g., at arXiv.
+% \item \verb+\begin{abstract}...\end{abstract}+ .
+% \end{itemize}
+
+% \paragraph*{Please do not \ldots} %Do not override the \texttt{\seriesstyle}-defaults}
+% Generally speaking, please do not override the \texttt{lipics-v2021}-style defaults. To be more specific, a short checklist also used by Dagstuhl Publishing during the final typesetting is given below.
+% In case of \textbf{non-compliance} with these rules Dagstuhl Publishing will remove the corresponding parts of \LaTeX{} code and \textbf{replace it with the \texttt{lipics-v2021} defaults}. In serious cases, we may reject the LaTeX-source and expect the corresponding author to revise the relevant parts.
+% \begin{itemize}
+% \item Do not use a different main font. (For example, the \texttt{times} package is forbidden.)
+% \item Do not alter the spacing of the \texttt{lipics-v2021.cls} style file.
+% \item Do not use \verb+enumitem+ and \verb+paralist+. (The \texttt{enumerate} package is preloaded, so you can use
+%  \verb+\begin{enumerate}[(a)]+ or the like.)
+% \item Do not use ``self-made'' sectioning commands (e.\,g., \verb+\noindent{\bf My+ \verb+Paragraph}+).
+% \item Do not hide large text blocks using comments or \verb+\iffalse+ $\ldots$ \verb+\fi+ constructions. 
+% \item Do not use conditional structures to include/exclude content. Instead, please provide only the content that should be published -- in one file -- and nothing else.
+% \item Do not wrap figures and tables with text. In particular, the package \texttt{wrapfig} is not supported.
+% \item Do not change the bibliography style. In particular, do not use author-year citations. (The
+% \texttt{natbib} package is not supported.)
+% \end{itemize}
+
+% \enlargethispage{\baselineskip}
+
+% This is only a summary containing the most relevant details. Please read the complete document ``LIPIcs: Instructions for Authors and the \texttt{lipics-v2021} Class'' for all details and don't hesitate to contact Dagstuhl Publishing (\url{mailto:publishing@dagstuhl.de}) in case of questions or comments:
+% \href{http://drops.dagstuhl.de/styles/lipics-v2021/lipics-v2021-authors/lipics-v2021-authors-guidelines.pdf}{\texttt{http://drops.dagstuhl.de/styles/lipics-v2021/\newline lipics-v2021-authors/lipics-v2021-authors-guidelines.pdf}}
+
+% \section{Lorem ipsum dolor sit amet}
+
+% Lorem ipsum dolor sit amet, consectetur adipiscing elit \cite{DBLP:journals/cacm/Knuth74}. Praesent convallis orci arcu, eu mollis dolor. Aliquam eleifend suscipit lacinia. Maecenas quam mi, porta ut lacinia sed, convallis ac dui. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse potenti. Donec eget odio et magna ullamcorper vehicula ut vitae libero. Maecenas lectus nulla, auctor nec varius ac, ultricies et turpis. Pellentesque id ante erat. In hac habitasse platea dictumst. Curabitur a scelerisque odio. Pellentesque elit risus, posuere quis elementum at, pellentesque ut diam. Quisque aliquam libero id mi imperdiet quis convallis turpis eleifend. 
+
+% \begin{lemma}[Lorem ipsum]
+% \label{lemma:lorem}
+% Vestibulum sodales dolor et dui cursus iaculis. Nullam ullamcorper purus vel turpis lobortis eu tempus lorem semper. Proin facilisis gravida rutrum. Etiam sed sollicitudin lorem. Proin pellentesque risus at elit hendrerit pharetra. Integer at turpis varius libero rhoncus fermentum vitae vitae metus.
+% \end{lemma}
+
+% \begin{proof}
+% Cras purus lorem, pulvinar et fermentum sagittis, suscipit quis magna.
+
+
+% \proofsubparagraph*{Just some paragraph within the proof.}
+% Nam liber tempor cum soluta nobis eleifend option congue nihil imperdiet doming id quod mazim placerat facer possim assum. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.
+% \begin{claim}
+% content...
+% \end{claim}
+% \begin{claimproof}
+% content...
+%     \begin{enumerate}
+%         \item abc abc abc \claimqedhere{}
+%     \end{enumerate}
+% \end{claimproof}
+
+% \end{proof}
+
+% \begin{corollary}[Curabitur pulvinar, \cite{DBLP:books/mk/GrayR93}]
+% \label{lemma:curabitur}
+% Nam liber tempor cum soluta nobis eleifend option congue nihil imperdiet doming id quod mazim placerat facer possim assum. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.
+% \end{corollary}
+
+% \begin{proposition}\label{prop1}
+% This is a proposition
+% \end{proposition}
+
+% \autoref{prop1} and \cref{prop1} \ldots
+
+% \subsection{Curabitur dictum felis id sapien}
+
+% Curabitur dictum \cref{lemma:curabitur} felis id sapien \autoref{lemma:curabitur} mollis ut venenatis tortor feugiat. Curabitur sed velit diam. Integer aliquam, nunc ac egestas lacinia, nibh est vehicula nibh, ac auctor velit tellus non arcu. Vestibulum lacinia ipsum vitae nisi ultrices eget gravida turpis laoreet. Duis rutrum dapibus ornare. Nulla vehicula vulputate iaculis. Proin a consequat neque. Donec ut rutrum urna. Morbi scelerisque turpis sed elit sagittis eu scelerisque quam condimentum. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Aenean nec faucibus leo. Cras ut nisl odio, non tincidunt lorem. Integer purus ligula, venenatis et convallis lacinia, scelerisque at erat. Fusce risus libero, convallis at fermentum in, dignissim sed sem. Ut dapibus orci vitae nisl viverra nec adipiscing tortor condimentum \cite{DBLP:journals/cacm/Dijkstra68a}. Donec non suscipit lorem. Nam sit amet enim vitae nisl accumsan pretium. 
+
+% \begin{lstlisting}[caption={Useless code.},label=list:8-6,captionpos=t,float,abovecaptionskip=-\medskipamount]
+% for i:=maxint to 0 do 
+% begin 
+%     j:=square(root(i));
+% end;
+% \end{lstlisting}
+
+% \subsection{Proin ac fermentum augue}
+
+% Proin ac fermentum augue. Nullam bibendum enim sollicitudin tellus egestas lacinia euismod orci mollis. Nulla facilisi. Vivamus volutpat venenatis sapien, vitae feugiat arcu fringilla ac. Mauris sapien tortor, sagittis eget auctor at, vulputate pharetra magna. Sed congue, dui nec vulputate convallis, sem nunc adipiscing dui, vel venenatis mauris sem in dui. Praesent a pretium quam. Mauris non mauris sit amet eros rutrum aliquam id ut sapien. Nulla aliquet fringilla sagittis. Pellentesque eu metus posuere nunc tincidunt dignissim in tempor dolor. Nulla cursus aliquet enim. Cras sapien risus, accumsan eu cursus ut, commodo vel velit. Praesent aliquet consectetur ligula, vitae iaculis ligula interdum vel. Integer faucibus faucibus felis. 
+
+% \begin{itemize}
+% \item Ut vitae diam augue. 
+% \item Integer lacus ante, pellentesque sed sollicitudin et, pulvinar adipiscing sem. 
+% \item Maecenas facilisis, leo quis tincidunt egestas, magna ipsum condimentum orci, vitae facilisis nibh turpis et elit. 
+% \end{itemize}
+
+% \begin{remark}
+% content...
+% \end{remark}
+
+% \section{Pellentesque quis tortor}
+
+% Nec urna malesuada sollicitudin. Nulla facilisi. Vivamus aliquam tempus ligula eget ornare. Praesent eget magna ut turpis mattis cursus. Aliquam vel condimentum orci. Nunc congue, libero in gravida convallis \cite{DBLP:conf/focs/HopcroftPV75}, orci nibh sodales quam, id egestas felis mi nec nisi. Suspendisse tincidunt, est ac vestibulum posuere, justo odio bibendum urna, rutrum bibendum dolor sem nec tellus. 
+
+% \begin{lemma} [Quisque blandit tempus nunc]
+% Sed interdum nisl pretium non. Mauris sodales consequat risus vel consectetur. Aliquam erat volutpat. Nunc sed sapien ligula. Proin faucibus sapien luctus nisl feugiat convallis faucibus elit cursus. Nunc vestibulum nunc ac massa pretium pharetra. Nulla facilisis turpis id augue venenatis blandit. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.
+% \end{lemma}
+
+% Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
+
+% \section{Morbi eros magna}
+
+% Morbi eros magna, vestibulum non posuere non, porta eu quam. Maecenas vitae orci risus, eget imperdiet mauris. Donec massa mauris, pellentesque vel lobortis eu, molestie ac turpis. Sed condimentum convallis dolor, a dignissim est ultrices eu. Donec consectetur volutpat eros, et ornare dui ultricies id. Vivamus eu augue eget dolor euismod ultrices et sit amet nisi. Vivamus malesuada leo ac leo ullamcorper tempor. Donec justo mi, tempor vitae aliquet non, faucibus eu lacus. Donec dictum gravida neque, non porta turpis imperdiet eget. Curabitur quis euismod ligula. 
+
+
+% %%
+% %% Bibliography
+% %%
+
+% %% Please use bibtex, 
+
+% \bibliography{lipics-v2021-sample-article}
+
+% \appendix
+
+% \section{Styles of lists, enumerations, and descriptions}\label{sec:itemStyles}
+
+% List of different predefined enumeration styles:
+
+% \begin{itemize}
+% \item \verb|\begin{itemize}...\end{itemize}|
+% \item \dots
+% \item \dots
+% %\item \dots
+% \end{itemize}
+
+% \begin{enumerate}
+% \item \verb|\begin{enumerate}...\end{enumerate}|
+% \item \dots
+% \item \dots
+% %\item \dots
+% \end{enumerate}
+
+% \begin{alphaenumerate}
+% \item \verb|\begin{alphaenumerate}...\end{alphaenumerate}|
+% \item \dots
+% \item \dots
+% %\item \dots
+% \end{alphaenumerate}
+
+% \begin{romanenumerate}
+% \item \verb|\begin{romanenumerate}...\end{romanenumerate}|
+% \item \dots
+% \item \dots
+% %\item \dots
+% \end{romanenumerate}
+
+% \begin{bracketenumerate}
+% \item \verb|\begin{bracketenumerate}...\end{bracketenumerate}|
+% \item \dots
+% \item \dots
+% %\item \dots
+% \end{bracketenumerate}
+
+% \begin{description}
+% \item[Description 1] \verb|\begin{description} \item[Description 1]  ...\end{description}|
+% \item[Description 2] Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
+% \item[Description 3]  \dots
+% %\item \dots
+% \end{description}
+
+% \cref{testenv-proposition} and \autoref{testenv-proposition} ...
+
+% \section{Theorem-like environments}\label{sec:theorem-environments}
+
+% List of different predefined enumeration styles:
+
+% \begin{theorem}\label{testenv-theorem}
+% Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
+% \end{theorem}
+
+% \begin{lemma}\label{testenv-lemma}
+% Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
+% \end{lemma}
+
+% \begin{corollary}\label{testenv-corollary}
+% Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
+% \end{corollary}
+
+% \begin{proposition}\label{testenv-proposition}
+% Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
+% \end{proposition}
+
+% \begin{conjecture}\label{testenv-conjecture}
+% Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
+% \end{conjecture}
+
+% \begin{observation}\label{testenv-observation}
+% Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
+% \end{observation}
+
+% \begin{exercise}\label{testenv-exercise}
+% Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
+% \end{exercise}
+
+% \begin{definition}\label{testenv-definition}
+% Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
+% \end{definition}
+
+% \begin{example}\label{testenv-example}
+% Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
+% \end{example}
+
+% \begin{note}\label{testenv-note}
+% Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
+% \end{note}
+
+% \begin{note*}
+% Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
+% \end{note*}
+
+% \begin{remark}\label{testenv-remark}
+% Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
+% \end{remark}
+
+% \begin{remark*}
+% Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
+% \end{remark*}
+
+% \begin{claim}\label{testenv-claim}
+% Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
+% \end{claim}
+
+% \begin{claim*}\label{testenv-claim2}
+% Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
+% \end{claim*}
+
+% \begin{proof}
+% Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
+% \end{proof}
+
+% \begin{claimproof}
+% Fusce eu leo nisi. Cras eget orci neque, eleifend dapibus felis. Duis et leo dui. Nam vulputate, velit et laoreet porttitor, quam arcu facilisis dui, sed malesuada risus massa sit amet neque.
+% \end{claimproof}
 
 \end{document}
 

@@ -1,0 +1,13 @@
+\newcommand{\eqBody}[3]{#1 \vdash #2 = #3}
+\newcommand{\eqBodyG}[2]{\eqBody{\Gamma}{#1} {#2}}
+\newcommand{\eqBodyE}[2]{{#1} = {#2}}
+
+\newcommand{\myaxiomE}[3]{\infer{\eqBody{#1}{#2}{#3}}{}}
+\newcommand{\myaxiom}[2]{\infer{#1 = #2}{}}
+
+\newcommand{\myo}[1]{o(#1)}
+\newcommand{\derive}[2]{#1 \backslash #2}
+\newcommand{\regex}{regex}
+\newcommand{\prop}{Prop}
+
+\newcommand{\rulename}[1]{#1}
