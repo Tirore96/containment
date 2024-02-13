@@ -1,6 +1,6 @@
 -Q theories Containment
 
-theories/syntax.v
+-I theories/
 
 -arg -w
 -arg none
