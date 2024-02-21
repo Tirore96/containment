@@ -1,6 +1,6 @@
-From mathcomp Require Import all_ssreflect finmap zify.
+From mathcomp Require Import all_ssreflect zify.
 Require Import Paco.paco.
-From Equations Require Import Equations.
+(*From Equations Require Import Equations.*)
 From Containment Require Import tactics.
 
 Let inE := tactics.inE.
@@ -8,7 +8,7 @@ Let inE := tactics.inE.
 
 Notation Forall2 := List.Forall2.*)
 
-Equations foldIn {A B : Type} (l : list A) (f : forall (x : A), List.In x l -> B -> B) (b : B) : B := 
+(*Equations foldIn {A B : Type} (l : list A) (f : forall (x : A), List.In x l -> B -> B) (b : B) : B := 
   foldIn nil f b := b;
   foldIn (x:: xs) f b := f x _ (foldIn xs (fun x H b => f x _ b) b).
 
@@ -21,7 +21,7 @@ Proof.
 move => A. rewrite /foldInAll.  elim. done. 
 intros. simpl.   simp foldIn. f_equal.  done. 
 Qed. 
-
+*)
 
 
 Lemma my_in_cons : forall (A :eqType) (a : A) l, a \in (a::l).

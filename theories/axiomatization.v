@@ -3,7 +3,7 @@ From mathcomp Require Import all_ssreflect zify.
 Require Import Relation_Definitions Setoid.
 Require Import Coq.btauto.Btauto.
 Require Import Paco.paco.
-From Containment Require Import  tactics utils regex enum pred extensional_partial modules.
+From Containment Require Import  tactics utils regex enum extensional_partial modules.
 Set Implicit Arguments.
 Set Maximal Implicit Insertion.
 
@@ -659,23 +659,6 @@ Lemma c_eq_completeness : forall (c0 c1 : regex), equiv_r c0 c1 -> c0 =⟨nil⟩
 Proof. move=> c0 c1. move/equiv_r_plus. move/Bisim_co_ind. move/bisim_complete.
 move/bisim_c_eq. rewrite !big_cons !big_nil. eauto.
 Qed.
-
-
-
-Lemma dslF_plus_shape : forall a R x y, dslF R (\big[Plus/Empt]_(e <- a::nil) ((Event e) _;_ x))
-                                    (\big[Plus/Empt]_(e <- a::nil) ((Event e) _;_ y)) -> dslF R (Event a _;_ x) 
-                                                                                             (Event a _;_ y).
-Proof.
-intros. rewrite !big_cons !big_nil in X.
-eauto.
-Qed.
-
-Definition fold_back : forall (r0 r1 : @regex A), dsl_co r0 r1 -> dslF dsl_co r0 r1.
-Proof.
-intros. inv X.
-Defined.
-
-
 
 
 
