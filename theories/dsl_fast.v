@@ -37,7 +37,7 @@ Inductive dsl (R: seq (@regex A * regex)) : regex -> regex -> Type :=
 | swapinv A : dsl R(Eps _;_ A)  (A _;_ Eps) 
 
 | proj A : dsl R (Eps _;_ A)  A 
-| projinv A : dsl R A (Eps _;_ A) 
+(*| projinv A : dsl R A (Eps _;_ A) *)
 
 | abortR A : dsl R (A _;_ Empt)  Empt 
 | abortRinv A : dsl R Empt   (A _;_ Empt) 
@@ -88,7 +88,7 @@ Arguments associnv {R A B C}.
 Arguments swap {R A}.
 Arguments swapinv {R A}.
 Arguments proj {R A}.
-Arguments projinv {R A}.
+(*Arguments projinv {R A}.*)
 Arguments abortR {R A}.
 Arguments abortRinv {R A}.
 Arguments abortL {R A}.
@@ -171,7 +171,7 @@ dp T f.
 dp p0 f.
 exists p1=>//=.
 
-exists (p_pair p_tt T)=>//=. 
+(*exists (p_pair p_tt T)=>//=. *)
 
 dp T f.
 dp p1 f.
@@ -479,10 +479,10 @@ Proof.
 unfold o. intros. simpl. destruct (nu c0);destruct (nu c1);simpl;eauto. 
 Qed.
 
-Lemma o_seq_l : forall c0 c1 R,  o (c0 _;_ c1) <⟨R⟩= o c0 _;_ o c1.
+(*Lemma o_seq_l : forall c0 c1 R,  o (c0 _;_ c1) <⟨R⟩= o c0 _;_ o c1.
 Proof.
 unfold o. intros. simpl. destruct (nu c0);destruct (nu c1);simpl;eauto.
-Qed.
+Qed.*)
 
 Lemma o_seq_r : forall c0 c1 R, o c0 _;_ o c1 <⟨R⟩=  o (c0 _;_ c1) .
 Proof.
@@ -610,12 +610,12 @@ move=> a l IH. rewrite !big_cons.
 lct1. apply:distR. eauto. 
 Qed.
 
-Lemma eps_c_r : forall r R,   r < ⟨R⟩= r _;_ Eps.
+(*Lemma eps_c_r : forall r R,   r < ⟨R⟩= r _;_ Eps.
 Proof.
 intros. econ. lct2. apply:swapinv. eauto. done. done.
 Qed.
 
-Hint Resolve eps_c_r.
+Hint Resolve eps_c_r.*)
 
 Lemma eps_c_l : forall r R,   r _;_ Eps < ⟨R⟩= r .
 Proof.
@@ -636,12 +636,13 @@ move=> a l IH Hin. rewrite !big_cons /=. lcp1. apply:Hin. done.
 eauto. 
 Qed.
 
-Lemma derive_seq_l : forall R a r r', a \ (r _;_ r') <⟨R⟩= ((a \ r) _;_ r') _+_ (o (r) _;_ a \ r') .
+(*Lemma derive_seq_l : forall R a r r', a \ (r _;_ r') <⟨R⟩= ((a \ r) _;_ r') _+_ (o (r) _;_ a \ r') .
 Proof.
 move=> R a r r' /=. case Hcase: (nu r)=>/=. rewrite /o Hcase /=. 
 lcp1. lcid. eauto. 
+intro.
 rewrite /o Hcase /=.  eauto.
-Qed.
+Qed.*)
 
 Lemma derive_seq_r : forall R a r r', 
 ((a \ r) _;_ r') _+_ (o (r) _;_ a \ r') 
@@ -705,7 +706,7 @@ simpl. intro. move: (IH _ H). intros.
 rewrite big_cons Heqn. lct1. lcp1. eauto.  eauto. eauto. 
 Qed.
 
-Lemma big_event_in_r R : forall l a, a \in l -> Event a  <⟨R⟩= \big[Plus/Empt]_(i <- l) ((Event i)_;_(i \ Event a)) . 
+(*Lemma big_event_in_r R : forall l a, a \in l -> Event a  <⟨R⟩= \big[Plus/Empt]_(i <- l) ((Event i)_;_(i \ Event a)) . 
 Proof.
 elim=>//=.
 move=> a l IH a0 /=.
@@ -719,7 +720,7 @@ move=>HH. lct2.  apply:tagL. eauto.
 simpl. move=>HH.
 move: (IH _ HH). intros. rewrite big_cons /= Heqn.
 lct2. apply:retag. lct2. apply:tagL. eauto. 
-Qed.
+Qed.*)
 
 (*Uses drop!*) (*ineffecient rule*)
 (*Lemma star_o_l : forall R c c', Star (o (c) _+_ c') <⟨R⟩ = Star c' .
@@ -744,7 +745,7 @@ elim;try solve [auto].
   lcp1. lcid. lct1.  apply:eq_big_plus_c. intro. intros. apply:abortR. apply: plus_empt_l. 
 *)
 - move=> s. con.
- *  rewrite /o /=. lct2. apply:retag. lct2. apply:tagL. 
+ *  rewrite /o /=. lct2. apply:retag. lct2. apply:tagL.  
     apply:big_event_in_r. rewrite mem_index_enum //. 
 (* *  rewrite /o /=. lct1. apply:untagL. apply:big_event_in_l. rewrite mem_index_enum //. *)
 - move=> r0 Hd0 r1 Hd1.

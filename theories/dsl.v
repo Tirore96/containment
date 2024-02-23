@@ -1,6 +1,5 @@
 From HB Require Import structures.
 Require Import Program. 
-From Equations Require Import Equations.  
 From mathcomp Require Import all_ssreflect zify.
 Require Import Relation_Definitions Setoid.
 From deriving Require Import deriving. 
@@ -9,7 +8,7 @@ Require Import Coq.btauto.Btauto.
 Require Import ConstructiveEpsilon.
 Require Import Numbers.BinNums.
 Require Import PArith.BinPos.
-From Containment Require Import  tactics utils regex pred modules constructiveEps enum (*dsl_module*) extensional_partial.
+From Containment Require Import  tactics utils regex modules constructiveEps enum (*dsl_module*) extensional_partial.
 Set Implicit Arguments.
 Set Maximal Implicit Insertion.
 
@@ -677,7 +676,29 @@ elim;try solve [eauto].
     lct2. apply:shuffleinv. lcp1. lcid.
     lct2. apply:retag. lcp1. lcid. apply:com_seq_o_r. done.
     
-- move=> r0 [] Hd Hd'. con.  
+- move=> r0 [] Hd Hd'. con. 
+  rewrite /o /=.
+
+(*  lct2. lcp1. lcid. simpl.
+   apply:eq_big_plus_c. intro. intros. lct2. apply:assoc. lcs1. lcid. lcid.
+  lct2. lcp2. apply:factor_seq_r_r. lcid.*)
+  move : Hd.
+  rewrite /o /=.
+  case_if. intros. 
+  lct1. apply:cstar. apply Hd.
+  lct1. apply: drop. 
+  lct1. apply:wrapinv.
+  lcp1. lcid.
+  lct1. lcs2. lct1. apply:dropinv. 
+  rewrite /o H in Hd'.
+  apply:cstar. apply Hd'. lcid.
+  lct2. 
+    apply:eq_big_plus_c. intro. intros. lct2. apply:assoc. lcs1. lcid.
+    lcid.
+    apply:factor_seq_r_r. 
+
+
+
   * lct2. lcp1. lcid. simpl. lct2. 
     apply:eq_big_plus_c. intro. intros. lct2. apply:assoc. lcs1. lcid.
     lcst1. apply/Hd'. 

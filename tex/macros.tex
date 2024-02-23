@@ -3,7 +3,7 @@
 \newcommand{\eqBodyE}[2]{{#1} = {#2}}
 
 \newcommand{\myaxiomE}[3]{\infer{\eqBody{#1}{#2}{#3}}{}}
-\newcommand{\myaxiom}[2]{\infer{#1 =_F #2}{}}
+\newcommand{\myaxiom}[2]{\infer{#1 = #2}{}}
 \newcommand{\myaxiomN}[2]{\Gamma \vdash #1 = #2}
 \newcommand{\myaxiomC}[3]{\Gamma \vdash \mathsf{#1} :  #2 = #3}
 
@@ -33,3 +33,6 @@
 \newcommand{\inr}[1]{\mathsf{inr}(#1)}
 \newcommand{\dstar}[1]{({#1^*})^*}
 \newcommand{\mystar}[1]{{#1^*}}
+\newcommand{\myset}{Set}
+\newcommand{\decomp}[1]{\Sigma_{a \in \Sigma} \derive{a}{#1}^*}
+\newcommand{\event}[1]{\mathsf{Event}~#1}
