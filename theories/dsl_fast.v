@@ -37,7 +37,7 @@ Inductive dsl (R: seq (@regex A * regex)) : regex -> regex -> Type :=
 | swapinv A : dsl R(Eps _;_ A)  (A _;_ Eps) 
 
 | proj A : dsl R (Eps _;_ A)  A 
-(*| projinv A : dsl R A (Eps _;_ A) *)
+| projinv A : dsl R A (Eps _;_ A) 
 
 | abortR A : dsl R (A _;_ Empt)  Empt 
 | abortRinv A : dsl R Empt   (A _;_ Empt) 
@@ -55,7 +55,7 @@ Inductive dsl (R: seq (@regex A * regex)) : regex -> regex -> Type :=
 | wrapinv A : dsl R (Star A)  (Eps _+_ (A _;_ Star A))
 
 | drop A B : dsl R A (Eps _+_ B) -> dsl R (Star A)  (Eps _+_ B _;_ Star ( A))
-| dropinv A B : dsl R (Eps _+_ B) A -> dsl R  (Eps _+_ B _;_ Star ( A)) (Star A) 
+(*| dropinv A B : dsl R (Eps _+_ B) A -> dsl R  (Eps _+_ B _;_ Star ( A)) (Star A) *)
 | cid A : dsl R A A 
 
 (*| ci_sym A B (H: A =R=B) : B =R=A*)
@@ -74,6 +74,14 @@ Inductive dsl (R: seq (@regex A * regex)) : regex -> regex -> Type :=
 (*| dsl_fix A B n : PTree.get n R = None -> dsl (PTree.set n (A,B) R) A B -> dsl R A B.*)
 (**)
 Notation "c0 < ⟨ R ⟩ = c1" := (dsl R c0 c1)(at level 63).
+
+Lemma dropinv R A B : dsl R (Eps _+_ B) A -> dsl R  (Eps _+_ B _;_ Star ( A)) (Star A). 
+Proof.
+intros. apply:ctrans. apply:cplus. apply:cid. apply:cseq.
+apply:ctrans. apply:tagL. apply: Eps. 
+apply:ctrans. apply:retag.  apply:X. apply:cid.
+apply:wrap.
+Qed.
 
 Hint Constructors dsl : dsl.
 Arguments shuffle {R A B C}.
@@ -171,7 +179,7 @@ dp T f.
 dp p0 f.
 exists p1=>//=.
 
-(*exists (p_pair p_tt T)=>//=. *)
+exists (p_pair p_tt T)=>//=. 
 
 dp T f.
 dp p1 f.
@@ -261,8 +269,8 @@ ssa. lia.  rewrite Hflat //.
 
 
 
-
-move: T f. apply: pTree_1size_rect.
+(*peekinv case we don't need anymore*)
+(*move: T f. apply: pTree_1size_rect.
 intros. dp2 u X f. dp2 p X f. 
 exists (p_fold (p_inl p_tt))=>//=.
 
@@ -275,7 +283,7 @@ move=>Hf.
 move: (interp _ _ _ d (p_inr p0) Hf).
 case. move=> x [] Hsize Hflat. ssa.
 exists (p_fold (p_inr (p_pair x p1))). ssa. lia. rewrite Hflat. done.
-
+*)
 
 
 
@@ -706,7 +714,7 @@ simpl. intro. move: (IH _ H). intros.
 rewrite big_cons Heqn. lct1. lcp1. eauto.  eauto. eauto. 
 Qed.
 
-(*Lemma big_event_in_r R : forall l a, a \in l -> Event a  <⟨R⟩= \big[Plus/Empt]_(i <- l) ((Event i)_;_(i \ Event a)) . 
+Lemma big_event_in_r R : forall l a, a \in l -> Event a  <⟨R⟩= \big[Plus/Empt]_(i <- l) ((Event i)_;_(i \ Event a)) . 
 Proof.
 elim=>//=.
 move=> a l IH a0 /=.
@@ -720,7 +728,7 @@ move=>HH. lct2.  apply:tagL. eauto.
 simpl. move=>HH.
 move: (IH _ HH). intros. rewrite big_cons /= Heqn.
 lct2. apply:retag. lct2. apply:tagL. eauto. 
-Qed.*)
+Qed.
 
 (*Uses drop!*) (*ineffecient rule*)
 (*Lemma star_o_l : forall R c c', Star (o (c) _+_ c') <⟨R⟩ = Star c' .
