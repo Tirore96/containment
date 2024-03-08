@@ -36,5 +36,22 @@
 \newcommand{\dstar}[1]{({#1^*})^*}
 \newcommand{\mystar}[1]{{#1^*}}
 \newcommand{\myset}{Set}
-\newcommand{\decomp}[1]{\Sigma_{a \in \Sigma} \derive{a}{#1}^*}
+\newcommand{\decomp}[1]{\Sigma_{a \in \Sigma} a\times \derive{a}{#1}}
+\newcommand{\decompp}[2]{\Sigma_{a \in \Sigma} a\times (\derive{a}{#1})\times#2}
+\newcommand{\cat}[2]{#1 \mathsf{++}#2}
 \newcommand{\event}[1]{\mathsf{Event}~#1}
+\newcommand{\pd}[2]{\partial_{#1}(#2)}
+\newcommand{\mymap}[2]{\mathsf{map}~(#1)~#2}
+\newcommand{\domm}[2]{\mathbb{D}~{#1}~#2}
+\newcommand{\pder}[2]{(\tilde{#1},\tilde{#2})} 
+\newcommand{\mypar}[2]{\partial{#1}(#2)}
+\newcommand{\simulationb}[3]{\mathsf{simulation}_{#1}(#2,#3)}
+\newcommand{\mysum}[2]{\Sigma_{#1 \in #2}}
+\newcommand{\interp}[1]{\llbracket #1 \rrbracket}
+\newcommand{\type}[1]{\mathcal{T}\interp{#1}}
+\newcommand{\flatten}[1]{\mathsf{flatten}(#1)}
+\newcommand{\pres}[1]{\mathsf{pres}(#1)}
+\newcommand{\irule}[3]{\dslcom{#1}(\textsf{#2})=\textsf{#3}}
+\newcommand{\iruleinv}[3]{\dslcominv{#1}(\textsf{#2})=\textsf{#3}}
+\newcommand{\zerom}[1]{|\mathsf{#1}|_0}
+\newcommand{\onem}[1]{|\mathsf{#1}|_1}

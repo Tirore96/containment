@@ -1,5 +1,4 @@
 Require Import Program. 
-From Equations Require Import Equations.  
 From mathcomp Require Import all_ssreflect zify.
 Require Import Paco.paco.
 
