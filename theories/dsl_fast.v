@@ -14,12 +14,12 @@ Set Maximal Implicit Insertion.
 
 Let inE := tactics.inE.
 
-(*Why is M already defined*)
+
 Module IndDSL (M : FModule).
 Module PM := ContainsF M.
-(*Module CM := Constructive M.*)
+Module CM := Constructive M.
 Module EM := ExtensionalPartial PM.
-Import M (*CM*) EM.
+Import M CM EM.
 
 Inductive dsl (R: seq (@regex A * regex)) : regex -> regex -> Type := 
 | shuffle A B C : dsl R ((A _+_ B) _+_ C) (A _+_ (B _+_ C))
@@ -66,7 +66,7 @@ Inductive dsl (R: seq (@regex A * regex)) : regex -> regex -> Type :=
 (*| rule_cfix r r' (p  : dsl R dsl) : dsl R r  r' ~> p[d (cfix p) .: dsl R var_dsl] ->  r  r' ~> (cfix p) (*guarded p otherwise unsound*)*)
 (*| guard a A B  : R A B -> dsl R ((Event a) _;_ A)  ((Event a) _;_ B)*)
 (*| dsl_var a A B n : PTree.get n R = Some (A,B) -> dsl R ((Event a) _;_ A) ((Event a) _;_ B) *)
-| dsl_var a A B :   ((A,B) \in R) -> dsl R (Event a _;_ A) (Event a _;_  B) 
+| dsl_var a A B :   (A,B) \in R -> dsl R (Event a _;_ A) (Event a _;_  B) 
 
 (*without summation as that was due to productivity checker, not needed for inductive definition*)
 | dsl_fix A B : dsl ((A,B):: R) A B -> dsl R A B.
@@ -74,8 +74,6 @@ Inductive dsl (R: seq (@regex A * regex)) : regex -> regex -> Type :=
 (*| dsl_fix A B n : PTree.get n R = None -> dsl (PTree.set n (A,B) R) A B -> dsl R A B.*)
 (**)
 Notation "c0 < ⟨ R ⟩ = c1" := (dsl R c0 c1)(at level 63).
-
-
 
 Lemma dropinv R A B : dsl R (Eps _+_ B) A -> dsl R  (Eps _+_ B _;_ Star ( A)) (Star A). 
 Proof.
@@ -229,7 +227,7 @@ intros. dp2 u X f. dp2 p X f.
 exists ((p_inl p_tt))=>//=.
 -
 dp2 p X f.
-have: (forall x y : @regex A,
+have: (forall x y : regex_regex__canonical__eqtype_Equality A,
     (x, y) \in l -> forall T0 : pTree x, pRel0 T0 p0 -> post y T0).  
 intros. apply f. done. 
 move: H0. rewrite /pRel0 /=. lia.
@@ -432,7 +430,7 @@ exists (p_pair (p_singl s) x).
 ssa. f_equal. done. 
 
 move : T f.
-eapply (@pTree_0size_rect _ r0 (fun (T : pTree r0) => (forall x y,(x,y) \in l -> forall (T0 : pTree x), pRel0 T0 T -> post y T0) -> post r1 T)).
+eapply (@pTree_0size_rect r0 (fun (T : pTree r0) => (forall x y,(x,y) \in l -> forall (T0 : pTree x), pRel0 T0 T -> post y T0) -> post r1 T)).
 move=> Hin IH Hf.
 eapply (@interp _ _ _ p0 Hin). 
 intros.
@@ -448,6 +446,18 @@ Defined.
 
 
 
+Lemma dsl_sound : forall c0 c1, dsl nil c0 c1 -> (forall s, Match s c0 -> Match s c1).
+Proof.
+move=> c0 c1 d s Hmatch. 
+case: (exists_pTree Hmatch) => x /eqP Hf. subst.
+have: (forall  (x0 y : regex),
+    (x0, y) \in nil -> forall T0 : pTree x0, pRel0 T0 x -> post y T0).
+intros. done. move=>Hp.
+move: (interp d x Hp). 
+case. intros. ssa. rewrite H0. rewrite -uflatten_to_upTree.
+apply pTree_Match. apply:to_typing.
+Qed.
+
 
 
 
@@ -455,138 +465,8 @@ Defined.
 End Interpret.
 
 
-(*
-
-Extraction Inline  solution_left.
-Extraction Inline  solution_right.
-Extraction Inline  simplification_heq. Locate pTree_0size_rect.
-Extraction Inline pTree_0size_rect.
-Extraction Inline pTree_1size_rect.
-Extraction Inline pTree_case.
-(*Extraction Implicit interp [ 3 4].
-Extraction Implicit p_pair [ 1].*) 
-Extraction Implicit dsl_fix [1]. 
-Extraction Implicit ctrans [1]. 
-Extraction Implicit drop [1]. 
-Extraction Implicit cplus [1 2 4]. 
-Extraction Implicit cid [1 2]. 
-Extraction Implicit dsl_var []. 
-
-
-Extraction Inline  solution_left.
-Extraction Inline  solution_right.
-Extraction Inline  simplification_heq.
-Extraction Inline pTree_0size_rect.
-Extraction Inline pTree_1size_rect.
-Extraction Inline pTree_case.
-Extraction Inline pTree_0size_rect.
-Extraction Inline pTree_1size_rect.
-
-(*Extraction Implicit interp.*)
-Extraction Implicit interp [3].
-Extraction Implicit p_pair [ 1 2 3].
-
-Extraction Implicit p_inl [ 1 2 3].
-Extraction Implicit p_inr [ 1 2 3].
-Check @p_fold.
-Extraction Implicit p_fold [ 1 2].
-
-Extraction Implicit shuffle [R A B C].
-Extraction Implicit shuffleinv [R A B C].
-Extraction Implicit retag [R A B].
-Extraction Implicit untagL [R A].
-Extraction Implicit untagLinv [R A].
-Extraction Implicit untag [R A].
-Extraction Implicit tagL [R A B].
-Extraction Implicit assoc [R A B C].
-Extraction Implicit associnv [R A B C].
-Extraction Implicit swap [R].
-Extraction Implicit swapinv [R].
-Extraction Implicit proj [R A].
-Extraction Implicit projinv [R].
-Extraction Implicit abortR [R A].
-Extraction Implicit abortRinv [R A].
-Extraction Implicit abortL [R A].
-Extraction Implicit abortLinv [R A].
-Extraction Implicit distL [R A B C].
-Extraction Implicit distLinv [R A B C].
-Extraction Implicit distR [R A B C].
-Extraction Implicit distRinv [R A B C].
-Extraction Implicit wrap [R A]. 
-Extraction Implicit wrapinv [R A].
-Extraction Implicit drop [R A B].
-Extraction Implicit dropinv [R A B].
-Extraction Implicit cid [R A].
-Extraction Implicit ctrans [R A B C].
-Extraction Implicit cplus [R A A' B B'].
-Extraction Implicit cseq [R A  A' B B' ].
-(*Extraction Implicit cstar [R A B].*)
-Extraction Implicit dsl_var [R].
-(*Extraction Implicit guard [R a A B].*)
-Extraction Implicit dsl_fix [R].
-
-Extraction Implicit  interp [1 2 3].
-
-(*Extraction Implicit eq_op [ s].*)
-(*Extraction Inline eq_op.*)
-(*Extraction Inline Equality.eqtype_hasDecEq_mixin.
-Print Equality.eqtype_hasDecEq_mixin.
-Print Equality.axioms.
-Locate Equality.
-Print  mathcomp.ssreflect.eqtype.Equality.
-Extraction Equality.axioms_.
-Extraction hasDecEq.eq_op.
-Extraction Finite.Exports.fintype_Finite__to__eqtype_Equality.*)
-Check regex_regex__canonical__eqtype_Equality.
-Extraction Inline Datatypes_prod__canonical__eqtype_Equality.
-Extraction Inline regex_regex__canonical__eqtype_Equality.
-Check @pTree_1size_rect.
-Extraction Implicit pTree_1size_rect [ A r P].
-Extraction Inline pTree_1size_rect.
-Extraction Implicit pTree_0size_rect [ A r P].
-Extraction Inline pTree_0size_rect.
-
-
-
-Extraction Inline Datatypes_prod__canonical__eqtype_Equality.
-Extraction Inline regex_regex__canonical__eqtype_Equality.
-
-Extraction Implicit pTree_1size_rect [ A r P].
-Extraction Inline pTree_1size_rect.
-Extraction Implicit pTree_0size_rect [ A r P].
-Extraction Inline pTree_0size_rect.
-
-Extraction Inline  hasDecEq.phant_axioms. 
-Extraction Inline Equality.eqtype_hasDecEq_mixin.
-Extraction Inline hasDecEq.eq_op.
-Extraction Inline Finite.Exports.fintype_Finite__to__eqtype_Equality.
-Extraction Inline Finite.Exports.fintype_Finite_class__to__eqtype_Equality_class.
-
- Extraction Inline Finite.eqtype_hasDecEq_mixin.
-Extraction Inline fintype_ordinal__canonical__fintype_Finite.
-Extraction Inline Equality.sort.*)
-
-
-Definition example a : dsl nil (Star (Eps _+_ (Event a))) (Star (Event a)). 
-apply :dsl_fix.
-apply:ctrans. 
-apply:drop. apply:cplus. apply:cid. apply:cid.
-apply:ctrans. 2: { apply:wrap. } 
-apply:cplus. apply:cid.
-apply:dsl_var. done.
-Defined.
-
-
-(*Extraction example.
-
-
-
-
-Extraction interp.*)
-
-
-
 Section DSL_Complete.
+
 
 Ltac pp := intros;apply:proj2_sig.
 
@@ -920,6 +800,9 @@ elim;try solve [auto].
   lct1. apply distR. lct1. lcp1. apply:abortL.
   lcid. apply:untagL.
 Qed.
+
+
+
 
 
 Lemma derive_unfold_coerce2 : forall c, dsl nil (o c _+_ \big[Plus/Empt]_(a : A) (Event a _;_ a \ c)) c.
@@ -1256,7 +1139,6 @@ move/allP.  eauto.
 Qed.
 
 
-
 Lemma o_o_l : forall l, o (\big[Plus/Empt]_(i <- l) i) < ⟨ [::] ⟩ = o_l l.
 Proof.
 intros. rewrite /o /o_l nu_has //. 
@@ -1267,6 +1149,8 @@ Proof.
 intros. rewrite /o /o_l nu_has //. 
 Qed.
 
+
+
 Lemma decomp_p1_aux : forall l ,  \big[Plus/Empt]_(i <- l) i <⟨nil⟩= (o_l l) _+_ \big[Plus/Empt]_(a : A) (Event a _;_ \big[Plus/Empt]_(i <- pd_l a l) i ). 
 Proof. 
 intros. 
@@ -1276,7 +1160,10 @@ apply:eq_big_plus_c.
 intro. intros. apply:cseq. lcid. rewrite -pd_plus.
 lct2. apply:c_eq_undup2. apply:c_eq_derive_pd_l1.
 Qed.
-(*lct
+
+(*Lemma decomp_p1_aux : forall l ,  \big[Plus/Empt]_(i <- l) i <⟨nil⟩= (o_l l) _+_ \big[Plus/Empt]_(a : A) (Event a _;_ \big[Plus/Empt]_(i <- pd_l a l) i ). 
+Proof. 
+intros. 
 rewrite /pd_l. 
 suff:   \big[Plus/Empt]_(i <- l) i < ⟨ [::] ⟩ =
   o_l l _+_ \big[Plus/Empt]_a (Event a _;_ \big[Plus/Empt]_(i <- (flatten [seq pd a i | i <- l])) i).
@@ -1327,7 +1214,6 @@ Proof.
 move=> A. elim;ssa.
 Qed.
 
-
 Lemma decomp_p2_aux : forall l,  (o_l l) _+_ \big[Plus/Empt]_(a : A) (Event a _;_ \big[Plus/Empt]_(i <- pd_l a l) i )  <⟨nil⟩=  \big[Plus/Empt]_(i <- l) i.
 Proof. 
 intros. 
@@ -1338,7 +1224,10 @@ apply:eq_big_plus_c.
 intro. intros. apply:cseq. lcid. rewrite -pd_plus.
 lct1. apply:c_eq_undup1. apply:c_eq_derive_pd_l2.
 Qed.
-(*intros. 
+
+(*Lemma decomp_p2_aux : forall l,  (o_l l) _+_ \big[Plus/Empt]_(a : A) (Event a _;_ \big[Plus/Empt]_(i <- pd_l a l) i )  <⟨nil⟩=  \big[Plus/Empt]_(i <- l) i.
+Proof. 
+intros. 
 rewrite /pd_l. 
 suff: 
   o_l l _+_ \big[Plus/Empt]_a (Event a _;_ \big[Plus/Empt]_(i <- (flatten [seq pd a i | i <- l])) i)  < ⟨ [::] ⟩ =  \big[Plus/Empt]_(i <- l) i.
@@ -1361,8 +1250,8 @@ lct1. apply:big_plus2.
      elim: l;ssa. 
      rewrite !big_cons. lct1. apply c_eq_cat1. lcp1. 
      apply c_eq_derive_pd_l2. done. 
-Qed.
-*)
+Qed.*)
+
 Lemma decomp_p2 : forall l L,  (o_l l) _+_ \big[Plus/Empt]_(a : A) (Event a _;_ \big[Plus/Empt]_(i <- pd_l a l) i )  <⟨L⟩=  \big[Plus/Empt]_(i <- l) i.
 Proof.
 intros. apply/dsl_mon. apply/decomp_p2_aux. eauto.
@@ -1464,29 +1353,300 @@ move/bisim_c_eq. rewrite !big_cons !big_nil. eauto.
 Qed.
 
 End DSL_Complete.
+
+Lemma contains_seq1 : forall (r0 r1 : @regex A), contains_r r0 r1 <-> contains_r (\big[Plus/Empt]_(a <- r0::nil) a) (\big[Plus/Empt]_(a <- r1::nil) a).
+Proof.
+intros. split.
+intros. rewrite !big_cons !big_nil. 
+intro. ssa. inv H0. con. eauto. inv H3.
+rewrite !big_cons !big_nil.
+intros. intro. 
+intros. suff: Match s (r1 _+_ Empt).
+intros. inv H1. inv H4.
+apply:H. con. done.
+Qed.
+
+
+Lemma synth_coercion : forall (r0 r1 : @regex A), option (dsl nil r0 r1). 
+Proof.
+intros. 
+Locate P_decidable. 
+destruct (enum.reachable_wrap [::r0] [::r1] PM.Pb) eqn:Heqn.
+move/EM.P_decidable : Heqn. move=>HH. con. apply:c_eq_completeness.  apply/contains_seq1. done.
+apply : None.
+Qed.
+
+Definition gen_trees (n : nat) (r : @regex A) : seq (CM.pTree r). 
+move : ((CM.gen_upTree n)) => l.
+elim : l. apply : nil.
+intros. destruct (CM.typingb a r) eqn:Heqn. apply CM.typingP1 in Heqn.
+apply CM.to_pTree in Heqn. apply : cons. apply Heqn. apply X.
+apply : X.
+Defined.
+
+
+Definition triple := (synth_coercion,gen_trees,@interp).
+
+Definition example a : dsl nil (Star (Eps _+_ (Event a))) (Star (Event a)). 
+apply :dsl_fix.
+apply:ctrans. 
+apply:drop. apply:cplus. apply:cid. apply:cid.
+apply:ctrans. 2: { apply:wrap. } 
+apply:cplus. apply:cid.
+apply:dsl_var. done.
+Defined.
+
+
+(*Extraction Inline  solution_left.
+Extraction Inline  solution_right.
+Extraction Inline  simplification_heq.
+Extraction Inline pTree_0size_rect.
+Extraction Inline pTree_1size_rect.
+Extraction Inline pTree_case.
+Extraction Implicit interp [ 3 4].
+Extraction Implicit p_pair [ 1].
+
+Extraction interp.
+Extraction pTree_case.*)
+
+(*
+Extraction Inline  solution_left.
+Extraction Inline  solution_right.
+Extraction Inline  simplification_heq.
+(*Extraction Inline pTree_0size_rect.
+Extraction Inline pTree_1size_rect.
+Extraction Inline pTree_case.
+Extraction Inline pTree_0size_rect.
+Extraction Inline pTree_1size_rect.*)
+
+(*Extraction Implicit interp.*)
+
+Extraction Implicit p_pair [ 1 2 3].
+
+Extraction Implicit p_inl [ 1 2 3].
+Extraction Implicit p_inr [ 1 2 3].
+Extraction Implicit p_fold [ 1 2].
+
+Extraction Implicit shuffle [R B C].
+Extraction Implicit shuffleinv [R A B C].
+Extraction Implicit retag [R A B].
+Extraction Implicit untagL [R A].
+Extraction Implicit untagLinv [R A].
+Extraction Implicit untag [R A].
+Extraction Implicit tagL [R A B].
+Extraction Implicit assoc [R A B C].
+Extraction Implicit associnv [R A B C].
+Extraction Implicit swap [R].
+Extraction Implicit swapinv [R].
+Extraction Implicit proj [R A].
+Extraction Implicit projinv [R].
+Extraction Implicit abortR [R A].
+Extraction Implicit abortRinv [R A].
+Extraction Implicit abortL [R A].
+Extraction Implicit abortLinv [R A].
+Extraction Implicit distL [R A B C].
+Extraction Implicit distLinv [R A B C].
+Extraction Implicit distR [R A B C].
+Extraction Implicit distRinv [R A B C].
+Extraction Implicit wrap [R A]. 
+Extraction Implicit wrapinv [R A].
+Extraction Implicit drop [R A B].
+Extraction Implicit dropinv [R A B].
+Extraction Implicit cid [R A].
+Extraction Implicit ctrans [R A B C].
+Extraction Implicit cplus [R A A' B B'].
+Extraction Implicit cseq [R A  A' B B' ].
+(*Extraction Implicit cstar [R A B].*)
+Extraction Implicit dsl_var [R].
+(*Extraction Implicit guard [R a A B].*)
+Extraction Implicit dsl_fix [R].
+
+Check @interp.
+Extraction Implicit interp [ l r0 r1].*)
+
+
+
+Extraction Inline  solution_left.
+Extraction Inline  solution_right.
+Extraction Inline  simplification_heq. Locate pTree_0size_rect.
+Extraction Inline pTree_0size_rect.
+Extraction Inline pTree_1size_rect.
+Extraction Inline pTree_case.
+(*Extraction Implicit interp [ 3 4].
+Extraction Implicit p_pair [ 1].*) 
+Extraction Implicit dsl_fix [1]. 
+Extraction Implicit ctrans [1]. 
+Extraction Implicit drop [1]. 
+Extraction Implicit cplus [1 2 4]. 
+Extraction Implicit cid [1 2]. 
+Extraction Implicit dsl_var []. 
+
+
+Extraction Inline  solution_left.
+Extraction Inline  solution_right.
+Extraction Inline  simplification_heq.
+Extraction Inline pTree_0size_rect.
+Extraction Inline pTree_1size_rect.
+Extraction Inline pTree_case.
+Extraction Inline pTree_0size_rect.
+Extraction Inline pTree_1size_rect.
+
+(*Extraction Implicit interp.*)
+(*Extraction Implicit interp [3].*)
+Extraction Implicit p_pair [ 1 2].
+Check @p_inl.
+Extraction Implicit p_inl [ r0 r1].
+Extraction Implicit p_inr [ r0 r1].
+Extraction Implicit p_fold [ r ].
+Recursive Extraction p_fold.
+
+Extraction Implicit shuffle [R A B C].
+Extraction Implicit shuffleinv [R A B C].
+Extraction Implicit retag [R A B].
+Extraction Implicit untagL [R A].
+Extraction Implicit untagLinv [R A].
+Extraction Implicit untag [R A].
+Extraction Implicit tagL [R A B].
+Extraction Implicit assoc [R A B C].
+Extraction Implicit associnv [R A B C].
+Extraction Implicit swap [R].
+Extraction Implicit swapinv [R].
+Extraction Implicit proj [R A].
+Extraction Implicit projinv [R].
+Extraction Implicit abortR [R A].
+Extraction Implicit abortRinv [R A].
+Extraction Implicit abortL [R A].
+Extraction Implicit abortLinv [R A].
+Extraction Implicit distL [R A B C].
+Extraction Implicit distLinv [R A B C].
+Extraction Implicit distR [R A B C].
+Extraction Implicit distRinv [R A B C].
+Extraction Implicit wrap [R A]. 
+Extraction Implicit wrapinv [R A].
+Extraction Implicit drop [R A B].
+Extraction Implicit dropinv [R A B].
+Extraction Implicit cid [R A].
+Extraction Implicit ctrans [R A B C].
+Extraction Implicit cplus [R A A' B B'].
+Extraction Implicit cseq [R A  A' B B' ].
+(*Extraction Implicit cstar [R A B].*)
+Extraction Implicit dsl_var [R].
+(*Extraction Implicit guard [R a A B].*)
+Extraction Implicit dsl_fix [R].
+
+Extraction Implicit  interp [1 2 3].
+
+(*Extraction Implicit eq_op [ s].*)
+(*Extraction Inline eq_op.*)
+(*Extraction Inline Equality.eqtype_hasDecEq_mixin.
+Print Equality.eqtype_hasDecEq_mixin.
+Print Equality.axioms.
+Locate Equality.
+Print  mathcomp.ssreflect.eqtype.Equality.
+Extraction Equality.axioms_.
+Extraction hasDecEq.eq_op.
+Extraction Finite.Exports.fintype_Finite__to__eqtype_Equality.*)
+Check regex_regex__canonical__eqtype_Equality.
+Extraction Inline Datatypes_prod__canonical__eqtype_Equality.
+Extraction Inline regex_regex__canonical__eqtype_Equality.
+Check @pTree_1size_rect.
+Extraction Implicit pTree_1size_rect [ r P].
+Extraction Inline pTree_1size_rect.
+Extraction Implicit pTree_0size_rect [ r P].
+Extraction Inline pTree_0size_rect.
+
+Extraction Inline Datatypes_prod__canonical__eqtype_Equality.
+Extraction Inline regex_regex__canonical__eqtype_Equality.
+
+Extraction Inline  hasDecEq.phant_axioms. 
+Extraction Inline Equality.eqtype_hasDecEq_mixin.
+Extraction Inline hasDecEq.eq_op.
+Extraction Inline Finite.Exports.fintype_Finite__to__eqtype_Equality.
+Extraction Inline Finite.Exports.fintype_Finite_class__to__eqtype_Equality_class.
+
+ Extraction Inline Finite.eqtype_hasDecEq_mixin.
+Extraction Inline fintype_ordinal__canonical__fintype_Finite.
+Extraction Inline Equality.sort.
+Recursive Extraction pTree.
+Recursive Extraction interp.
+
+Extraction interp.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 End IndDSL.
 
+Module TM <: FModule.
+
+Definition A := (ordinal 5 : finType).
+End TM.
+
+Module MM := IndDSL TM.
+Import MM.
 
 
+(*Extraction Inline  solution_left.
+Extraction Inline  solution_right.
+Extraction Inline  simplification_heq. 
+*)
 
+Check @interp.
 
-(*We need to show soundness outside the module because of extraction issues*)
-Module Soundness (F : FModule).
-Module MF := IndDSL F.
-Module CM := Constructive F.
-Import MF CM.
+Extraction Implicit interp [3].
+Extraction Implicit CM.p_pair [ 1 2 3].
 
-Lemma dsl_sound : forall c0 c1, dsl nil c0 c1 -> (forall s, Match s c0 -> Match s c1).
-Proof.
-move=> c0 c1 d s Hmatch. 
-case: (exists_pTree Hmatch) => x /eqP Hf. subst.
-have: (forall  (x0 y : regex),
-    (x0, y) \in nil -> forall T0 : pTree x0, pRel0 T0 x -> post y T0).
-intros. done. move=>Hp.
-move: (interp d x Hp). 
-case. intros. ssa. rewrite H0. rewrite -uflatten_to_upTree.
-apply pTree_Match. apply:to_typing.
-Qed.
-End Soundness.
+Extraction Implicit CM.p_inl [ 1 2 3].
+Extraction Implicit CM.p_inr [ 1 2 3].
+Extraction Implicit CM.p_fold [ 1 2].
 
+Extraction Implicit shuffle [R A B C].
+Extraction Implicit shuffleinv [R A B C].
+Extraction Implicit retag [R A B].
+Extraction Implicit untagL [R A].
+Extraction Implicit untagLinv [R A].
+Extraction Implicit untag [R A].
+Extraction Implicit tagL [R A B].
+Extraction Implicit assoc [R A B C].
+Extraction Implicit associnv [R A B C].
+Extraction Implicit swap [R].
+Extraction Implicit swapinv [R].
+Extraction Implicit proj [R A].
+Extraction Implicit projinv [R].
+Extraction Implicit abortR [R A].
+Extraction Implicit abortRinv [R A].
+Extraction Implicit abortL [R A].
+Extraction Implicit abortLinv [R A].
+Extraction Implicit distL [R A B C].
+Extraction Implicit distLinv [R A B C].
+Extraction Implicit distR [R A B C].
+Extraction Implicit distRinv [R A B C].
+Extraction Implicit wrap [R A]. 
+Extraction Implicit wrapinv [R A].
+Extraction Implicit drop [R A B].
+Extraction Implicit dropinv [R A B].
+Extraction Implicit cid [R A].
+Extraction Implicit ctrans [R A B C].
+Extraction Implicit cplus [R A A' B B'].
+Extraction Implicit cseq [R A  A' B B' ].
+(*Extraction Implicit cstar [R A B].*)
+Extraction Implicit dsl_var [R].
+(*Extraction Implicit guard [R a A B].*)
+Extraction Implicit dsl_fix [R].
 
+Extraction Implicit  interp [1 2 3].
+Extraction Implicit interp [ 1 2 3].
+
+Recursive Extraction  MM.interp.
