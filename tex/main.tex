@@ -69,7 +69,9 @@
 \usepackage{xcolor}
 \usepackage{stmaryrd}
 
-\newcommand\mycomment[1]{\textcolor{red}{#1}}
+%\newcommand\mycomment[1]{\textcolor{red}{#1}}
+\newcommand\mycomment[1]{}
+
 \begin{document}
 \include{macros}
 
@@ -77,6 +79,16 @@
 
 %TODO mandatory: add short abstract of the document
 \begin{abstract}
+% Regular expressions are ubiqutious. They are theoretically relevant to automata theory for being syntactic representations of finite state automata and essential in practice for text processing. Theory and practice share an extensional view of regular expressions, caring more about the binary property of whether a string matches an expression, and less about the more informative property of how it matches the expression as a parse tree. Regular expressions can be viewed as types that have parse trees as their terms and Henglein and Nielsen demonstrate how these parse trees can represent compressed text. In most typed programming languages one expects type checking to work up to subtyping. Incorporating \textit{regular expressions as types} into such a language requires coercive subtyping to preserve that the only terms of regular expression types are their parse trees. Henglein and Nielsen show how such coercions can be derived by a computational interpretation of intuitionistic proofs of regular expression containments. They prove their system sound and complete with respect to language containment. We extend on their work by proving that effecient coercions can be synthesized effeciently and mechanise this result, along with soundness and completeness, in the Coq proof assistant. As part of the solution to synthesis, we also introduce a technique for mechanising decidability of regular expression containment and equivalence in under 900 loc. Finally we extract the synthesis procedure and benchmark the performance of the coercions.
+% \\\\
+ Regular expressions are typically studied in automata and formal language theory as a formalism for denoting the class of regular languages, where the only observable property is whether a string belongs to the denoted set of strings or not, and any two regular expressions are observably equivalent if they satisfy the same membership tests.  In programming practice, however, regular expressions are typically used to extract more detailed information: not only whether but also how a string matches a regular expression, ranging from extracting a particular substring to constructing a full parse tree.  Many automata theory techniques are not applicable in this setting; for example, a deterministic finite automaton constructed from a regular expression provides no way of constructing a parse tree for the given regular expression.  
+
+It is known that proofs of membership of strings in (the language denoted by) a regular expression are in one-to-one correspondence to parse trees; and that a formal proof of a regular expression containment $A \leq B$ in an axiomatization of regular expression containment can be operationally interpreted as a coercion, a function that maps any proof of containment of a string in $A$ into a proof of containment of the same string in $B$.  Different containment proofs may yield extensionally different functions, however, since regular expressions, considered as grammars, can be ambiguous. Additionally, even if extensionally the same, one proof of containment may yield a slow implementation, another an efficient one.
+%This raises the questions: How do we synthesize not only any proof of containment, but a provably efficient one, if one exists at all?  How can we perform this synthesis itself efficiently?  More fundamentally, how do we even know that the containment axiomatization at hand contains not only inefficient coercions?
+
+In this paper we prove that efficient coercions can be synthesized efficiently and mechanize this result in Coq, along with soundness (only terminating coercions are inferred) and completeness (for each valid containment at least one  coercion is derivable). As part of the solution to synthesis, we present a technique for mechanizing the decidability of regular expression containment and equivalence in under 900 lines of code, which to the best of our knowledge is the shortest mechanised proof in the litterature.
+Finally we extract our efficient coercion synthesis procedure and benchmark the performance of the synthesized coercions.  %More speculatively, we propose that the interaction between domain-specific language design, functional programming, and computational complexity analysis on the one hand and mechanizated axiomatization on the other hand may provide a productive methodology for efficient domain-specific software design and synthesis--even in the case where mechanized formal correctness is not the key objective.
+
 \end{abstract}
 
 % \section{Introduction}
@@ -91,6 +103,7 @@
 % \item The inductive system for language equivalence is the altered to create one for language containment, and we go from Prop to Type.
 % \end{enumerate}
 \section{Preliminaries}
+\mycomment{double check it is 900 lines it takes to prove this}
 Cardelli and Fresch introduce regular expressions as types.
 \begin{definition}[Regular expression and semantics]
 Regular expressions over a finite base set $a$ are given by the syntax:\\
@@ -744,7 +757,7 @@ Relies on Lemma (\ref{lem:closure}), from which we show the following decreasing
 Define $M(V,\pder{A}{B} = |\pi(\pder{A}{B}) \backslash \{V\}|  $ \mycomment{using set notation for lists}\\
 If $\tilde{A}$ and $\tilde{B}$ are unique and $\pder{A}{B} \notin V$ then $M(\pder{A}{B}::V,\mypar{a}{\pder{A}{B}}) <  M(V,\pder{A}{B}) $
 \end{proof}
-\mycomment{We use a similar measure in ITP 2023 projection}\\
+\mycomment{We use a similar measure in ITP 2023 projection}
 We can now state a main lemma:
 \begin{lemma}
 $A \subseteq B$ iff $\simulationb{nil}{[A]}{[B]}$
@@ -898,7 +911,26 @@ Fixpoint interp l r0 r1 (p : dsl l r0 r1) (T : pTree r0)
 \mycomment{change semantic rules to include environment}
 \textsf{Gammaf} is used to interpret the variables, and its type ensures that it can only be used on parse trees of smaller $0$-size..
 \section{Benchmarking}
-Implementations we compare
+Implementations we compare\\
+\begin{figure}
+  \centering
+  \begin{tabular}{l | l | l | l | l | l}
+Containment & Synthesis time & $|p|$=10 &  $|p|$=100 &  $|p|$=1000 \\
+\hline
+$a^* \times \dstar a \leq a^*$ & ? & & &\\
+\hline
+$\dstar a \leq a^*$ & ? & & &\\
+\hline
+$(1 + a)^* \leq a^*$ & ? & & &\\
+\hline
+$(a+b)^* \leq a^* + (b \times a^*)^*$ & ? & & &\\
+\hline
+$a^* \times b^* \leq ((1 + a) \times (1+ B))^*$ & ? & & &
+\end{tabular}
+  \caption{Synthesis and execution time for coercion with $\Sigma=\{0...4\}$ and resp. $\Sigma=\{0..99\}$}
+  \label{fig:bench}
+\end{figure}
+
 \begin{itemize}
 \item Proof search approch
 \item Inductive dsl with environment as list. Does expensive decomposition
@@ -925,6 +957,10 @@ How does this relate to code extraction?
 \end{itemize}
 
 \section{discussion and related work}
+Computational interpretations of linear logic \cite{A93}\\
+Regular expression containment as a proof search problem Vladimir Komendantsky[Misc url].\\
+Also mention Marco and Carstens result-
+
 Greedy parse trees and preservatino of greediness by coercions. Proof relevance computational properties.\\
 white board and mechanisation leads to interesting results.
 \\
