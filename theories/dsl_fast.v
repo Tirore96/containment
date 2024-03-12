@@ -8,20 +8,22 @@ Require Import Coq.btauto.Btauto.
 Require Import ConstructiveEpsilon.
 Require Import Numbers.BinNums.
 Require Import PArith.BinPos.
-From Containment Require Import  tactics utils regex modules constructiveEps enum (*dsl_module*) extensional_partial.
+From Containment Require Import  tactics utils regex pTree enum. (* constructiveEps enum (*dsl_module*) extensional_partial.*)
 Set Implicit Arguments.
 Set Maximal Implicit Insertion.
 
 Let inE := tactics.inE.
 
 
-Module IndDSL (M : FModule).
-Module PM := ContainsF M.
+(*Module IndDSL (M : FModule).*)
+Section DSL.
+Variable (Af : finType).
+(*Module PM := ContainsF M.
 Module CM := Constructive M.
 Module EM := ExtensionalPartial PM.
-Import M CM EM.
+Import M CM EM.*)
 
-Inductive dsl (R: seq (@regex A * regex)) : regex -> regex -> Type := 
+Inductive dsl (R: seq (@regex Af * regex)) : regex -> regex -> Type := 
 | shuffle A B C : dsl R ((A _+_ B) _+_ C) (A _+_ (B _+_ C))
 | shuffleinv A B C : dsl R (A _+_ (B _+_ C)) ((A _+_ B) _+_ C)
 | retag A B: dsl R (A _+_ B) (B _+_ A)
@@ -67,12 +69,7 @@ Inductive dsl (R: seq (@regex A * regex)) : regex -> regex -> Type :=
 (*| guard a A B  : R A B -> dsl R ((Event a) _;_ A)  ((Event a) _;_ B)*)
 (*| dsl_var a A B n : PTree.get n R = Some (A,B) -> dsl R ((Event a) _;_ A) ((Event a) _;_ B) *)
 | dsl_var a A B :   (A,B) \in R -> dsl R (Event a _;_ A) (Event a _;_  B) 
-
-(*without summation as that was due to productivity checker, not needed for inductive definition*)
 | dsl_fix A B : dsl ((A,B):: R) A B -> dsl R A B.
-
-(*| dsl_fix A B n : PTree.get n R = None -> dsl (PTree.set n (A,B) R) A B -> dsl R A B.*)
-(**)
 Notation "c0 < ⟨ R ⟩ = c1" := (dsl R c0 c1)(at level 63).
 
 Lemma dropinv R A B : dsl R (Eps _+_ B) A -> dsl R  (Eps _+_ B _;_ Star ( A)) (Star A). 
@@ -120,7 +117,6 @@ Arguments dsl_fix {R A B}.
 Hint Constructors dsl.
 
 
-Section Interpret.
 Fixpoint interp l r0 r1 (p : dsl l r0 r1) (T : pTree r0) 
          (f : forall x y,  (x,y) \in l -> forall (T0 : pTree x), pRel0 T0 T -> post y T0) {struct p}:
   post r1 T. 
@@ -227,7 +223,7 @@ intros. dp2 u X f. dp2 p X f.
 exists ((p_inl p_tt))=>//=.
 -
 dp2 p X f.
-have: (forall x y : regex_regex__canonical__eqtype_Equality A,
+have: (forall x y : regex_regex__canonical__eqtype_Equality Af,
     (x, y) \in l -> forall T0 : pTree x, pRel0 T0 p0 -> post y T0).  
 intros. apply f. done. 
 move: H0. rewrite /pRel0 /=. lia.
@@ -430,7 +426,7 @@ exists (p_pair (p_singl s) x).
 ssa. f_equal. done. 
 
 move : T f.
-eapply (@pTree_0size_rect r0 (fun (T : pTree r0) => (forall x y,(x,y) \in l -> forall (T0 : pTree x), pRel0 T0 T -> post y T0) -> post r1 T)).
+eapply (@pTree_0size_rect _ r0 (fun (T : pTree r0) => (forall x y,(x,y) \in l -> forall (T0 : pTree x), pRel0 T0 T -> post y T0) -> post r1 T)).
 move=> Hin IH Hf.
 eapply (@interp _ _ _ p0 Hin). 
 intros.
@@ -454,20 +450,13 @@ have: (forall  (x0 y : regex),
     (x0, y) \in nil -> forall T0 : pTree x0, pRel0 T0 x -> post y T0).
 intros. done. move=>Hp.
 move: (interp d x Hp). 
-case. intros. ssa. rewrite H0. rewrite -uflatten_to_upTree.
+case. intros. ssa. rewrite H0. 
+rewrite -uflatten_to_upTree.
 apply pTree_Match. apply:to_typing.
 Qed.
 
 
-
-
-
-End Interpret.
-
-
-Section DSL_Complete.
-
-
+Section Decomposition.
 Ltac pp := intros;apply:proj2_sig.
 
 Lemma o_plus_l : forall c0 c1 R, (o (c0 _+_ c1)) <⟨R⟩= (o c0 _+_ o c1).
@@ -625,9 +614,9 @@ Qed.
 
 Hint Resolve eps_c_l.
 
-Definition ex_coerce (l: seq A) (F0 F1 : A -> @regex A) R  := forall a, a \in l -> R (F0 a) (F1 a).
+Definition ex_coerce (l: seq Af) (F0 F1 : Af -> @regex Af) R  := forall a, a \in l -> R (F0 a) (F1 a).
 
-Lemma eq_big_plus_c : forall (l : seq A) F1 F2 R, ex_coerce l F1 F2 (dsl R) ->
+Lemma eq_big_plus_c : forall (l : seq Af) F1 F2 R, ex_coerce l F1 F2 (dsl R) ->
    \big[Plus/Empt]_(i <- l) (F1 i) <⟨R⟩= \big[Plus/Empt]_(i <- l) (F2 i). 
 Proof.
 move=> + F1 F2 R. 
@@ -737,8 +726,8 @@ move=> R c c'.
 rewrite /o. case Hcase: (nu c)=>//. eauto.
 Qed.*)
 
-Lemma derive_unfold_coerce : forall c, dsl nil c (o c _+_ \big[Plus/Empt]_(a : A) (Event a _;_ a \ c)).
-Proof.
+Lemma derive_unfold_coerce : forall c, dsl nil c (o c _+_ \big[Plus/Empt]_(a : Af) (Event a _;_ a \ c)).
+Proof. 
 elim;try solve [auto].
 (*- con. eauto. rewrite /o /=. lct2. lct2. apply:untagL. apply:retag. 
   lcp1. lcid. lct1.  apply:eq_big_plus_c. intro. intros. apply:abortR. apply: plus_empt_l. 
@@ -805,7 +794,7 @@ Qed.
 
 
 
-Lemma derive_unfold_coerce2 : forall c, dsl nil (o c _+_ \big[Plus/Empt]_(a : A) (Event a _;_ a \ c)) c.
+Lemma derive_unfold_coerce2 : forall c, dsl nil (o c _+_ \big[Plus/Empt]_(a : Af) (Event a _;_ a \ c)) c.
 Proof.
 elim;try solve [auto].
  rewrite /o /=. lct2. lct2. apply:untagL. apply:retag. 
@@ -950,13 +939,13 @@ Qed.*)
 
 
 
-Lemma derive_unfold_coerce_l : forall c,  dsl nil c (o c _+_ \big[Plus/Empt]_(a : A) (Event a _;_ a \ c)). 
+Lemma derive_unfold_coerce_l : forall c,  dsl nil c (o c _+_ \big[Plus/Empt]_(a : Af) (Event a _;_ a \ c)). 
 Proof.
 (*intros. destruct (derive_unfold_coerce c). done.*)
 intros. apply derive_unfold_coerce.
 Qed.
 
-Lemma derive_unfold_coerce_r : forall c, dsl nil (o c _+_ \big[Plus/Empt]_(a : A) (Event a _;_ a \ c)) c.
+Lemma derive_unfold_coerce_r : forall c, dsl nil (o c _+_ \big[Plus/Empt]_(a : Af) (Event a _;_ a \ c)) c.
 Proof.
 intros. apply derive_unfold_coerce2.
 Qed.
@@ -973,7 +962,7 @@ apply:tagL.
 eauto. done.
 Qed.
 
-Lemma big_plus_coerce : forall (l : seq A) F0 F1 R, (forall a, a \in l ->  (F0 a,F1 a) \in R) ->
+Lemma big_plus_coerce : forall (l : seq Af) F0 F1 R, (forall a, a \in l ->  (F0 a,F1 a) \in R) ->
  (\big[Plus/Empt]_(a <- l) (Event a _;_ F0 a)) <⟨R⟩=  (\big[Plus/Empt]_(a <- l) (Event a _;_ F1 a)).  
 Proof.
 elim;ssa. rewrite !big_nil. eauto.
@@ -1000,15 +989,15 @@ intros. rewrite /o_l. case_if;ssa.
 rewrite H //. case_if=>//.
 Qed.
 
-Lemma nu_false : nu (\big[Plus/Empt]_(a : A) (Event a _;_ Empt)) = false.
+Lemma nu_false : nu (\big[Plus/Empt]_(a : Af) (Event a _;_ Empt)) = false.
 Proof.
-move: (index_enum A)=> l.
+move: (index_enum Af)=> l.
 elim: l;ssa.
 rewrite !big_nil. ssa.
 rewrite !big_cons. ssa.
 Qed.
 
-Lemma nu_has : forall (l : @pder A), nu (\big[Plus/Empt]_(i <- l) i) = has nu l.
+Lemma nu_has : forall (l : @pder Af), nu (\big[Plus/Empt]_(i <- l) i) = has nu l.
 Proof.
 elim;ssa. rewrite !big_nil. done.
 rewrite !big_cons. ssa. f_equal. done.
@@ -1095,15 +1084,15 @@ Qed.
 Lemma big_plus1 : forall a F, F a <⟨nil⟩= a \ \big[Plus/Empt]_a0 (Event a0 _;_ F a0).
 Proof.
 move=> a.
-have: a \in index_enum A by done. 
-move : (index_enum A)=>l.
+have: a \in index_enum Af by done. 
+move : (index_enum Af)=>l.
 elim: l;ssa. rewrite !big_cons. rewrite !inE in H. simpl.
 destruct (eqVneq a a0). subst. 
 lct2. lcp1. apply:projinv.  lcid. eauto.
 lct1. apply X. ssa. eauto.
 Qed.
 
-Lemma big_event_notin_lF R : forall (l : seq A) a (F : A -> regex), a \notin l ->   a \ \big[Plus/Empt]_(i <- l) (Event i _;_ (F i)) <⟨R⟩= Empt . 
+Lemma big_event_notin_lF R : forall (l : seq Af) a (F : Af -> regex), a \notin l ->   a \ \big[Plus/Empt]_(i <- l) (Event i _;_ (F i)) <⟨R⟩= Empt . 
 Proof.
 elim=>//=;ssa. rewrite !big_nil //.
 rewrite  !inE in H.  ssa.
@@ -1114,8 +1103,8 @@ Qed.
 Lemma big_plus2 : forall a F, a \ \big[Plus/Empt]_a0 (Event a0 _;_ F a0) <⟨nil⟩=  F a.
 Proof.
 move=> a.
-have: a \in index_enum A by done. 
-move : (index_enum A)=>l.
+have: a \in index_enum Af by done. 
+move : (index_enum Af)=>l.
 elim: l;ssa. rewrite !big_cons. rewrite !inE in H. 
 destruct (eqVneq a a0). subst. rewrite /= eqxx. 
 lct1. lcp1. apply proj. lcid. 
@@ -1151,7 +1140,7 @@ Qed.
 
 
 
-Lemma decomp_p1_aux : forall l ,  \big[Plus/Empt]_(i <- l) i <⟨nil⟩= (o_l l) _+_ \big[Plus/Empt]_(a : A) (Event a _;_ \big[Plus/Empt]_(i <- pd_l a l) i ). 
+Lemma decomp_p1_aux : forall l ,  \big[Plus/Empt]_(i <- l) i <⟨nil⟩= (o_l l) _+_ \big[Plus/Empt]_(a : Af) (Event a _;_ \big[Plus/Empt]_(i <- pd_l a l) i ). 
 Proof. 
 intros. 
 lct1. apply:derive_unfold_coerce_l.
@@ -1197,12 +1186,12 @@ apply/is_subP. move/is_subP : H.
 intro. intro. move/H. rewrite !inE. move=>->//. lia.
 Qed.
 
-Lemma decomp_p1 : forall l L ,  \big[Plus/Empt]_(i <- l) i <⟨L⟩= (o_l l) _+_ \big[Plus/Empt]_(a : A) (Event a _;_ \big[Plus/Empt]_(i <- pd_l a l) i ). 
+Lemma decomp_p1 : forall l L ,  \big[Plus/Empt]_(i <- l) i <⟨L⟩= (o_l l) _+_ \big[Plus/Empt]_(a : Af) (Event a _;_ \big[Plus/Empt]_(i <- pd_l a l) i ). 
 Proof.
 intros. apply/dsl_mon. apply/decomp_p1_aux. eauto.
 Qed.
 
-Lemma nu_plus : forall (A' : Type)l (F : A' -> @regex A), nu(\big[Plus/Empt]_(a <- l) (F a)) = has (fun x => nu (F x)) l.
+Lemma nu_plus : forall (A' : Type)l (F : A' -> @regex Af), nu(\big[Plus/Empt]_(a <- l) (F a)) = has (fun x => nu (F x)) l.
 Proof.
 move=> A'.
 elim;ssa. rewrite !big_nil. ssa.
@@ -1214,7 +1203,7 @@ Proof.
 move=> A. elim;ssa.
 Qed.
 
-Lemma decomp_p2_aux : forall l,  (o_l l) _+_ \big[Plus/Empt]_(a : A) (Event a _;_ \big[Plus/Empt]_(i <- pd_l a l) i )  <⟨nil⟩=  \big[Plus/Empt]_(i <- l) i.
+Lemma decomp_p2_aux : forall l,  (o_l l) _+_ \big[Plus/Empt]_(a : Af) (Event a _;_ \big[Plus/Empt]_(i <- pd_l a l) i )  <⟨nil⟩=  \big[Plus/Empt]_(i <- l) i.
 Proof. 
 intros. 
 lct2. apply:derive_unfold_coerce_r.
@@ -1252,28 +1241,151 @@ lct1. apply:big_plus2.
      apply c_eq_derive_pd_l2. done. 
 Qed.*)
 
-Lemma decomp_p2 : forall l L,  (o_l l) _+_ \big[Plus/Empt]_(a : A) (Event a _;_ \big[Plus/Empt]_(i <- pd_l a l) i )  <⟨L⟩=  \big[Plus/Empt]_(i <- l) i.
+Lemma decomp_p2 : forall l L,  (o_l l) _+_ \big[Plus/Empt]_(a : Af) (Event a _;_ \big[Plus/Empt]_(i <- pd_l a l) i )  <⟨L⟩=  \big[Plus/Empt]_(i <- l) i.
 Proof.
 intros. apply/dsl_mon. apply/decomp_p2_aux. eauto.
 Qed.
 
+End Decomposition.
+
+Section Decidability.
+Definition check_o := (fun ( l0 l1 : @pder Af) => has nu l0 ==> has nu l1).
+
+Inductive exten_gen bisim : pder -> pder-> Prop :=
+ contains_con2 l0 l1 (H0: forall e, bisim (pd_l e l0) (pd_l e l1) : Prop ) (H1: check_o l0 l1 (*has nu l0 = has nu l1*)) : exten_gen bisim l0 l1.
+
+Definition Extensional l0 l1 := paco2 exten_gen bot2 l0 l1.
+Hint Unfold  Extensional : core.
+
+Lemma exten_gen_mon: monotone2 exten_gen. 
+Proof.
+unfold monotone2. intros.  constructor. inversion IN. intros.
+auto. inversion IN. auto.  
+Qed.
+Hint Resolve exten_gen_mon : paco.
+
+Definition contains_l s (l0 l1 : @pder Af) := Match s (\big[Plus/Empt]_(a <- l0) a) -> Match s (\big[Plus/Empt]_(a <- l1) a).
+
+Lemma Pb_P_iff : forall l l', check_o l l' <->
+                           contains_l [::] l l'.
+Proof.
+intros. rewrite /check_o /contains_l.
+rewrite -!Match_has_nu_iff. split. move/implyP=>//.  
+move/implyP=>//.
+Qed.
+
+Lemma P_derive : forall a l0 l1, forall s, contains_l s  (pd_l a l0) (pd_l a l1) <-> contains_l (a :: s) l0 l1.  
+Proof.
+intros. rewrite /contains_l.
+rewrite -!pd_plus. rewrite !Match_big_undup.
+rewrite !deriveP2. done.
+Qed.
+
+
+Lemma P_undup : forall l0 l1, (forall s, contains_l s l0 l1  <-> contains_l s (undup l0) (undup l1)).
+Proof.
+intros. rewrite /contains_l. rewrite !Match_big_undup //.
+Qed.
+
+
+Theorem equiv_rInd : forall l l', Extensional l l' -> forall s, contains_l s l l'.  
+Proof.
+move=> l0 l1 HC s. 
+elim: s l0 l1  HC.
+- move=> c0 c1. intros. punfold HC. case: HC. move=> ce c3 HC HC'.
+  apply Pb_P_iff. done.
+- move=> a l IH c0 c1. move=>HC.  punfold HC. case: HC. intros.
+  case: (H0 a)=>//. intros.
+  apply/P_derive. apply IH. done.
+Qed.
+
+Theorem Bisim_co_ind : forall l l', (forall s, contains_l s l l') -> Extensional l l'.
+Proof.
+pcofix CIH. move=> l l'. pfold. con. 
+intros. right. apply:CIH. intros.
+apply P_derive. apply H0.
+apply/Pb_P_iff. done.
+Qed.
+
+Lemma Extensional_equiv : forall l l', Extensional l l' <->  forall s, contains_l s l l'. 
+Proof.
+intros. split. apply/equiv_rInd. apply:Bisim_co_ind.
+Qed.
+
+
+Fixpoint bisim_complete_aux p l_v (H : D_bisim l_v p) {struct H} :  Extensional p.1 p.2 ->  reachable check_o H.  
+refine( match H with 
+        | Db_stop x y z => _ 
+        | _ => _ 
+        end).
+simpl in x,y,z. intros.
+have:  exten_gen (upaco2 exten_gen bot2) y.1 y.2. clear bisim_complete_aux. punfold H0.
+clear H0. move=> He.  move: He z. case.
+intros. simpl. destruct (Utils.dec _). done.
+exfalso. rewrite z in e. done.
+simpl in p0. intros.
+have:  exten_gen (upaco2 exten_gen bot2) p1.1 p1.2.
+punfold H0.
+clear H0=>H0. destruct p1. simpl in *.
+destruct (Utils.dec _). done.
+move: H0 i i0 d. clear e.
+case. intros. ssa. 
+apply/allP. intro. intros.
+apply (bisim_complete_aux _ _ (d x)). simpl.
+clear bisim_complete_aux. simpl. case: (H0 x). ssa. done.
+Qed.
+
+Lemma bisim_complete : forall l0 l1, Extensional l0 l1 ->  reachable_wrap l0 l1 check_o.
+Proof. intros. apply:bisim_complete_aux. apply/Extensional_equiv. 
+intro. apply -> P_undup. move: s. apply/Extensional_equiv=>//.
+Qed.
+
+Fixpoint bisim_sound_aux p l_v (H : D_bisim l_v p) (R : @pder Af -> @pder Af -> Prop) {struct H} : 
+(forall x0 x1, (x0,x1) \in l_v -> R x0 x1) ->   reachable check_o H -> upaco2 exten_gen R p.1 p.2. 
+refine( match H with 
+        | Db_stop x y z => _ 
+        | _ => _ 
+        end).
+- ssa. right.  apply/H0. destruct y. ssa. 
+- simpl. intros. left. destruct (Utils.dec _). rewrite e in i. done.
+  destruct (andP H1). pcofix CIH. pfold. con. intros. 
+  eapply (bisim_sound_aux (pd_l e0 p1.1,pd_l e0 p1.2)).  
+  simpl. 2: { apply (allP H3). done. } 
+  intros. rewrite !inE in H4. destruct (orP H4). 
+  norm_eqs. ssa.  eauto. done.
+Qed.
+
+Lemma bisim_sound : forall e0 e1, reachable_wrap e0 e1 check_o -> Extensional e0 e1.  
+Proof. move => e0 e1 H. rewrite /reachable_wrap in H. 
+apply:Bisim_co_ind=>s. apply/P_undup. move: s. apply/Extensional_equiv.
+apply (@bisim_sound_aux _ _ _ bot2) in H. ssa. inv H. ssa.
+Qed.
+
+Lemma P_decidable : forall l0 l1, reachable_wrap l0 l1 check_o <-> (forall s, contains_l s l0 l1).
+Proof. intros. split. move/bisim_sound. move/Extensional_equiv.
+move=> H s. eauto. intros. apply/bisim_complete. apply/Bisim_co_ind. done.
+Qed.
+End Decidability.
+
+Section Completeness.
 (*To avoid universe inconsistency we create a type similar to sumbool*)
 Inductive sumboolT (A B : Type) : Type := 
  | leftT : A -> sumboolT A B
  | rightT : B -> sumboolT A B.
 
 
-Lemma reachable_simp : forall V l (H : D_bisim V l) (Hnot: l\notin V), reachable PM.Pb H = 
-                                                              (PM.Pb l.1 l.2) && (all (fun (a : A) => reachable  PM.Pb (D_bisim_proj H Hnot a)) (index_enum A)).
+
+Lemma reachable_simp : forall V l (H : D_bisim V l) (Hnot: l\notin V), reachable check_o H = 
+                                                              (check_o l.1 l.2) && (all (fun (a : Af) => reachable  check_o (D_bisim_proj H Hnot a)) (index_enum Af)).
 Proof.
 intros. destruct H.  ssa. exfalso.
 rewrite i in Hnot. done. ssa. rewrite (negbTE Hnot) /=. ssa.
 Qed.
 
-Fixpoint proof_irrel  V l (H H' : D_bisim V l) {struct H} : reachable PM.Pb H = reachable PM.Pb H'.
+Fixpoint proof_irrel  V l (H H' : D_bisim V l) {struct H} : reachable check_o H = reachable check_o H'.
 Proof.
 refine (
-match H in D_bisim V' l' return V' = V -> l' = l -> reachable PM.Pb H = reachable PM.Pb H' with 
+match H in D_bisim V' l' return V' = V -> l' = l -> reachable check_o H = reachable check_o H' with 
 | Db_stop x y z => fun HQ HQ' =>_
 | Db_next x y z a b => fun HQ HQ'=> _
 end Logic.eq_refl Logic.eq_refl).
@@ -1288,9 +1400,9 @@ destruct (Utils.dec _). done.
 f_equal. apply/eq_in_all. intro. ssa.
 Qed.
 
-Fixpoint EQ_complete_aux p (V : seq (@pder A * @pder A)) (H : D_bisim V p) {struct H} : forall (L : seq (@regex A * @regex A)),
+Fixpoint EQ_complete_aux p (V : seq (@pder Af * @pder Af)) (H : D_bisim V p) {struct H} : forall (L : seq (@regex Af * @regex Af)),
     (forall x y, (x,y) \in V ->  (\big[Plus/Empt]_(i <- x) i, \big[Plus/Empt]_(i <- y) i) \in L) -> 
-                                                         reachable PM.Pb H -> 
+                                                         reachable check_o H -> 
                                                         sumboolT (((\big[Plus/Empt]_(i <- p.1) i), (\big[Plus/Empt]_(i <- p.2) i)) \in L)
                                                                  ((\big[Plus/Empt]_(i <- p.1) i) <⟨L⟩= (\big[Plus/Empt]_(i <- p.2) i)).
 simpl. ssa.
@@ -1311,10 +1423,10 @@ move  HeqL':  ((\big[Plus/Empt]_(i <- p) i, \big[Plus/Empt]_(i <- p0) i) :: L) =
 suff: forall a, Event a _;_  \big[Plus/Empt]_(i <- pd_l a p) i <⟨L'⟩= Event a _;_  \big[Plus/Empt]_(i <- pd_l a p0) i.
 intros. clear H H2 H3 HeqL'.
 move: X.
-move:(index_enum A)=> lA.
+move:(index_enum Af)=> lA.
 elim: lA. 
 ssa. rewrite !big_nil. done.
-ssa. rewrite !big_cons. lcp1. done.
+ssa. rewrite !big_cons. apply:cplus. done.
 apply/X. done. 
 intros. 
 move Heq : ( \big[Plus/Empt]_(i <- pd_l a p) i) => r0.
@@ -1332,15 +1444,15 @@ Qed.
 
 
 
-Lemma bisim_c_eq : forall l l', reachable_wrap l l' PM.Pb ->  (\big[Plus/Empt]_(i <- l) i) <⟨nil⟩= (\big[Plus/Empt]_(i <- l') i).
+Lemma bisim_c_eq : forall l l', reachable_wrap l l' check_o ->  (\big[Plus/Empt]_(i <- l) i) <⟨nil⟩= (\big[Plus/Empt]_(i <- l') i).
 Proof.
 intros. apply (@EQ_complete_aux _ _ _ nil) in H. destruct H. done. simpl in d.
-lct1. apply c_eq_undup2. 
-lct2. apply c_eq_undup1. done. 
+apply:ctrans. apply c_eq_undup2.  apply:ctrans.
+2: apply c_eq_undup1. done. 
 ssa.
 Qed.
 
-Lemma equiv_r_plus : forall (c0 c1 : @regex A), contains_r c0 c1 -> contains_r (\big[Plus/Empt]_(i <- c0::nil) i)  (\big[Plus/Empt]_(i <- c1::nil) i).
+Lemma equiv_r_plus : forall (c0 c1 : @regex Af), contains_r c0 c1 -> contains_r (\big[Plus/Empt]_(i <- c0::nil) i)  (\big[Plus/Empt]_(i <- c1::nil) i).
 Proof.
 intros. intro. ssa. move: H0. rewrite !big_cons !big_nil. intros. inv H0;eauto. con. apply/H. done.
 inv H3.
@@ -1351,10 +1463,12 @@ Lemma c_eq_completeness : forall (c0 c1 : regex), contains_r c0 c1 -> c0 <⟨nil
 Proof. move=> c0 c1. move/equiv_r_plus. move/Bisim_co_ind. move/bisim_complete.
 move/bisim_c_eq. rewrite !big_cons !big_nil. eauto.
 Qed.
+End Completeness.
+End DSL.
 
-End DSL_Complete.
-
-Lemma contains_seq1 : forall (r0 r1 : @regex A), contains_r r0 r1 <-> contains_r (\big[Plus/Empt]_(a <- r0::nil) a) (\big[Plus/Empt]_(a <- r1::nil) a).
+(*Extraction*)
+Require Import Containment.constructiveEps.
+Lemma contains_seq1 : forall (Af : finType) (r0 r1 : @regex Af), contains_r r0 r1 <-> contains_r (\big[Plus/Empt]_(a <- r0::nil) a) (\big[Plus/Empt]_(a <- r1::nil) a).
 Proof.
 intros. split.
 intros. rewrite !big_cons !big_nil. 
@@ -1367,27 +1481,567 @@ apply:H. con. done.
 Qed.
 
 
-Lemma synth_coercion : forall (r0 r1 : @regex A), option (dsl nil r0 r1). 
+Lemma synth_coercion : forall {Af : finType} (r0 r1 : @regex Af), option (dsl nil r0 r1). 
 Proof.
 intros. 
-Locate P_decidable. 
-destruct (enum.reachable_wrap [::r0] [::r1] PM.Pb) eqn:Heqn.
-move/EM.P_decidable : Heqn. move=>HH. con. apply:c_eq_completeness.  apply/contains_seq1. done.
+destruct (enum.reachable_wrap [::r0] [::r1] check_o) eqn:Heqn.
+move/P_decidable : Heqn. move=>HH. con. apply:c_eq_completeness.  apply/contains_seq1. done.
 apply : None.
 Qed.
 
-Definition gen_trees (n : nat) (r : @regex A) : seq (CM.pTree r). 
-move : ((CM.gen_upTree n)) => l.
+
+
+(*Fixpoint to_pTree2 {A : finType} {p : @upTree A} {r : regex} (H : typingb p r) : pTree r. 
+destruct H.
+- apply p_tt.
+- apply (p_singl a).
+- apply (p_inl (to_pTree2 _ _ _ H)).
+- apply (p_inr (to_pTree2 _ _ _ H)).
+- apply (p_pair (to_pTree2 _ _ _ H) (to_pTree2 _ _ _ H0)).
+- apply (
+
+match H in typing p r return pTree r  with 
+| pt_tt => p_tt
+| pt_singl a => p_singl a 
+| pt_inl _ _ _ p => p_inl (to_pTree p) 
+| pt_inr _ _ _ p => p_inr (to_pTree p)
+| pt_pair _ _ _ _ p0 p1 => p_pair (to_pTree p0) (to_pTree p1)
+| pt_fold _ _ p' => p_fold (to_pTree p')
+end.*)
+
+
+(*Definition to_pTree2 {A : eqType} (r : @regex A) (up : upTree A) : option (@pTree A r).
+elim : r up.
+- intros. destruct (eqVneq up up_tt). apply (Some p_tt). apply None.
+- intros. apply None.
+- intros. destruct (eqVneq up (up_singl s)). apply (Some (p_singl s)). apply None.
+- intros. destruct (match up with | up_inl _ => true | up_inr _ => true | _ => false end) eqn:Heqn.  
+  destruct up eqn:Heqn2; try solve [exfalso;ssa].
+  destruct (X u) eqn:Heqn3. apply (Some (p_inl p)). apply None.
+  destruct (X0 u) eqn:Heqn3. apply (Some (p_inr p)). apply None.
+  apply None.
+- intros.  destruct (match up with | up_pair _ _ => true | _ => false end) eqn:Heqn. 
+  destruct up eqn:Heqn2; try solve [exfalso;ssa].
+  destruct (X u1) eqn:Heqn3. 
+  destruct (X0 u2) eqn:Heqn4.  apply (Some (p_pair p p0)). apply None.
+  apply None. apply None.
+- intros. destruct (match up with | up_fold (up_inl up_tt)  => true | (up_fold (up_inr (up_pair  _ _))) => true | _ => false end) eqn:Heqn. 
+  destruct up eqn:Heqn2; try solve [exfalso;ssa].
+  destruct u eqn:Heqn3; try solve [exfalso;ssa].
+  destruct u0 eqn:Heqn4; try solve [exfalso;ssa].
+  apply (Some (p_fold (p_inl (p_tt)))).
+  destruct u0 eqn:Heqn4; try solve [exfalso;ssa].
+  
+
+  
+  
+
+apply (Some (p_inl p)). apply None.
+
+
+
+  apply (Some (X u)).*)
+
+Definition myFin := ordinal 2.
+Definition upT : upTree myFin := (up_fold (up_inr (up_pair (up_singl ord0) (up_fold (up_inl up_tt))))).
+Definition re_star : @regex myFin := Star (Event ord0).
+
+Definition tp : typingb upT re_star := is_true_true.  
+
+Print eqP.
+
+
+Definition gen_trees  (n : nat) (r : @regex myFin) : seq (pTree r). 
+move : ((gen_upTree myFin n)) => l.
 elim : l. apply : nil.
-intros. destruct (CM.typingb a r) eqn:Heqn. apply CM.typingP1 in Heqn.
-apply CM.to_pTree in Heqn. apply : cons. apply Heqn. apply X.
+intros. destruct (typingb a r) eqn:Heqn. apply typingP1 in Heqn.
+apply to_pTree in Heqn. apply : cons. apply Heqn. apply X.
 apply : X.
 Defined.
 
+(*Fixpoint seq_first (A : Type) (P : A -> bool) (l : seq A) := 
+match l with 
+| nil => None 
+| a::l' => if P a then Some a else seq_first P l'
+end. *)
 
-Definition triple := (synth_coercion,gen_trees,@interp).
+(*Definition strings_upto (n : nat) := filter (fun l => size l == n) (enum n (index_enum myFin)).*)
 
-Definition example a : dsl nil (Star (Eps _+_ (Event a))) (Star (Event a)). 
+
+Definition nu_pTree (r : @regex myFin) : nu r -> pTree r.
+elim : r.
+intros. apply p_tt. intros. exfalso. simpl in H. discriminate.
+intros. simpl in H. discriminate.
+intros. simpl in H. destruct (nu r) eqn:Heqn. apply p_inl. apply X. con.
+simpl in H. apply p_inr. apply X0. apply H.
+intros. simpl in H. destruct (nu r) eqn:Heqn. simpl in *.
+destruct (nu r0) eqn:Heqn2.  apply p_pair. apply X. done. apply X0. done.
+discriminate. discriminate.
+intros. apply p_fold. apply p_inl. apply p_tt. (*As small as possible*)
+Defined.
+
+Definition nu_pTreeP (r : @regex myFin) : nu r -> { p : pTree r | pflatten p = nil}. 
+elim : r.
+intros. exists p_tt. done.
+intros. exfalso. simpl in H. discriminate.
+intros. simpl in H. discriminate.
+intros. simpl in H. destruct (nu r) eqn:Heqn. destruct X. con. exists (p_inl x). done.
+simpl in H. apply X0 in H. destruct H. exists (p_inr x). done.
+intros. simpl in H. destruct (nu r) eqn:Heqn. simpl in *.
+destruct (nu r0) eqn:Heqn2.  
+destruct X. con. destruct X0. con. exists (p_pair x x0). simpl. rewrite e e0//.
+discriminate. discriminate.
+intros. simpl in H. 
+exists (p_fold (p_inl p_tt)). done.
+Defined.
+
+(*Definition test : nu (@Eps myFin). done.
+Defined.
+
+Eval vm_compute in (nu_pTreeP _ test).*)
+
+Definition derive_pTree (a : myFin) (r : @regex myFin) (p : pTree (derive a r))  : pTree r.
+elim : r p.
+- simpl. intros. exfalso. inversion p.
+- intros. exfalso. inversion p.
+- intros. simpl in p. destruct (s == a) eqn:Heqn. con.  exfalso. inversion p.
+- intros. simpl in p. inversion p. con. apply X. apply X1.
+  apply p_inr. apply X0. apply X1.
+- intros. simpl in p. destruct (nu r) eqn:Heqn.
+  inversion p.  inversion X1.
+  con. apply X. apply X2. apply X3.
+  con. apply nu_pTree. apply Heqn. apply X0. apply X1.
+  inversion p. con. apply X. apply X1. apply X2.
+- intros. simpl in p. inversion p. con.
+  apply p_inr. apply p_pair. apply X. apply X0. apply X1.
+Defined.
+
+
+Definition derive_pTreeP (a : myFin) (r : @regex myFin) (p : pTree (derive a r))  : { p' : pTree r | pflatten p' = a::(pflatten p)}.
+elim : r p.
+- simpl. intros. exfalso. inversion p.
+- intros. exfalso. inversion p.
+- intros. simpl in p. destruct (eqVneq s a). subst. 
+  exists  (p_singl a). simpl. f_equal. 
+  move : p. rewrite eqxx. ssa. 
+  move : p. apply:pTree_case;ssa. rewrite -eq_regex //.
+  exfalso. rewrite (negbTE i) in p. inversion p.
+- intros. simpl in p. 
+  move : p. apply: pTree_case;try solve [intros;exfalso;ssa]. 
+  intros.  inversion pf. subst.
+  move: (X p). case. intros.
+  exists (p_inl x). simpl.  rewrite p0. f_equal. rewrite -eq_regex //=.
+  intros. inversion pf. subst.
+  move: (X0 p). case. intros.
+  exists (p_inr x). simpl.  rewrite p0. f_equal. rewrite -eq_regex //=.
+- intros. simpl in p. destruct (dec (nu r)). 
+  have : { s'' : pTree (a \ r _;_ r0 _+_ a \ r0) | pflatten s'' = pflatten p}.
+  move : p. rewrite e. intros. exists p. done.
+  case. intros.
+  move : x p0. apply:pTree_case; try solve [intros;exfalso;ssa].
+  intros.  inversion pf. subst.
+  rewrite /= -eq_regex in p1.
+  move : p0 p1. apply:pTree_case; try solve [intros;exfalso;ssa].
+  intros. inversion pf0. subst. rewrite -eq_regex in p2. ssa.
+  move: (X p0). case. intros.
+  exists (p_pair x p1). simpl. rewrite p3 /= p2 //=. 
+  intros. inversion pf. subst. rewrite -eq_regex in p1. ssa.
+  move: (X0 p0). case. intros. 
+  move: (nu_pTreeP _ e). case. intros.
+  exists (p_pair x0 x). ssa. rewrite p3 p2 p1 //=.
+  
+  have : { s'' : pTree (a \ r _;_ r0 ) | pflatten s'' = pflatten p}.
+  move : p. rewrite e. intros. exists p. done.
+  case. intros.
+  move : x p0. apply:pTree_case; try solve [intros;exfalso;ssa].
+  intros.  inversion pf. subst.
+  rewrite /= -eq_regex in p2. ssa.
+  move: ( X p0). case. intros.
+  exists (p_pair x p1). simpl. rewrite p3 -p2. ssa.
+- intros. simpl in p. 
+  move : p. apply:pTree_case; try solve [intros;exfalso;ssa].
+  intros. inversion pf. subst.
+  move: (X p0). case. intros.
+  exists (p_fold (p_inr (p_pair x p1))). simpl. rewrite p. ssa. f_equal.
+  rewrite -eq_regex. ssa.
+Defined.
+
+
+Definition test : @pTree myFin (derive ord0 (Seq (Event ord0) Eps)).
+simpl. con. con. con.
+Defined.
+
+(*Eval vm_compute in (derive_pTreeP ord0 _ test).*)
+
+
+Fixpoint inc_seq (n : nat) (l : seq nat) := 
+match l with 
+| nil => nil 
+| a::l' => if a.+1 < n then a.+1::l' 
+         else 0::(inc_seq n l')
+end.
+
+
+Definition to_string (A : Type) (a : A) (aa : seq A) (l : seq nat) := map (nth a aa) l.
+
+Definition split_l {A : Type} (l : seq A) := map (fun n => (take n l,seq.drop n l)) (iota 0 (size l)).
+Fixpoint seq_first (A B : Type) (P : A -> option B) (l : seq A) := 
+match l with 
+| nil => None 
+| a::l' => if P a is Some a then Some a else seq_first P l'
+end. 
+
+
+Fixpoint quick_parse_aux  (n : nat) (l : seq myFin) (r: @regex myFin) : option ((seq myFin) * (pTree r)).
+refine(
+if n is n'.+1 then
+match r with 
+ | Eps => if l == nil then (Some (nil,p_tt)) else None
+ | Empt => None 
+ | Event s => if l is (x::l') then if x == s then  Some (l',p_singl _) else None  else None
+ | Plus r0 r1 => if quick_parse_aux n' l r0 is Some (l',T) then Some (l',p_inl T) 
+                else if quick_parse_aux n' l  r1 is Some (l',T) then Some (l',p_inr T) else None 
+ | Seq r0 r1 => if quick_parse_aux n' l r0 is Some (l',T) then 
+                 if quick_parse_aux n' l' r1 is Some (l'',T') then Some (l'',p_pair T T') else None else None 
+ | Star r0 => _ (* quick_parse_aux n' l (Eps _+_ r0 _;_ (Star r0)) with *)
+end
+else None).
+destruct (quick_parse_aux n' l (Eps _+_ r0 _;_ (Star r0))). destruct p.
+
+move : p. apply:pTree_case;try solve [intros;exfalso;ssa].
+intros. inversion pf. subst. apply (Some (l0,p_fold (p_inl p))).
+intros. inversion pf. subst.
+move : p. apply:pTree_case;try solve [intros;exfalso;ssa].
+intros. inversion pf0. subst. apply (Some (l0,p_fold (p_inr (p_pair p0 p1)))).
+apply None.
+Defined.
+
+Definition quick_parse (l : seq myFin) (r: @regex myFin) : option ((pTree r)) := 
+if quick_parse_aux 1000000 l r is Some (l,T) then if l is nil then Some T else None else None.
+
+(*Fixpoint quick_parse  (n : nat) (l : seq nat) (r: @regex nat) : option (pTree r).
+refine(
+if n is n'.+1 then
+match r with 
+ | Eps => if l == nil then (Some (p_tt)) else None
+ | Empt => None 
+ | Event s => if l is (x::nil) then if x == s then  Some (p_singl _) else None  else None
+ | Plus r0 r1 => if quick_parse n' l r0 is Some T then Some (p_inl T) else if quick_parse n' l  r1 is Some T then Some (p_inr T) else None
+ | Seq r0 r1 => seq_first (fun x => if quick_parse n' x.1 r0 is Some T 
+                                 then if quick_parse n' x.2 r1 is Some T' then (Some (p_pair T T')) else None else None) (split_l l)
+ | Star r0 => _ (* quick_parse n' l (Eps _+_ r0 _;_ (Star r0)) with *)
+              
+end
+else None). 
+destruct (quick_parse n' l (Eps _+_ r0 _;_ (Star r0))).
+move : p. apply:pTree_case;try solve [intros;exfalso;ssa].
+intros. inversion pf. subst. apply (Some (p_fold (p_inl p))).
+intros. inversion pf. subst.
+move : p. apply:pTree_case;try solve [intros;exfalso;ssa].
+intros. inversion pf0. subst. apply (Some (p_fold (p_inr (p_pair p0 p1)))).
+apply None.
+Defined.*)
+
+
+(*Fixpoint quick_parse (fuel : nat) (l : seq myFin) (r: @regex myFin) : option (pTree r) := 
+  => match r with 
+          | Eps => None 
+          | Empt => None 
+          | Event s => if (a == s) && (l == nil) then Some (p_singl s) else None 
+          | Plus r0 r1 => if quick_parse l' r0 is Some T then Some T else quick_parse l' r1 
+          | Seq r0 r1 =>
+Definition quick_parse (l : seq myFin) (r : @regex myFin) : option (pTree r). 
+elim : l r.
+intros. destruct (nu r) eqn:Heqn. apply nu_pTree in Heqn. apply (Some Heqn). apply None.
+intros. destruct r.
+- apply None. apply None. destruct (eqVneq a s). apply (Some (p_singl s)). apply None.
+  destruct (X r1*)
+
+
+(*Definition parse (l : seq myFin) (r : @regex myFin) : option (pTree r).  (*{ s | @pflatten myFin r s = l }.*)
+elim : l r.
+- intros. destruct (nu r) eqn:Heqn. apply Some. apply nu_pTree. apply Heqn.
+  apply None.
+- intros. 
+  move : (X (derive a r)).
+  intros. destruct X0. apply Some. apply derive_pTree in p. apply p.
+  apply None.
+Defined.
+
+
+Definition nu_pTree_nat (r : @regex nat) : nu r -> pTree r.
+elim : r.
+intros. apply p_tt. intros. exfalso. simpl in H. discriminate.
+intros. simpl in H. discriminate.
+intros. simpl in H. destruct (nu r) eqn:Heqn. apply p_inl. apply X. con.
+simpl in H. apply p_inr. apply X0. apply H.
+intros. simpl in H. destruct (nu r) eqn:Heqn. simpl in *.
+destruct (nu r0) eqn:Heqn2.  apply p_pair. apply X. done. apply X0. done.
+discriminate. discriminate.
+intros. apply p_fold. apply p_inl. apply p_tt. (*As small as possible*)
+Defined.
+Definition derive_pTree_nat (a : nat) (r : @regex nat) (p : pTree (derive a r))  : pTree r.
+elim : r p.
+- simpl. intros. exfalso. inversion p.
+- intros. exfalso. inversion p.
+- intros. simpl in p. destruct (s == a) eqn:Heqn. con.  exfalso. inversion p.
+- intros. simpl in p. inversion p. con. apply X. apply X1.
+  apply p_inr. apply X0. apply X1.
+- intros. simpl in p. destruct (nu r) eqn:Heqn.
+  inversion p.  inversion X1.
+  con. apply X. apply X2. apply X3.
+  con. apply nu_pTree_nat. apply Heqn. apply X0. apply X1.
+  inversion p. con. apply X. apply X1. apply X2.
+- intros. simpl in p. inversion p. con.
+  apply p_inr. apply p_pair. apply X. apply X0. apply X1.
+Defined.
+
+Definition parse_nat (l : seq nat) (r : @regex nat) : option (pTree r).  (*{ s | @pflatten myFin r s = l }.*)
+elim : l r.
+- intros. destruct (nu r) eqn:Heqn. apply Some. apply nu_pTree_nat. apply Heqn.
+  apply None.
+- intros. 
+  move : (X (derive a r)).
+  intros. destruct X0. apply Some. apply derive_pTree_nat in p. apply p.
+  apply None.
+Defined.*)
+
+Definition re1 : @regex myFin := Seq (Star (Event ord0)) (Star (Star (Event ord0))).
+Definition re2 : @regex myFin := Star (Event ord0).
+
+Definition re_nat : @regex nat := Seq (Star (Event 0)) (Star (Star (Event 0))).
+
+Definition test_string := to_string 0 ([:: 0 ;1 ;2]) (nseq (2000) 0).
+(*Definition test_parse := fun (_ : unit) => parse_nat test_string re_nat.
+Definition test_quick_parse := fun (_ : unit) => quick_parse_wrap 1000000 test_string re_nat.
+
+(*Eval vm_compute in (test_parse tt).*)
+Extraction quick_parse.
+Eval vm_compute in (test_quick_parse tt).
+
+Recursive Extraction test_parse.
+Extraction "../bench/lib/test_parse" test_parse.*)
+
+
+Definition parseP (l : seq myFin) (r : @regex myFin) : option { s : pTree r | pflatten s = l}. 
+elim : l r.
+- intros. destruct (nu r) eqn:Heqn. apply Some. apply nu_pTreeP. apply Heqn.
+  apply None.
+- intros. 
+  move : (X (derive a r)).
+  intros. destruct X0. apply Some. destruct s. 
+  move: (derive_pTreeP _ _ x). case. intros. exists x0. subst. done.
+  apply None.
+Defined.
+
+
+Definition parse_inc (r : @regex myFin) (l : seq nat) := 
+match quick_parse (to_string ord0 (index_enum myFin) l) r with 
+| Some t => inr ( t)
+| None => inl (inc_seq (size (index_enum myFin)) l)
+end.
+
+Fixpoint rep_try_parse (n : nat) (r: @regex myFin) (l : seq nat) := 
+if n is n'.+1 then 
+match parse_inc r l with 
+| inr t => Some t 
+| inl l' => if l == l' then None else  rep_try_parse n' r  l' 
+end 
+else None.
+
+(*Definition rep_try_parse_int n (r: @regex myFin) (l : seq nat) := rep_try_parse (Nat.of_int n) r l.*)
+
+
+Definition my_parse (fuel size : nat) (r: @regex myFin) := rep_try_parse fuel r (nseq size 0).
+
+
+(*Definition my_parse_int (fuel size : Decimal.signed_int) (r: @regex myFin) := rep_try_parse (Nat.of_int fuel) r (nseq (Nat.of_int size) 0).*)
+
+
+Definition interp_wrap {r0 r1 : @regex myFin} (d : dsl nil r0 r1) (T : pTree r0) : post r1 T.
+apply:interp. apply:d. intros. exfalso. discriminate.
+Defined.
+
+Definition my_synth := @synth_coercion myFin.
+Definition my_test (r0 r1 : @regex myFin) (n : Decimal.signed_int) : option (pTree r1) :=
+match my_synth r0 r1 with (* as x return match x with | Some prog => match (gen_tree n r0) with | Some p => post r1 p | None => unit end | None => unit end   with *)
+| Some prog =>  if Nat.of_int n is Some n' then
+ match my_parse 1  n' r0 with  (* as x return match x with | Some p => post r1 p | None => unit end with*)
+              | Some p =>  Some (proj1_sig (interp_wrap prog p))
+              | None => None
+              end
+   else None
+| None => None
+end.
+
+
+(*Definition my_test (r0 r1 : @regex myFin) (n : Decimal.signed_int) : option (pTree r0) :=
+match my_synth r0 r1 with (* as x return match x with | Some prog => match (gen_tree n r0) with | Some p => post r1 p | None => unit end | None => unit end   with *)
+| Some prog =>  my_parse 100000 (Nat.of_int n) r0 
+| None => None
+end.
+*)
+Require Import Decimal.
+
+Fixpoint dsl_size {l} {r0 r1 : @regex myFin} (d : dsl l r0 r1) : nat := 
+match d with 
+| ctrans _ _ _ d0 d1 => (dsl_size d0) + (dsl_size d1)
+| cplus _ _ _ _ d0 d1 =>  (dsl_size d0) + (dsl_size d1)
+| cseq _ _ _ _ d0 d1 =>  (dsl_size d0) + (dsl_size d1)
+| dsl_fix _ _ d0 =>  (dsl_size d0)
+| _ => 1
+end.
+
+(*Eval vm_compute in (Nat.of_int (Pos ( (D1 ( D1 (  D1 (D1 (D0 Nil)))))))). (Pos (D1 Nil))).*)
+Definition test_case := ((@regex myFin) * (@regex myFin) * Decimal.signed_int)%type.
+Definition test1 := (re1,re2,Pos ( (( (D1 (D0 Nil)))))). 
+(*111 110*)
+(*Definition trees := gen_strings 100 re1.*)
+
+
+Definition eval_test (t : test_case) := my_test (fst (fst t)) (snd (fst t)) (snd t).
+
+(*Definition test_string := to_string ord0 (index_enum myFin) (nseq (150) 0).*)
+(*Definition test_parse := fun (_ : unit) => parse test_string re1.*)
+(*Definition my_parse_test := my_parse 1000 2 re1.*)
+Definition suiteone := (test1,eval_test).
+Extraction Inline Datatypes_nat__canonical__choice_Countable.
+Extraction Inline solution_left.
+Extraction Inline solution_right.
+Extraction Inline simplification_heq.
+Extraction Inline pTree_0size_rect.
+Extraction Inline pTree_1size_rect.
+Extraction Inline pTree_case.
+(* Extraction Implicit my_test [r0 r1]. *)
+
+Extraction "../bench/lib/suiteone" suiteone. 
+
+
+(*Extraction Implicit p_pair [ A r0 r1].
+Extraction Implicit p_inl [ A r0 r1].
+Extraction Implicit p_inr [ A r0 r1].
+Extraction Implicit p_fold [ A r ].
+
+Check @interp.
+
+
+
+
+Extraction Implicit shuffle [R A B C].
+
+Extraction synth_coercion.
+
+Extraction Implicit shuffleinv [R A B C].
+Extraction Implicit retag [R A B].
+Extraction Implicit untagL [R A].
+Extraction Implicit untagLinv [R A].
+Extraction Implicit untag [R A].
+Extraction Implicit tagL [R A B].
+Extraction Implicit assoc [R A B C].
+Extraction Implicit associnv [R A B C].
+Extraction Implicit swap [R A].
+Extraction Implicit swapinv [R A].
+Extraction Implicit proj [R A].
+Extraction Implicit projinv [R A].
+Extraction Implicit abortR [R A].
+Extraction Implicit abortRinv [R A].
+Extraction Implicit abortL [R A].
+Extraction Implicit abortLinv [R A].
+Extraction Implicit distL [R A B C].
+Extraction Implicit distLinv [R A B C].
+Extraction Implicit distR [R A B C].
+Extraction Implicit distRinv [R A B C].
+Extraction Implicit wrap [R A]. 
+Extraction Implicit wrapinv [R A].
+Extraction Implicit drop [R A B].
+Extraction Implicit dropinv [R A B].
+Extraction Implicit cid [R A].
+Extraction Implicit ctrans [R A B C].
+Extraction Implicit cplus [R A A' B B'].
+Extraction Implicit cseq [R A  A' B B' ].
+Extraction Implicit dsl_var [R].
+Extraction Implicit dsl_fix [R].
+
+Extraction Implicit  interp [ l r0 r1].
+Extraction Implicit  interp_wrap [ r0 r1].
+
+*)
+
+
+
+Definition mytest := my_parse 1000 1 re1.
+
+
+Extraction "../bench/lib/mytest" mytest.
+Eval vm_compute in my_parse 5 1 re1.
+Definition init_seq (len : nat) := nseq 
+
+
+
+
+
+Fixpoint gen_strings n (r : @regex myFin) : option (seq myFin) := 
+match n with 
+| 0 => if r is Eps then Some nil else None 
+| 1 => if r is Event a then (Some (a::nil)) else None
+| n'.+1 =>
+match r with 
+| Eps => None 
+| Empt => None 
+| Event a => None 
+| Plus r0 r1 => if gen_strings n' r0 is Some l then Some l else gen_strings n' r1
+| Seq r0 r1 => if nu r0 then let l' := gen_strings n' r1 in
+                            (compose (gen_strings n' r0) l' cat ) ++ l'
+               else          (compose (gen_strings n' r0) (gen_strings n' r1 )cat )                                          
+| Star r0 => gen_strings n' (Eps _+_ r0 _;_ (Star r0))
+end
+end.
+
+Fixpoint gen_strings n (r : @regex myFin) : seq (seq myFin) := 
+match n with 
+| 0 => nil::nil
+| n'.+1 =>
+match r with 
+| Eps => nil
+| Empt => nil 
+| Event a => (a::nil)::nil
+| Plus r0 r1 => (gen_strings n' r0) ++ (gen_strings n' r1)
+| Seq r0 r1 => if nu r0 then let l' := gen_strings n' r1 in
+                            (compose (gen_strings n' r0) l' cat ) ++ l'
+               else          (compose (gen_strings n' r0) (gen_strings n' r1 )cat )                                          
+| Star r0 => gen_strings n' (Eps _+_ r0 _;_ (Star r0))
+end
+end.
+
+
+(*Fixpoint enum2 (A  B: Type) (f : seq A -> option B)  (n : nat) (R : seq A) := 
+match n with 
+| 0 => f nil
+| n'.+1 => seq_first 
+ if seq_first f (compose R (enum n' R) cons) is Some l then l
+          else nil
+end.*)
+
+
+Definition gen_tree (n : Decimal.signed_int) (r : @regex myFin) :=
+if Nat.of_int n is Some n'
+then  seq_first (fun l => parse l r)  (gen_strings n' r) else None.
+
+
+
+
+
+Extraction "../bench/temp/suiteone" suiteone.
+
+
+(*Extraction interp_wrap. Extraction interp.
+Eval vm_compute in (synth_coercion re1 re2).
+Print dsl.
+
+Definition my_size  (r0 r1 : @regex myFin) (d : dsl nil r0 r1) := Nat.to_int (dsl_size d).
+
+
+Definition example (Af : finType) (a : Af) : dsl nil (Star (Eps _+_ (Event a))) (Star (Event a)). 
 apply :dsl_fix.
 apply:ctrans. 
 apply:drop. apply:cplus. apply:cid. apply:cid.
@@ -1396,38 +2050,114 @@ apply:cplus. apply:cid.
 apply:dsl_var. done.
 Defined.
 
+Definition my_example := example myFin ord0.
+Definition suitetwo := (test1,eval_test,@my_size,my_example).
 
-(*Extraction Inline  solution_left.
-Extraction Inline  solution_right.
-Extraction Inline  simplification_heq.
+
+
+Extraction "../bench/lib/suitetwo" suitetwo. 
+
+
+
+Extraction "../bench/lib/my_test" my_test.
+
+
+Extraction "../bench/lib/gen_tree" gen_tree.
+
+Extraction "../bench/lib/strings_upto" strings_upto.
+Eval vm_compute in (strings_upto 2).
+
+Fixpoint gen_string (n : nat) (r : @regex myFin) := 
+seq_first (fun x => derive x r) (index_enum myFin)
+match n with 
+| 0 => Some nil 
+| n'.+1 => match r with 
+          | Eps => None 
+          | Empt => None 
+          | Event
+
+
+Definition gen_tree  (n : nat) (r : @regex myFin) : option (pTree r) :=
+seq_first (fun p => n == pTree_0size p) (gen_trees (n + n) r).
+
+
+
+
+(*Extraction Inline Equality.sort.
+Extraction Inline Equality.sort Finite.sort Finite.class.*)
+
+
+
+
+Definition ord0 : ordinal 2.
+econ. instantiate (1:= 0). done.
+Defined.
+
+Eval vm_compute in (gen_trees 1 re_star).
+
+Eval vm_compute in (gen_tree 1 re_star).
+
+Print finType. Print Finite.type.
+Definition A := ordinal 10.
+(*What is the difference between extraction @synth_coercion, @synth_cercion A and Eval vm_compute in (@synth_coercion A)*)
+
+(*One of the triplets is slow to reduce*)
+
+
+
+Definition triple := (@synth_coercion,@gen_trees,@interp).
+Definition tripleA_aux := (@synth_coercion A,@gen_trees A,@interp A).
+Definition tripleA := Eval hnf in tripleA_aux.
+Extraction "../bench/lib/triple" triple.
+Extraction "../bench/lib/tripleA" tripleA.
+
+(*Definition triple2 := Eval hnf in triple. 
+
+Definition EventT := @Event Datatypes_nat__canonical__eqtype_Equality.
+
+Definition Event2 := Eval vm_compute  in EventT.
+Print eqType. Print Equality.type.
+Recursive Extraction Event2.
+Extraction "../bench/lib/event2" Event2.
+Inductive TestT (A : eqType) := 
+ T2 : A -> TestT A.
+
+Extraction "../bench/lib/testT" TestT.
+
+Definition nat_eq (n0 n1: nat) : n0 == n1.*)
+
+
+Definition TestT2 := TestT Datatypes_nat__canonical__eqtype_Equality. 
+Definition Test3 := Eval vm_compute in TestT2.
+Extraction "../bench/lib/testT3" Test3.
+
+
+Extraction "../bench/lib/mynat" nat_eq.
+Extraction "../bench/lib/myregex" regex.regex.
+Print regex.
+Recursive Extraction triple.
+Extraction "../bench/lib/triple2" triple2.
+
+
+
+
+Extraction Inline solution_left.
+Extraction Inline solution_right.
+Extraction Inline simplification_heq.
 Extraction Inline pTree_0size_rect.
 Extraction Inline pTree_1size_rect.
 Extraction Inline pTree_case.
-Extraction Implicit interp [ 3 4].
-Extraction Implicit p_pair [ 1].
 
-Extraction interp.
-Extraction pTree_case.*)
+(*Extraction Implicit p_pair [ A r0 r1].
+Extraction Implicit p_inl [ A r0 r1].
+Extraction Implicit p_inr [ A r0 r1].
+Extraction Implicit p_fold [ A r ].
+*)
+Extraction synth_coercion.
 
-(*
-Extraction Inline  solution_left.
-Extraction Inline  solution_right.
-Extraction Inline  simplification_heq.
-(*Extraction Inline pTree_0size_rect.
-Extraction Inline pTree_1size_rect.
-Extraction Inline pTree_case.
-Extraction Inline pTree_0size_rect.
-Extraction Inline pTree_1size_rect.*)
 
-(*Extraction Implicit interp.*)
 
-Extraction Implicit p_pair [ 1 2 3].
-
-Extraction Implicit p_inl [ 1 2 3].
-Extraction Implicit p_inr [ 1 2 3].
-Extraction Implicit p_fold [ 1 2].
-
-Extraction Implicit shuffle [R B C].
+(*Extraction Implicit shuffle [R A B C].
 Extraction Implicit shuffleinv [R A B C].
 Extraction Implicit retag [R A B].
 Extraction Implicit untagL [R A].
@@ -1436,10 +2166,10 @@ Extraction Implicit untag [R A].
 Extraction Implicit tagL [R A B].
 Extraction Implicit assoc [R A B C].
 Extraction Implicit associnv [R A B C].
-Extraction Implicit swap [R].
-Extraction Implicit swapinv [R].
+Extraction Implicit swap [R A].
+Extraction Implicit swapinv [R A].
 Extraction Implicit proj [R A].
-Extraction Implicit projinv [R].
+Extraction Implicit projinv [R A].
 Extraction Implicit abortR [R A].
 Extraction Implicit abortRinv [R A].
 Extraction Implicit abortL [R A].
@@ -1456,85 +2186,10 @@ Extraction Implicit cid [R A].
 Extraction Implicit ctrans [R A B C].
 Extraction Implicit cplus [R A A' B B'].
 Extraction Implicit cseq [R A  A' B B' ].
-(*Extraction Implicit cstar [R A B].*)
 Extraction Implicit dsl_var [R].
-(*Extraction Implicit guard [R a A B].*)
 Extraction Implicit dsl_fix [R].
 
-Check @interp.
-Extraction Implicit interp [ l r0 r1].*)
-
-
-
-Extraction Inline  solution_left.
-Extraction Inline  solution_right.
-Extraction Inline  simplification_heq. Locate pTree_0size_rect.
-Extraction Inline pTree_0size_rect.
-Extraction Inline pTree_1size_rect.
-Extraction Inline pTree_case.
-(*Extraction Implicit interp [ 3 4].
-Extraction Implicit p_pair [ 1].*) 
-Extraction Implicit dsl_fix [1]. 
-Extraction Implicit ctrans [1]. 
-Extraction Implicit drop [1]. 
-Extraction Implicit cplus [1 2 4]. 
-Extraction Implicit cid [1 2]. 
-Extraction Implicit dsl_var []. 
-
-
-Extraction Inline  solution_left.
-Extraction Inline  solution_right.
-Extraction Inline  simplification_heq.
-Extraction Inline pTree_0size_rect.
-Extraction Inline pTree_1size_rect.
-Extraction Inline pTree_case.
-Extraction Inline pTree_0size_rect.
-Extraction Inline pTree_1size_rect.
-
-(*Extraction Implicit interp.*)
-(*Extraction Implicit interp [3].*)
-Extraction Implicit p_pair [ 1 2].
-Check @p_inl.
-Extraction Implicit p_inl [ r0 r1].
-Extraction Implicit p_inr [ r0 r1].
-Extraction Implicit p_fold [ r ].
-Recursive Extraction p_fold.
-
-Extraction Implicit shuffle [R A B C].
-Extraction Implicit shuffleinv [R A B C].
-Extraction Implicit retag [R A B].
-Extraction Implicit untagL [R A].
-Extraction Implicit untagLinv [R A].
-Extraction Implicit untag [R A].
-Extraction Implicit tagL [R A B].
-Extraction Implicit assoc [R A B C].
-Extraction Implicit associnv [R A B C].
-Extraction Implicit swap [R].
-Extraction Implicit swapinv [R].
-Extraction Implicit proj [R A].
-Extraction Implicit projinv [R].
-Extraction Implicit abortR [R A].
-Extraction Implicit abortRinv [R A].
-Extraction Implicit abortL [R A].
-Extraction Implicit abortLinv [R A].
-Extraction Implicit distL [R A B C].
-Extraction Implicit distLinv [R A B C].
-Extraction Implicit distR [R A B C].
-Extraction Implicit distRinv [R A B C].
-Extraction Implicit wrap [R A]. 
-Extraction Implicit wrapinv [R A].
-Extraction Implicit drop [R A B].
-Extraction Implicit dropinv [R A B].
-Extraction Implicit cid [R A].
-Extraction Implicit ctrans [R A B C].
-Extraction Implicit cplus [R A A' B B'].
-Extraction Implicit cseq [R A  A' B B' ].
-(*Extraction Implicit cstar [R A B].*)
-Extraction Implicit dsl_var [R].
-(*Extraction Implicit guard [R a A B].*)
-Extraction Implicit dsl_fix [R].
-
-Extraction Implicit  interp [1 2 3].
+Extraction Implicit  interp [ l r0 r1].*)
 
 (*Extraction Implicit eq_op [ s].*)
 (*Extraction Inline eq_op.*)
@@ -1546,14 +2201,12 @@ Print  mathcomp.ssreflect.eqtype.Equality.
 Extraction Equality.axioms_.
 Extraction hasDecEq.eq_op.
 Extraction Finite.Exports.fintype_Finite__to__eqtype_Equality.*)
-Check regex_regex__canonical__eqtype_Equality.
-Extraction Inline Datatypes_prod__canonical__eqtype_Equality.
+(*Extraction Inline Datatypes_prod__canonical__eqtype_Equality.
 Extraction Inline regex_regex__canonical__eqtype_Equality.
-Check @pTree_1size_rect.
-Extraction Implicit pTree_1size_rect [ r P].
+(*Extraction Implicit pTree_1size_rect [ r P].
 Extraction Inline pTree_1size_rect.
 Extraction Implicit pTree_0size_rect [ r P].
-Extraction Inline pTree_0size_rect.
+Extraction Inline pTree_0size_rect.*)
 
 Extraction Inline Datatypes_prod__canonical__eqtype_Equality.
 Extraction Inline regex_regex__canonical__eqtype_Equality.
@@ -1564,89 +2217,18 @@ Extraction Inline hasDecEq.eq_op.
 Extraction Inline Finite.Exports.fintype_Finite__to__eqtype_Equality.
 Extraction Inline Finite.Exports.fintype_Finite_class__to__eqtype_Equality_class.
 
- Extraction Inline Finite.eqtype_hasDecEq_mixin.
+Extraction Inline Finite.eqtype_hasDecEq_mixin.
 Extraction Inline fintype_ordinal__canonical__fintype_Finite.
-Extraction Inline Equality.sort.
-Recursive Extraction pTree.
-Recursive Extraction interp.
+Extraction Inline Equality.sort.*)
+(*Recursive Extraction pTree.pTree.*)
 
-Extraction interp.
+(*Extraction Implicit  interp [ l r0 r1].*)
+Extraction Inline eq_rect_r.
+Extraction Inline eq_rect.
+Extraction Inline Datatypes_nat__canonical__choice_Countable.
+Extraction Inline unlock. Print regex.
+Extraction Inline Equality.sort Finite.sort Finite.class.
+Recursive Extraction triple. Locate fin. 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-End IndDSL.
-
-Module TM <: FModule.
-
-Definition A := (ordinal 5 : finType).
-End TM.
-
-Module MM := IndDSL TM.
-Import MM.
-
-
-(*Extraction Inline  solution_left.
-Extraction Inline  solution_right.
-Extraction Inline  simplification_heq. 
+Extraction "../bench/lib/triple" triple.
 *)
-
-Check @interp.
-
-Extraction Implicit interp [3].
-Extraction Implicit CM.p_pair [ 1 2 3].
-
-Extraction Implicit CM.p_inl [ 1 2 3].
-Extraction Implicit CM.p_inr [ 1 2 3].
-Extraction Implicit CM.p_fold [ 1 2].
-
-Extraction Implicit shuffle [R A B C].
-Extraction Implicit shuffleinv [R A B C].
-Extraction Implicit retag [R A B].
-Extraction Implicit untagL [R A].
-Extraction Implicit untagLinv [R A].
-Extraction Implicit untag [R A].
-Extraction Implicit tagL [R A B].
-Extraction Implicit assoc [R A B C].
-Extraction Implicit associnv [R A B C].
-Extraction Implicit swap [R].
-Extraction Implicit swapinv [R].
-Extraction Implicit proj [R A].
-Extraction Implicit projinv [R].
-Extraction Implicit abortR [R A].
-Extraction Implicit abortRinv [R A].
-Extraction Implicit abortL [R A].
-Extraction Implicit abortLinv [R A].
-Extraction Implicit distL [R A B C].
-Extraction Implicit distLinv [R A B C].
-Extraction Implicit distR [R A B C].
-Extraction Implicit distRinv [R A B C].
-Extraction Implicit wrap [R A]. 
-Extraction Implicit wrapinv [R A].
-Extraction Implicit drop [R A B].
-Extraction Implicit dropinv [R A B].
-Extraction Implicit cid [R A].
-Extraction Implicit ctrans [R A B C].
-Extraction Implicit cplus [R A A' B B'].
-Extraction Implicit cseq [R A  A' B B' ].
-(*Extraction Implicit cstar [R A B].*)
-Extraction Implicit dsl_var [R].
-(*Extraction Implicit guard [R a A B].*)
-Extraction Implicit dsl_fix [R].
-
-Extraction Implicit  interp [1 2 3].
-Extraction Implicit interp [ 1 2 3].
-
-Recursive Extraction  MM.interp.
