@@ -1466,8 +1466,12 @@ Qed.
 End Completeness.
 End DSL.
 
+
+
+
+
 (*Extraction*)
-Require Import Containment.constructiveEps.
+(*Require Import Containment.constructiveEps.*)
 Lemma contains_seq1 : forall (Af : finType) (r0 r1 : @regex Af), contains_r r0 r1 <-> contains_r (\big[Plus/Empt]_(a <- r0::nil) a) (\big[Plus/Empt]_(a <- r1::nil) a).
 Proof.
 intros. split.
@@ -1490,187 +1494,29 @@ apply : None.
 Qed.
 
 
-
-(*Fixpoint to_pTree2 {A : finType} {p : @upTree A} {r : regex} (H : typingb p r) : pTree r. 
-destruct H.
-- apply p_tt.
-- apply (p_singl a).
-- apply (p_inl (to_pTree2 _ _ _ H)).
-- apply (p_inr (to_pTree2 _ _ _ H)).
-- apply (p_pair (to_pTree2 _ _ _ H) (to_pTree2 _ _ _ H0)).
-- apply (
-
-match H in typing p r return pTree r  with 
-| pt_tt => p_tt
-| pt_singl a => p_singl a 
-| pt_inl _ _ _ p => p_inl (to_pTree p) 
-| pt_inr _ _ _ p => p_inr (to_pTree p)
-| pt_pair _ _ _ _ p0 p1 => p_pair (to_pTree p0) (to_pTree p1)
-| pt_fold _ _ p' => p_fold (to_pTree p')
-end.*)
-
-
-(*Definition to_pTree2 {A : eqType} (r : @regex A) (up : upTree A) : option (@pTree A r).
-elim : r up.
-- intros. destruct (eqVneq up up_tt). apply (Some p_tt). apply None.
-- intros. apply None.
-- intros. destruct (eqVneq up (up_singl s)). apply (Some (p_singl s)). apply None.
-- intros. destruct (match up with | up_inl _ => true | up_inr _ => true | _ => false end) eqn:Heqn.  
-  destruct up eqn:Heqn2; try solve [exfalso;ssa].
-  destruct (X u) eqn:Heqn3. apply (Some (p_inl p)). apply None.
-  destruct (X0 u) eqn:Heqn3. apply (Some (p_inr p)). apply None.
-  apply None.
-- intros.  destruct (match up with | up_pair _ _ => true | _ => false end) eqn:Heqn. 
-  destruct up eqn:Heqn2; try solve [exfalso;ssa].
-  destruct (X u1) eqn:Heqn3. 
-  destruct (X0 u2) eqn:Heqn4.  apply (Some (p_pair p p0)). apply None.
-  apply None. apply None.
-- intros. destruct (match up with | up_fold (up_inl up_tt)  => true | (up_fold (up_inr (up_pair  _ _))) => true | _ => false end) eqn:Heqn. 
-  destruct up eqn:Heqn2; try solve [exfalso;ssa].
-  destruct u eqn:Heqn3; try solve [exfalso;ssa].
-  destruct u0 eqn:Heqn4; try solve [exfalso;ssa].
-  apply (Some (p_fold (p_inl (p_tt)))).
-  destruct u0 eqn:Heqn4; try solve [exfalso;ssa].
-  
-
-  
-  
-
-apply (Some (p_inl p)). apply None.
-
-
-
-  apply (Some (X u)).*)
-
 Definition myFin := ordinal 2.
-Definition upT : upTree myFin := (up_fold (up_inr (up_pair (up_singl ord0) (up_fold (up_inl up_tt))))).
+Definition synth_coercion_wrap := @synth_coercion myFin.
+(*Definition upT : upTree myFin := (up_fold (up_inr (up_pair (up_singl ord0) (up_fold (up_inl up_tt))))).
 Definition re_star : @regex myFin := Star (Event ord0).
 
 Definition tp : typingb upT re_star := is_true_true.  
 
-Print eqP.
+Print eqP.*)
 
-
-Definition gen_trees  (n : nat) (r : @regex myFin) : seq (pTree r). 
+(*Definition gen_trees  (n : nat) (r : @regex myFin) : seq (pTree r). 
 move : ((gen_upTree myFin n)) => l.
 elim : l. apply : nil.
 intros. destruct (typingb a r) eqn:Heqn. apply typingP1 in Heqn.
 apply to_pTree in Heqn. apply : cons. apply Heqn. apply X.
 apply : X.
-Defined.
-
-(*Fixpoint seq_first (A : Type) (P : A -> bool) (l : seq A) := 
-match l with 
-| nil => None 
-| a::l' => if P a then Some a else seq_first P l'
-end. *)
-
-(*Definition strings_upto (n : nat) := filter (fun l => size l == n) (enum n (index_enum myFin)).*)
+Defined.*)
 
 
-Definition nu_pTree (r : @regex myFin) : nu r -> pTree r.
-elim : r.
-intros. apply p_tt. intros. exfalso. simpl in H. discriminate.
-intros. simpl in H. discriminate.
-intros. simpl in H. destruct (nu r) eqn:Heqn. apply p_inl. apply X. con.
-simpl in H. apply p_inr. apply X0. apply H.
-intros. simpl in H. destruct (nu r) eqn:Heqn. simpl in *.
-destruct (nu r0) eqn:Heqn2.  apply p_pair. apply X. done. apply X0. done.
-discriminate. discriminate.
-intros. apply p_fold. apply p_inl. apply p_tt. (*As small as possible*)
-Defined.
 
-Definition nu_pTreeP (r : @regex myFin) : nu r -> { p : pTree r | pflatten p = nil}. 
-elim : r.
-intros. exists p_tt. done.
-intros. exfalso. simpl in H. discriminate.
-intros. simpl in H. discriminate.
-intros. simpl in H. destruct (nu r) eqn:Heqn. destruct X. con. exists (p_inl x). done.
-simpl in H. apply X0 in H. destruct H. exists (p_inr x). done.
-intros. simpl in H. destruct (nu r) eqn:Heqn. simpl in *.
-destruct (nu r0) eqn:Heqn2.  
-destruct X. con. destruct X0. con. exists (p_pair x x0). simpl. rewrite e e0//.
-discriminate. discriminate.
-intros. simpl in H. 
-exists (p_fold (p_inl p_tt)). done.
-Defined.
-
-(*Definition test : nu (@Eps myFin). done.
-Defined.
-
-Eval vm_compute in (nu_pTreeP _ test).*)
-
-Definition derive_pTree (a : myFin) (r : @regex myFin) (p : pTree (derive a r))  : pTree r.
-elim : r p.
-- simpl. intros. exfalso. inversion p.
-- intros. exfalso. inversion p.
-- intros. simpl in p. destruct (s == a) eqn:Heqn. con.  exfalso. inversion p.
-- intros. simpl in p. inversion p. con. apply X. apply X1.
-  apply p_inr. apply X0. apply X1.
-- intros. simpl in p. destruct (nu r) eqn:Heqn.
-  inversion p.  inversion X1.
-  con. apply X. apply X2. apply X3.
-  con. apply nu_pTree. apply Heqn. apply X0. apply X1.
-  inversion p. con. apply X. apply X1. apply X2.
-- intros. simpl in p. inversion p. con.
-  apply p_inr. apply p_pair. apply X. apply X0. apply X1.
-Defined.
-
-
-Definition derive_pTreeP (a : myFin) (r : @regex myFin) (p : pTree (derive a r))  : { p' : pTree r | pflatten p' = a::(pflatten p)}.
-elim : r p.
-- simpl. intros. exfalso. inversion p.
-- intros. exfalso. inversion p.
-- intros. simpl in p. destruct (eqVneq s a). subst. 
-  exists  (p_singl a). simpl. f_equal. 
-  move : p. rewrite eqxx. ssa. 
-  move : p. apply:pTree_case;ssa. rewrite -eq_regex //.
-  exfalso. rewrite (negbTE i) in p. inversion p.
-- intros. simpl in p. 
-  move : p. apply: pTree_case;try solve [intros;exfalso;ssa]. 
-  intros.  inversion pf. subst.
-  move: (X p). case. intros.
-  exists (p_inl x). simpl.  rewrite p0. f_equal. rewrite -eq_regex //=.
-  intros. inversion pf. subst.
-  move: (X0 p). case. intros.
-  exists (p_inr x). simpl.  rewrite p0. f_equal. rewrite -eq_regex //=.
-- intros. simpl in p. destruct (dec (nu r)). 
-  have : { s'' : pTree (a \ r _;_ r0 _+_ a \ r0) | pflatten s'' = pflatten p}.
-  move : p. rewrite e. intros. exists p. done.
-  case. intros.
-  move : x p0. apply:pTree_case; try solve [intros;exfalso;ssa].
-  intros.  inversion pf. subst.
-  rewrite /= -eq_regex in p1.
-  move : p0 p1. apply:pTree_case; try solve [intros;exfalso;ssa].
-  intros. inversion pf0. subst. rewrite -eq_regex in p2. ssa.
-  move: (X p0). case. intros.
-  exists (p_pair x p1). simpl. rewrite p3 /= p2 //=. 
-  intros. inversion pf. subst. rewrite -eq_regex in p1. ssa.
-  move: (X0 p0). case. intros. 
-  move: (nu_pTreeP _ e). case. intros.
-  exists (p_pair x0 x). ssa. rewrite p3 p2 p1 //=.
-  
-  have : { s'' : pTree (a \ r _;_ r0 ) | pflatten s'' = pflatten p}.
-  move : p. rewrite e. intros. exists p. done.
-  case. intros.
-  move : x p0. apply:pTree_case; try solve [intros;exfalso;ssa].
-  intros.  inversion pf. subst.
-  rewrite /= -eq_regex in p2. ssa.
-  move: ( X p0). case. intros.
-  exists (p_pair x p1). simpl. rewrite p3 -p2. ssa.
-- intros. simpl in p. 
-  move : p. apply:pTree_case; try solve [intros;exfalso;ssa].
-  intros. inversion pf. subst.
-  move: (X p0). case. intros.
-  exists (p_fold (p_inr (p_pair x p1))). simpl. rewrite p. ssa. f_equal.
-  rewrite -eq_regex. ssa.
-Defined.
-
-
-Definition test : @pTree myFin (derive ord0 (Seq (Event ord0) Eps)).
+(*Definition test : @pTree myFin (derive ord0 (Seq (Event ord0) Eps)).
 simpl. con. con. con.
 Defined.
-
+*)
 (*Eval vm_compute in (derive_pTreeP ord0 _ test).*)
 
 
@@ -1680,18 +1526,13 @@ match l with
 | a::l' => if a.+1 < n then a.+1::l' 
          else 0::(inc_seq n l')
 end.
-
-
 Definition to_string (A : Type) (a : A) (aa : seq A) (l : seq nat) := map (nth a aa) l.
-
 Definition split_l {A : Type} (l : seq A) := map (fun n => (take n l,seq.drop n l)) (iota 0 (size l)).
 Fixpoint seq_first (A B : Type) (P : A -> option B) (l : seq A) := 
 match l with 
 | nil => None 
 | a::l' => if P a is Some a then Some a else seq_first P l'
 end. 
-
-
 Fixpoint quick_parse_aux  (n : nat) (l : seq myFin) (r: @regex myFin) : option ((seq myFin) * (pTree r)).
 refine(
 if n is n'.+1 then
@@ -1716,172 +1557,32 @@ intros. inversion pf0. subst. apply (Some (l0,p_fold (p_inr (p_pair p0 p1)))).
 apply None.
 Defined.
 
-Definition quick_parse (l : seq myFin) (r: @regex myFin) : option ((pTree r)) := 
-if quick_parse_aux 1000000 l r is Some (l,T) then if l is nil then Some T else None else None.
+(*Definition big_nat : nat := 1000000000.*)
 
-(*Fixpoint quick_parse  (n : nat) (l : seq nat) (r: @regex nat) : option (pTree r).
-refine(
-if n is n'.+1 then
-match r with 
- | Eps => if l == nil then (Some (p_tt)) else None
- | Empt => None 
- | Event s => if l is (x::nil) then if x == s then  Some (p_singl _) else None  else None
- | Plus r0 r1 => if quick_parse n' l r0 is Some T then Some (p_inl T) else if quick_parse n' l  r1 is Some T then Some (p_inr T) else None
- | Seq r0 r1 => seq_first (fun x => if quick_parse n' x.1 r0 is Some T 
-                                 then if quick_parse n' x.2 r1 is Some T' then (Some (p_pair T T')) else None else None) (split_l l)
- | Star r0 => _ (* quick_parse n' l (Eps _+_ r0 _;_ (Star r0)) with *)
-              
-end
-else None). 
-destruct (quick_parse n' l (Eps _+_ r0 _;_ (Star r0))).
-move : p. apply:pTree_case;try solve [intros;exfalso;ssa].
-intros. inversion pf. subst. apply (Some (p_fold (p_inl p))).
-intros. inversion pf. subst.
-move : p. apply:pTree_case;try solve [intros;exfalso;ssa].
-intros. inversion pf0. subst. apply (Some (p_fold (p_inr (p_pair p0 p1)))).
-apply None.
-Defined.*)
+Definition quick_parse (n : nat) (l : seq myFin) (r: @regex myFin) : option ((pTree r)) := 
+if quick_parse_aux n l r is Some (l,T) then if l is nil then Some T else None else None.
 
-
-(*Fixpoint quick_parse (fuel : nat) (l : seq myFin) (r: @regex myFin) : option (pTree r) := 
-  => match r with 
-          | Eps => None 
-          | Empt => None 
-          | Event s => if (a == s) && (l == nil) then Some (p_singl s) else None 
-          | Plus r0 r1 => if quick_parse l' r0 is Some T then Some T else quick_parse l' r1 
-          | Seq r0 r1 =>
-Definition quick_parse (l : seq myFin) (r : @regex myFin) : option (pTree r). 
-elim : l r.
-intros. destruct (nu r) eqn:Heqn. apply nu_pTree in Heqn. apply (Some Heqn). apply None.
-intros. destruct r.
-- apply None. apply None. destruct (eqVneq a s). apply (Some (p_singl s)). apply None.
-  destruct (X r1*)
-
-
-(*Definition parse (l : seq myFin) (r : @regex myFin) : option (pTree r).  (*{ s | @pflatten myFin r s = l }.*)
-elim : l r.
-- intros. destruct (nu r) eqn:Heqn. apply Some. apply nu_pTree. apply Heqn.
-  apply None.
-- intros. 
-  move : (X (derive a r)).
-  intros. destruct X0. apply Some. apply derive_pTree in p. apply p.
-  apply None.
-Defined.
-
-
-Definition nu_pTree_nat (r : @regex nat) : nu r -> pTree r.
-elim : r.
-intros. apply p_tt. intros. exfalso. simpl in H. discriminate.
-intros. simpl in H. discriminate.
-intros. simpl in H. destruct (nu r) eqn:Heqn. apply p_inl. apply X. con.
-simpl in H. apply p_inr. apply X0. apply H.
-intros. simpl in H. destruct (nu r) eqn:Heqn. simpl in *.
-destruct (nu r0) eqn:Heqn2.  apply p_pair. apply X. done. apply X0. done.
-discriminate. discriminate.
-intros. apply p_fold. apply p_inl. apply p_tt. (*As small as possible*)
-Defined.
-Definition derive_pTree_nat (a : nat) (r : @regex nat) (p : pTree (derive a r))  : pTree r.
-elim : r p.
-- simpl. intros. exfalso. inversion p.
-- intros. exfalso. inversion p.
-- intros. simpl in p. destruct (s == a) eqn:Heqn. con.  exfalso. inversion p.
-- intros. simpl in p. inversion p. con. apply X. apply X1.
-  apply p_inr. apply X0. apply X1.
-- intros. simpl in p. destruct (nu r) eqn:Heqn.
-  inversion p.  inversion X1.
-  con. apply X. apply X2. apply X3.
-  con. apply nu_pTree_nat. apply Heqn. apply X0. apply X1.
-  inversion p. con. apply X. apply X1. apply X2.
-- intros. simpl in p. inversion p. con.
-  apply p_inr. apply p_pair. apply X. apply X0. apply X1.
-Defined.
-
-Definition parse_nat (l : seq nat) (r : @regex nat) : option (pTree r).  (*{ s | @pflatten myFin r s = l }.*)
-elim : l r.
-- intros. destruct (nu r) eqn:Heqn. apply Some. apply nu_pTree_nat. apply Heqn.
-  apply None.
-- intros. 
-  move : (X (derive a r)).
-  intros. destruct X0. apply Some. apply derive_pTree_nat in p. apply p.
-  apply None.
-Defined.*)
-
-Definition re1 : @regex myFin := Seq (Star (Event ord0)) (Star (Star (Event ord0))).
-Definition re2 : @regex myFin := Star (Event ord0).
-
-Definition re_nat : @regex nat := Seq (Star (Event 0)) (Star (Star (Event 0))).
-
-Definition test_string := to_string 0 ([:: 0 ;1 ;2]) (nseq (2000) 0).
-(*Definition test_parse := fun (_ : unit) => parse_nat test_string re_nat.
-Definition test_quick_parse := fun (_ : unit) => quick_parse_wrap 1000000 test_string re_nat.
-
-(*Eval vm_compute in (test_parse tt).*)
-Extraction quick_parse.
-Eval vm_compute in (test_quick_parse tt).
-
-Recursive Extraction test_parse.
-Extraction "../bench/lib/test_parse" test_parse.*)
-
-
-Definition parseP (l : seq myFin) (r : @regex myFin) : option { s : pTree r | pflatten s = l}. 
-elim : l r.
-- intros. destruct (nu r) eqn:Heqn. apply Some. apply nu_pTreeP. apply Heqn.
-  apply None.
-- intros. 
-  move : (X (derive a r)).
-  intros. destruct X0. apply Some. destruct s. 
-  move: (derive_pTreeP _ _ x). case. intros. exists x0. subst. done.
-  apply None.
-Defined.
-
-
-Definition parse_inc (r : @regex myFin) (l : seq nat) := 
-match quick_parse (to_string ord0 (index_enum myFin) l) r with 
+Definition parse_inc  (n : nat) (r : @regex myFin) (l : seq nat) := 
+match quick_parse n (to_string ord0 (index_enum myFin) l) r with 
 | Some t => inr ( t)
 | None => inl (inc_seq (size (index_enum myFin)) l)
 end.
 
-Fixpoint rep_try_parse (n : nat) (r: @regex myFin) (l : seq nat) := 
+
+(*n = fuel for rep_try parse
+  n2 = fuel for parse *)
+Fixpoint rep_try_parse (n n2 : nat) (r: @regex myFin) (l : seq nat) := 
 if n is n'.+1 then 
-match parse_inc r l with 
+match parse_inc n2  r l with 
 | inr t => Some t 
-| inl l' => if l == l' then None else  rep_try_parse n' r  l' 
+| inl l' => if l == l' then None else  rep_try_parse n' n2 r  l' 
 end 
 else None.
 
-(*Definition rep_try_parse_int n (r: @regex myFin) (l : seq nat) := rep_try_parse (Nat.of_int n) r l.*)
-
-
-Definition my_parse (fuel size : nat) (r: @regex myFin) := rep_try_parse fuel r (nseq size 0).
-
-
-(*Definition my_parse_int (fuel size : Decimal.signed_int) (r: @regex myFin) := rep_try_parse (Nat.of_int fuel) r (nseq (Nat.of_int size) 0).*)
-
-
+Definition my_parse (fuel size : nat) (r: @regex myFin) := rep_try_parse fuel fuel r (nseq size 0).
 Definition interp_wrap {r0 r1 : @regex myFin} (d : dsl nil r0 r1) (T : pTree r0) : post r1 T.
 apply:interp. apply:d. intros. exfalso. discriminate.
 Defined.
-
-Definition my_synth := @synth_coercion myFin.
-Definition my_test (r0 r1 : @regex myFin) (n : Decimal.signed_int) : option (pTree r1) :=
-match my_synth r0 r1 with (* as x return match x with | Some prog => match (gen_tree n r0) with | Some p => post r1 p | None => unit end | None => unit end   with *)
-| Some prog =>  if Nat.of_int n is Some n' then
- match my_parse 1  n' r0 with  (* as x return match x with | Some p => post r1 p | None => unit end with*)
-              | Some p =>  Some (proj1_sig (interp_wrap prog p))
-              | None => None
-              end
-   else None
-| None => None
-end.
-
-
-(*Definition my_test (r0 r1 : @regex myFin) (n : Decimal.signed_int) : option (pTree r0) :=
-match my_synth r0 r1 with (* as x return match x with | Some prog => match (gen_tree n r0) with | Some p => post r1 p | None => unit end | None => unit end   with *)
-| Some prog =>  my_parse 100000 (Nat.of_int n) r0 
-| None => None
-end.
-*)
-Require Import Decimal.
 
 Fixpoint dsl_size {l} {r0 r1 : @regex myFin} (d : dsl l r0 r1) : nat := 
 match d with 
@@ -1892,8 +1593,235 @@ match d with
 | _ => 1
 end.
 
+Definition time_synth_coercion := @synth_coercion_wrap.
+Definition time_interp_wrap := @interp_wrap.
+
+Definition interp_size (r0 r1: @regex myFin) (prog : dsl nil r0 r1) := (fun T0 => (pTree_1size T0,proj1_sig (time_interp_wrap prog T0))).
+
+Definition synth_interp (n : nat) (l : seq nat) (r0 r1 : @regex myFin): option (nat * seq (nat * pTree r1)) :=
+match time_synth_coercion r0 r1 with 
+| Some prog => let Ts := pmap (fun x => my_parse n x r0) l
+              in if size Ts != size l then None 
+              else Some ((dsl_size prog), map (@interp_size r0 r1 prog) Ts) (*(fun T0 => (pTree_1size T0,proj1_sig (time_interp_wrap prog T0))) Ts)*)
+| None => None
+end.
+
+(*Definition only_synth  (n : Decimal.signed_int) (x : nat) (r0 r1 : @regex myFin): option (Decimal.signed_int *  (pTree r1)) :=
+match time_synth_coercion r0 r1 with 
+| Some prog => if my_parse n' x r0 is Some T0
+              then Some (Nat.to_int (dsl_size prog), (proj1_sig (time_interp_wrap prog T0))) else None
+| None => None
+end
+else None.*)
+
+(*Definition synth_interp1 (n : Decimal.signed_int) (x : nat) (r0 r1 : @regex myFin): option (Decimal.signed_int *  (pTree r1)) :=
+if Nat.of_int n is Some n' then
+match time_synth_coercion r0 r1 with 
+| Some prog => if my_parse n' x r0 is Some T0
+              then Some (Nat.to_int (dsl_size prog), (proj1_sig (time_interp_wrap prog T0))) else None
+| None => None
+end
+else None.
+
+Definition no_synth_interp1 (n : Decimal.signed_int) (x : nat) (r0 r1 : @regex myFin) (prog : dsl nil r0 r1): option (Decimal.signed_int *  (pTree r1)) :=
+if Nat.of_int n is Some n' then
+if my_parse n' x r0 is Some T0
+              then Some (Nat.to_int (dsl_size prog), (proj1_sig (time_interp_wrap prog T0))) else None
+else None.*)
+
+Require Import  extraction.ExtrOcamlString.
+Require Import extraction.ExtrOcamlNatInt.
+Require Import String.
+
+
+Definition big_nat := 1000000. 
+(*(Pos ( (( D1 (D1 (D1 (D1 (D1 (D1 (D1 Nil)))))))))).*)
+Definition tree_sizes : seq nat := [:: 5000;500;50].
+
+(*Definition only_synth := (fun _ : unit => time_synth_coercion (fst (snd rp1)) (snd (snd rp1))).
+Definition no_synth_interp1_applied := (fun _ : unit => @no_synth_interp1 big_nat  50000  (fst (snd rp1)) (snd (snd rp1))).*)
+
+Definition synth_interp_applied := synth_interp big_nat tree_sizes.
+
+(*Definition synth_interp1_applied1 := (fun _ : unit => synth_interp1 big_nat 50000 (fst (snd rp1))(snd (snd rp1))).
+Definition synth_interp1_applied2 := (fun _ : unit => synth_interp1 big_nat 5000 (fst (snd rp1))(snd (snd rp1))).
+Definition synth_interp1_applied3 := (fun _ : unit => synth_interp1 big_nat 500 (fst (snd rp1))(snd (snd rp1))).
+*)
+
+Definition print_label (s : string) := id s. 
+
+Definition re_pair := (string * ((@regex myFin) * (@regex myFin)))%type. 
+Definition eval_test (rp : re_pair) := 
+let _ := print_label (fst rp) in 
+synth_interp_applied (fst (snd rp)) (snd (snd rp)).
+
+(*a = 0*)
+Definition a : @regex myFin:= Event ord0.
+
+(*b = 1*)
+Definition b : @regex myFin. apply Event. econ. instantiate (1:= 1). done. 
+Defined.
+
+Definition star_a := Star a.
+Definition star_star_a := Star (star_a).
+
+Definition rp1 := ("a^* x (a^*)^* <= a^*", (star_a _;_ star_star_a,star_a)).
+Definition rp1' := ("a ^* <= a^* x (a^*)^*", (star_a, star_a _;_ star_star_a)).
+
+Definition rp2 := ("(a^*)^* <= a^*",(star_star_a,star_a)).
+Definition rp2' := (" a^* <= (a^*)^*",(star_a,star_star_a)). 
+
+Definition rp3 := ("(1 + a)^* <= a^*",(Star (Eps _+_ a),star_a)).
+Definition rp3' := ("a^* <= (1 + a)^*",(star_a,Star (Eps _+_ a))). 
+
+Definition rp4 := ("(a+b)^* <= a^* + (b^* x a^*)^*",(Star (a _+_ b), (Star a) _+_ (Star ((Star b) _;_ (Star a))))). 
+Definition rp4' := ("a^* + (b^* x a^*)^* <= (a + b)^*",((Star a) _+_ (Star (b _;_ (Star a))), Star (a _+_ b) )).
+
+Definition rp5 := ("a^* x b^* <= ((1 + a) x (1 + b))^*",((Star a) _;_ (Star b),Star ((Eps _+_ a) _;_ (Eps _+_ b)))). 
+Definition rp5' := ("((1 + a) x (1 + b))^* <= a^* x b^*  ",(Star (Eps _+_ a) _;_ (Eps _+_ b),((Star a) _;_ (Star b)))).
+
+Definition rp6 := ("a^* x (1 + a) <= a^*",((Star a) _;_ (Eps _+_ a),Star a)).
+Definition rp6' := ("a^* <= a^* x (1 + a)",(Star a,(Star a) _;_ (Eps _+_ a))).
+
+(*Takes too long to generate test data for these examples*)
+(*
+Definition rp7 := ("b _+_ a^* x b <= a^* x b",(b _+_ ((Star a) _;_ b),(Star a) _;_ b)). (*error*)
+Definition rp7' := ("a^* x b <= b _+_ a^* x b",((Star a) _;_ b,(b _+_ ((Star a) _;_ b)))). (*error*)
+
+Definition rp8 := ("b + b x a^* <= b x a^*",(b _+_ (b _;_ (Star a)), b _;_ (Star a))). (*error*)
+Definition rp8' := (" b x a^* <= b + b x a^*",((b _;_ (Star a)),b _+_ (b _;_ (Star a)))).*)
+
+Definition rp7 := ("(a + b)^* <= (a^* + b^*)^*",(Star (a _+_ b),Star ((Star a) _+_ (Star b)))).
+Definition rp7' := ("(a^* + b^*)^* <= (a + b)^*",(Star ((Star a) _+_ (Star b)),Star (a _+_ b))).
+
+Definition rp8 := ("(a^* + b^*)^* <= (a^* x b^*)^*",(Star ((Star a) _+_ (Star b)), Star ((Star a) _;_ (Star b)))).
+Definition rp8' := ("(a^* x b^*)^* <= (a^* + b^*)^*",(Star ((Star a) _;_ (Star b)),Star ((Star a) _+_ (Star b)))).
+
+Definition make_test (rp : re_pair) := fun (_ : unit) => eval_test rp.
+Definition test1 := make_test rp1.
+Definition test1' := make_test rp1'.
+
+Definition test2 := make_test rp2.
+Definition test2' := make_test rp2'.
+
+Definition test3 := make_test rp3.
+Definition test3' := make_test rp3'.
+
+Definition test4 := make_test rp4.
+Definition test4' := make_test rp4'.
+
+Definition test5 := make_test rp5.
+Definition test5' := make_test rp5'.
+
+Definition test6 := make_test rp6.
+Definition test6' := make_test rp6'.
+
+(*Definition test7 := make_test rp7.
+Definition test7' := make_test rp7'.
+
+Definition test8 := make_test rp8.
+Definition test8' := make_test rp8'.*)
+
+Definition test7 := make_test rp7.
+
+Definition test7' := make_test rp7'.
+
+Definition test8 := make_test rp8.
+Definition test8' := make_test rp8'.
+
+
+(*Definition make_test2 (p :re_pair) := fun (_ : unit) => time_synth_coercion (fst (snd p)) (snd (snd p)).
+Definition test_bad7 := make_test2 rp7.
+Definition test_bad7' := make_test2 rp7'.
+Definition test_bad8 := make_test2 rp8.
+Definition test_bad := (test_bad7,test_bad7',test_bad8).*)
+Definition test := (test1,test1',test2,test2',test3,test3',test4,test4',test5,test5',test6,test6',test7,test7',test8,test8'). (*,test9,test9',test10,test10',test_bad).*)
+
+(*Extraction "../bench/lib/testsuite" test.*)
+
+
+
+Require Import Containment.constructiveEps.
+
+Lemma synth_coercion_slow : forall  (r0 r1 : @regex myFin), option (pTree r0 -> pTree r1). 
+Proof.
+intros. 
+destruct (enum.reachable_wrap [::r0] [::r1] check_o) eqn:Heqn.
+move/P_decidable : Heqn. move=>HH. con. apply:constr_eps_coerce.
+apply/contains_seq1. done.
+apply : None.
+Qed.
+
+Definition time_synth_coercion_slow := synth_coercion_slow.
+
+Definition slow_synth_interp (n : nat) (l : seq nat) (r0 r1 : @regex myFin): option (seq (pTree r1)) :=
+match time_synth_coercion_slow r0 r1 with 
+| Some prog => let Ts := pmap (fun x => my_parse n x r0) l
+              in if size Ts != size l then None 
+              else Some (map (prog) Ts) (*(fun T0 => (pTree_1size T0,proj1_sig (time_interp_wrap prog T0))) Ts)*)
+| None => None
+end.
+
+Definition slow_synth_interp_applied := slow_synth_interp big_nat [::50].
+
+Definition slow_eval_test (rp : re_pair) := 
+let _ := print_label (fst rp) in 
+slow_synth_interp_applied (fst (snd rp)) (snd (snd rp)).
+Definition slow_make_test (rp : re_pair) := fun (_ : unit) => slow_eval_test rp.
+
+Definition slowtest := slow_make_test rp1.
+
+Extraction "../bench/lib/slowtest" slowtest.
+
+
+(*Definition rps := [::rp1;rp1';rp2;rp2';rp3;rp3';rp4;rp4';rp5;rp5';rp6;rp6';rp7;rp7';rp8;rp8';rp9;rp9;rp10;rp10'].*)
+
+
+
+(*Definition suitetwo := (eval_test,rps). (*synth_interp1_applied1,synth_interp1_applied2,synth_interp1_applied3,@no_synth_interp1_applied,only_synth).*)
+Extraction "../bench/lib/suitetwo" suitetwo. 
+Extraction rps.
+
+(*Fixpoint map_unit {A : Type} { B : Type ->  Type} (f :  A ->  B A) (l : seq A) :=
+match l with 
+| nil => tt 
+| a::l' => let _ := f a in map_unit f l'
+end.
+Check eval_test.
+Definition eval_tests (rps : seq re_pair) := 
+@map_unit _ (fun A => option (nat * seq (pTree rp.2.2)))  eval_test  rps.*)
+
+
+
+Definition re1 : @regex myFin := Seq (Star (Event ord0)) (Star (Star (Event ord0))).
+Definition re2 : @regex myFin := Star (Event ord0).
+
+Definition re_nat : @regex nat := Seq (Star (Event 0)) (Star (Star (Event 0))).
+
+Definition test_string := to_string 0 ([:: 0 ;1 ;2]) (nseq (2000) 0).
+*)
+
+
+
+(*Definition my_parse_int (fuel size : Decimal.signed_int) (r: @regex myFin) := rep_try_parse (Nat.of_int fuel) r (nseq (Nat.of_int size) 0).*)
+
+
+
+
+Definition my_synth := @synth_coercion myFin.
+
+
+(*Definition my_test (r0 r1 : @regex myFin) (n : Decimal.signed_int) : option (pTree r0) :=
+match my_synth r0 r1 with (* as x return match x with | Some prog => match (gen_tree n r0) with | Some p => post r1 p | None => unit end | None => unit end   with *)
+| Some prog =>  my_parse 100000 (Nat.of_int n) r0 
+| None => None
+end.
+*)
+Require Import Decimal.
+
+
+
 (*Eval vm_compute in (Nat.of_int (Pos ( (D1 ( D1 (  D1 (D1 (D0 Nil)))))))). (Pos (D1 Nil))).*)
-Definition test_case := ((@regex myFin) * (@regex myFin) * Decimal.signed_int)%type.
 Definition test1 := (re1,re2,Pos ( (( (D1 (D0 Nil)))))). 
 (*111 110*)
 (*Definition trees := gen_strings 100 re1.*)

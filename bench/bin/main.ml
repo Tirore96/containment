@@ -1,5 +1,5 @@
 open Bench.Testsuite
-
+open Bench.Slowtest
 let () = 
          let _ = test1 () in
          let _ = test1' () in
@@ -24,11 +24,6 @@ let () =
 
          let _ = test8 () in
          let _ = test8' () in
-
-         let _ = test9 () in
-         let _ = test9' () in
-
-         let _ = test10 () in
-         let _ = test10' () in
+(**      let _ = slowtest () in *)
          ()
 
