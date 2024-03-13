@@ -81,14 +81,11 @@
 \begin{abstract}
 % Regular expressions are ubiqutious. They are theoretically relevant to automata theory for being syntactic representations of finite state automata and essential in practice for text processing. Theory and practice share an extensional view of regular expressions, caring more about the binary property of whether a string matches an expression, and less about the more informative property of how it matches the expression as a parse tree. Regular expressions can be viewed as types that have parse trees as their terms and Henglein and Nielsen demonstrate how these parse trees can represent compressed text. In most typed programming languages one expects type checking to work up to subtyping. Incorporating \textit{regular expressions as types} into such a language requires coercive subtyping to preserve that the only terms of regular expression types are their parse trees. Henglein and Nielsen show how such coercions can be derived by a computational interpretation of intuitionistic proofs of regular expression containments. They prove their system sound and complete with respect to language containment. We extend on their work by proving that effecient coercions can be synthesized effeciently and mechanise this result, along with soundness and completeness, in the Coq proof assistant. As part of the solution to synthesis, we also introduce a technique for mechanising decidability of regular expression containment and equivalence in under 900 loc. Finally we extract the synthesis procedure and benchmark the performance of the coercions.
 % \\\\
- Regular expressions are typically studied in automata and formal language theory as a formalism for denoting the class of regular languages, where the only observable property is whether a string belongs to the denoted set of strings or not, and any two regular expressions are observably equivalent if they satisfy the same membership tests.  In programming practice, however, regular expressions are typically used to extract more detailed information: not only whether but also how a string matches a regular expression, ranging from extracting a particular substring to constructing a full parse tree.  Many automata theory techniques are not applicable in this setting; for example, a deterministic finite automaton constructed from a regular expression provides no way of constructing a parse tree for the given regular expression.  
+ Regular expressions are typically studied in automata and formal language theory as a formalism for denoting the class of regular languages, where the only observable property is whether a string belongs to the denoted set of strings or not, and any two regular expressions are observably equivalent if they satisfy the same membership tests.  In programming practice, however, regular expressions are typically used to extract more detailed information: not only whether but also how a string matches a regular expression, ranging from extracting a particular substring to constructing a full parse tree. Many automata theory techniques are not applicable in this setting; for example, a deterministic finite automaton constructed from a regular expression provides no way of constructing a parse tree for the given regular expression.  
 
 It is known that proofs of membership of strings in (the language denoted by) a regular expression are in one-to-one correspondence to parse trees; and that a formal proof of a regular expression containment $A \leq B$ in an axiomatization of regular expression containment can be operationally interpreted as a coercion, a function that maps any proof of containment of a string in $A$ into a proof of containment of the same string in $B$.  Different containment proofs may yield extensionally different functions, however, since regular expressions, considered as grammars, can be ambiguous. Additionally, even if extensionally the same, one proof of containment may yield a slow implementation, another an efficient one.
-%This raises the questions: How do we synthesize not only any proof of containment, but a provably efficient one, if one exists at all?  How can we perform this synthesis itself efficiently?  More fundamentally, how do we even know that the containment axiomatization at hand contains not only inefficient coercions?
 
-In this paper we prove that efficient coercions can be synthesized efficiently and mechanize this result in Coq, along with soundness (only terminating coercions are inferred) and completeness (for each valid containment at least one  coercion is derivable). As part of the solution to synthesis, we present a technique for mechanizing the decidability of regular expression containment and equivalence in under 900 lines of code, which to the best of our knowledge is the shortest mechanised proof in the litterature.
-Finally we extract our efficient coercion synthesis procedure and benchmark the performance of the synthesized coercions.  %More speculatively, we propose that the interaction between domain-specific language design, functional programming, and computational complexity analysis on the one hand and mechanizated axiomatization on the other hand may provide a productive methodology for efficient domain-specific software design and synthesis--even in the case where mechanized formal correctness is not the key objective.
-
+In this paper we prove that efficient coercions can be synthesized efficiently and mechanize this result in Coq, along with soundness (only terminating coercions are inferred) and completeness (for each valid containment at least one coercion is derivable). We extract our efficient coercion synthesis procedure and benchmark the performance of the synthesized coercions. We also present a technique used in the synthesis procedure, that can prove regular expression equivalence in under 900 lines of code. This is to the best of our knowledge, the shortest mechanised proof in the litterature for such a decision procedure.
 \end{abstract}
 
 % \section{Introduction}
@@ -244,7 +241,11 @@ Inductive pTree : @regex A -> Type :=
 | p_fold r : pTree (Eps _+_ (r _;_ (Star r))) -> pTree (Star r).
 \end{minted}
 One crucial difference between the two is \textsf{Match} derivations live in \prop, making the shape of the derivation inaccesible for case distinction during computatioin in \myset \footnote{To be precise pTree lives in Type because it is parameterized by A which lives in Type. This is due to parameterizing the entire development over the ssreflect finite type which lives in Type }. Though we can not use \textsf{Contains} directly in constructing $f : A \rightarrow B$, knowing that the containment \textsf{Contains A B} holds, can be used as a termination argument for proof search. A mapping $f : A \rightarrow B$ can be obtained by lifting a parse tree \textsf{t} of regular expression $A$, \textsf{t : pTree A}, to a Match derivation \textsf{Match (flatten t) A}, where \textsf{flatten} returns the underlying string of the parse tree. Translating to a match derivation takes linear time in the size of the parse tree. From here we can apply the \textsf{Contains A B} assumption as a function returning \textsf{Match (flatten t) B}, from which me must construct a \textsf{t' : pTree B}, preserving the underlying string, that is,\textsf{flatten t' = flatten t}. Building \textsf{t' : pTree B} is where need proof search. With \textsf{Match (flatten t) B} living in Prop, we may not case distinct on the derivation to learn the shape \textsf{t'} should take. But the presence of \textsf{Match (flatten t) B} means that there exists a natural number $n$, such that the set of parse trees of at most $n$ constructor applications, will contain our desired parse tree. We show this in file \textsf{Constructive.v}, following the technique of the Constructive Epsilon Coq libarary [cite].\\
-Now with a procedure in hand to transform a language containment \textsf{Contains A B} into a map on parse trees \textsf{f : pTree A -> pTree B} all we need is a decision procedure for language containment, which there exists several of in the litteratue[cite]. We now have a way to synthesize mapping on parse trees (which we from now on will call coercions). This is of course too slow to be of any real use and only serves to show why we might wish to limit the function space of coercions to include only linear time programs that process the underlying string of the parse tree in a streaming fashion rather than brute forcing the problem. How should the function space be constrained? The coercion is not allowed to alter the underlying string (soundness). What ever constructs we do decide on must let us build any mapping that can be proved with \textsf{Contains} (completeness). As we shall see in a moment, Brandt and Henglein found that axiomatizing regular expression containment, is the same as defining the primitives and combinators of a set of rules for building coercions.
+Now with a procedure in hand to transform a language containment \textsf{Contains A B} into a map on parse trees \textsf{f : pTree A -> pTree B} all we need is a decision procedure for language containment, which there exists several of in the litteratue[cite]. We now have a way to synthesize mapping on parse trees (which we from now on will call coercions).
+\begin{definition}[Coercion]
+A function $f :\type{E} \rightarrow \type{F}$ is a coercion iff $\forall \mathsf{t}. \flatten{f~\mathsf{t}} = \flatten{\mathsf{t}}$.\\
+\end{definition}
+ This is of course too slow to be of any real use and only serves to show why we might wish to limit the function space of coercions to include only linear time programs that process the underlying string of the parse tree in a streaming fashion rather than brute forcing the problem. How should the function space be constrained? The coercion is not allowed to alter the underlying string (soundness). What ever constructs we do decide on must let us build any mapping that can be proved with \textsf{Contains} (completeness). As we shall see in a moment, Brandt and Henglein found that axiomatizing regular expression containment, is the same as defining the primitives and combinators of a set of rules for building coercions.
 \subsection{Grabmeyer}
 It is known that language equivalence and containment of reuglar expressions can be expressed coinductively as simulation (rspt. bisimulation) using the brozowski derivative $\derive{a}{A}$ to transition between regular expressions and nullariness operator $\mynu{\cdot}$ for finality. With this extensional view,language containment can be stated coinductively as:
 \begin{definition}[Simulation]
@@ -627,9 +628,10 @@ This recursion pattern tells us that we may add our conclusion to our set of ass
 \[\infer{\contains{\Gamma}{\fix ~f.d}{A}{B}}{ \contains{\Gamma, \dslcom{f}: A \leq B}{d}{A}{B}}
 \]
 But we can only discharge an assumption after consuming an event
-\[\infer{\contains{\Gamma, f : A \leq B, \Gamma'}{f}{a \times A}{a \times B}}{}
+\[\infer{\contains{\Gamma, \mathsf{f} : A \leq B, \Gamma'}{var~f}{a \times A}{a \times B}}{}
 \]
-Let us call this for event guarded recursion.
+Let us call this for event guarded recursion. Notice that event guardedness is built into the syntax; the assumption $\mathsf{f}$ with input type $A$ can be used only to build $\mathsf{var~f}$ which has input type $a \times A$.
+
 We can now replace the general fix rule with event guarded recursion and $\dslcom{peek}$. The effect of restricting the coercion language is that firstly; Only fast proofs are derivable. Secondly, the system has no exotic terms, $\fix f. f$ is not derivable. Put differently, all rules are compositional, and context is not necessary in order to build a subterm in the coercion sytem. The proof of soundeness, that is,  $\contains{}{c}{E}{F}$ is only derivable if $E \subseteq F$. It is not relevant for completeness, essentially comes down to proving termination and string preservation of interpretation. Restricting the syntax of coercions simplifies the termination argument for the interpreter. Completeness on the other hand is essentially coercion synthesis and the elimination of the side conditions eliminates the need for repeatedly executing side conditions to check the well-formedness during synthesis. In particular the Kozen side condition takes time linear in the size of the coercion syntax.\\\\
 The full coercion axiomatization we present in this work is the coercions for weak equivalence with $\dslcom{peek}$ along with the new fix and variable rules. The full rule set is presented in Figure (\ref{fig:system})
 \begin{figure}
@@ -665,7 +667,7 @@ The full coercion axiomatization we present in this work is the coercions for we
 \infer{\containsG{\dslcom{peek}~d}{A^*}{1 + B \times A^*}}{\containsG{d}{A}{1 + B}} \qquad
 \\\\
 \infer{\contains{\Gamma}{\fix ~f.d}{A}{B}}{ \contains{\Gamma, \dslcom{f}: A \leq B}{d}{A}{B}} \qquad
-\infer{\contains{\Gamma, f : A \leq B, \Gamma'}{id \times f}{a \times A}{a \times B}}{}
+\infer{\contains{\Gamma, \mathsf{f} : A \leq B, \Gamma'}{var~f}{a \times A}{a \times B}}{}
 \end{array}
 \end{displaymath}
 \end{figure}
@@ -799,29 +801,31 @@ We first apply $\fix$, then by decomposition and recomposition (\label{align:pde
 
 
 \section{Soundness and interpretation}
-Soundness is:
+The coercion system is sound if all derivable coercions are language containments:
 \[\contains{}{c}{E}{F} \implies E \subseteq F\]
-An interpretation function is:
-\[\interp{ \contains{}{c}{E}{F}} : \type{E} \rightarrow \type{F}\]
+This is closely related to the interpretation of a coercion $\interp{\dslcom{c}} : \type{E} \rightarrow \type{F}$ due to a correspondance between language membership $s \in A$ and type inhabitance $\mathsf{t} : \type{A}$
 \begin{lemma}\label{lem:types}
-$t : \type{A}$ implies $\flatten{t} \in A$\\
-$s \in A$ implies $\exists t.~t : \type{A}$ and $\flatten{t} = s$
+$\mathsf{t} : \type{A}$ implies $\flatten{\mathsf{t}} \in A$\\
+$s \in A$ implies $\exists \mathsf{t}.~\mathsf{t} : \type{A}$ and $\flatten{\mathsf{t}} = s$
 \end{lemma}
-By Lemma (\ref{lem:types}), to prove soundness, it suffices to show that there exists an interpretation function that maps a coercion derivation $\contains{}{c}{E}{F}$ to the susbet of the function space $\type{E} \rightarrow \type{F}$ that only contains string preserving maps.
-\begin{definition}[String preservation]
-A function $f :\type{E} \rightarrow \type{F}$ is preserving $\pres{f}$ iff $\forall t. \flatten{f~t} = \flatten{t}$.\\
-\end{definition}
-\begin{lemma}
-The existence of an interpretation function $\interp{ \contains{}{c}{E}{F}} : \{f : \type{E} \rightarrow \type{F}~ |~ \pres{f} \}$ implies soundness of the coercion system
-\end{lemma}
-We now focus on defining an interpreter and get interpretation for free. In Figure (\label{fig:interp}) the equtional simplification rules of the interpreter are given. The last for equalities capture recursion, the first being Grabmeyer recursion with a termination argument known as the $0$-measure $|v|_0$ on parse trees. The last three equalities define the semantics of $\dslcom{peek}$ as a recursive function and it has a termination measure known as $1$-measure $|v|_1$ 
+Lemma (\ref{lem:types}) allows us to prove soundness, by defining a terminating interpretation function from coercion derivations $\contains{}{c}{E}{F}$ to coercions in the function space $\type{E} \rightarrow \type{F}$.
+% \begin{lemma}
+% The existence of an interpretation function $\interp{ \contains{}{c}{E}{F}} : \{f : \type{E} \rightarrow \type{F}~ |~ \pres{f} \}$ implies soundness of the coercion system
+% \end{lemma}
+We now focus on defining an interpreter and get soundness for free. In Figure (\label{fig:interp}) the equtional rules of the interpreter are given. The last for equalities capture recursion, the first being Grabmeyer recursion with a termination argument known as the $0$-measure $|v|_0$ on parse trees. The last three equalities define the semantics of $\dslcom{peek}$ as a recursive function and it has a termination measure known as $1$-measure $|v|_1$ 
 \begin{definition}[Measures on parse trees]
+We define the two measures $|\cdot|_0$ and $|\cdot|_1$. For the cases where the two measures coinductive, we simply write $|\cdot|$.
   \begin{displaymath}
     \begin{array}{lll}
-      \zerom{0} = 0 \qquad \zerom{1} = 0 \qquad \zerom{a} = 1 \qquad \zerom{inl~ t} = \zerom{t} \qquad \zerom{inr~ t} = \zerom{t} \qquad
-     \zerom{(v,w)}=\zerom{v}+\zerom{w} \\\\ \zerom{fold~v}=\zerom{v}\\\\
-    \onem{0} = 0 \qquad \onem{1} = 1 \qquad \onem{a} = 1 \qquad \onem{inl~ t} = \onem{t} \qquad \onem{inr~ t} = \onem{t} \qquad
-     \onem{(v,w)}=\onem{v}+\onem{w} \\\\ \onem{fold~v}=\onem{v}
+\onem{1} = 1 \qquad \zerom{1} = 0
+\\\\
+ \measure{0} = 0 \qquad \measure{a} = 1 \qquad \measure{inl~ t} = \measure{t} \qquad \measure{inr~ t} = \measure{t} \qquad  \measure{(v,w)}=\measure{v}+\measure{w} \qquad  \measure{fold~v}=\measure{v}\qquad
+
+ %     \measure{(v,w)}=\measure{v}+\measure{w} \\\\ 
+
+ %    \onem{0} = 0 \qquad \onem{1} = 1 \qquad \onem{a} = 1 \qquad \onem{inl~ t} = \onem{t} \qquad \onem{inr~ t} = \onem{t} \qquad
+ %     \onem{(v,w)}=\onem{v}+\onem{w} \\\\
+ % \onem{fold~v}=\onem{v}
     \end{array}
   \end{displaymath}
 \end{definition}
@@ -830,58 +834,91 @@ We have that
 \[ \zerom{x} < \zerom{fold~ (inr~ v,x)}\]
 We can also verify that Grabmeyer recursion satisfies the $\onem{\cdot}$ measure because none of the rules increases the $\onem{\cdot}$ measure, and because of the discharge rule:
 \[\infer{\contains{\Gamma, f : A \leq B, \Gamma'}{id \times f}{a \times A}{a \times B}}{}\]
-This means that if the application $\dslcom{fix f.c}(t)$ recurses, then reduction will lead to a term $\dslcom{f}(a,t')$ where $\onem{t'} < \onem{(a,t')}\leq \onem{t}$
-\begin{figure} \ref{fig:interp}
-\mycomment{Check rules are correct}
-\mycomment{mention fold/unfold isorecursion 1.3 notation and terminology}
-  \centering
+This means that if the application $\dslcom{fix f.c}(t)$ recurses, then reduction will lead to a term $\dslcom{f}(a,t')$ where $\onem{t'} < \onem{(a,t')}\leq \onem{t}$\\
+\subsection{Semantics}
+We define the interpretation function $\llbracket \cdot \rrbracket_{\sigma_{\Gamma}}$ that translates a coercion derivation $\containsG{c}{A}{B}$ to a function on parse trees $\interp{\dslcom{c}}_{\sigma_{\Gamma}} : \mathcal{T}\llbracket A \rrbracket  \rightarrow \mathcal{T}\llbracket B \rrbracket$. The subscript, $\sigma_{\Gamma} : \{ \dslcom{f} ~|~\dslcom{f} : A \leq B  \in \Gamma \ \} \rightharpoonup  (\type{A} \rightarrow \type{B})$, is a partial map from assumptions $\dslcom{f} : A \leq B  \in \Gamma$, to functions on parse trees $\type{A} \rightarrow \type{B}$. 
+
+The interpretation rules for all context rules as well as axioms, such as $\dslcom{shuffle}$, are exactly those presented in Henglein and Nielsen. As an example, a rule for shuffle is 
+\[\interpsig{shuffle}{inl~v}{inl~(inl~v)} \]
+To save space we omit interpretation rules for context rules and axioms, refering to Definition 16. in Henglein and Nielsen. Unlike Henglein and Nielsen who define interpretation of fix as $\interp{\fix ~ \dslcom{f.c}}(\mathsf{v})=\interp{\dslcom{c}[\fix~\dslcom{f.c} \backslash \dslcom{f}]}(\mathsf{v})$, we define the interpretation function with an environment $\interp{\cdot}_{\sigma_{\Gamma}}$ because this allows a precise definition that close to the Coq implementation.
+
+In the fix rule, we write $\mathbf{f} \mapsto f_{\mathsf{v}} \cdot \sigma_{\Gamma}$ for the partial function extension, defined when $\mathbf{f} \notin \mathsf{Dom}(f)$. We label $f$ with subscript $\mathsf{v}$ for termination. This is seen in the rule where the application $\sigma_{\Gamma}~\mathsf{f}(\mathsf{v'})$ is allowed only when the string size has decreased since the declaration of the fixpoint.
+\begin{definition}[Interpretation]
+Let $\interp{\dslcom{c}}_{\sigma_{\Gamma}} : \type{A} \rightarrow \type{B}$ be the interpretation of $\containsG{c}{A}{B}$. We define it as:   
+%For $\dslcom{f} \notin \mathsf{Dom}(\sigma_{\Gamma})$ and $f : \type{A} \rightarrow \type{B}$ we write the extension of $\sigma_{\Gamma}$ with $\dslcom{f}$ as $ \dslcom{f} \cdot \sigma_{\Gamma}$.
+%We now give the definition of $\llbracket \containsG{c}{A}{B} \rrbracket : \mathcal{T}\llbracket A \rrbracket  \rightarrow \mathcal{T}\llbracket B \rrbracket$, assuming $\sigma_{\Gamma}$.\\
   \begin{displaymath}
     \begin{array}{l}
-\irule{shuffle}{inl v}{inl (inl v)}\\
-\irule{shuffle}{inr v}{inl (inr v)}\\
-\irule{shuffle}{(inr (inr v))}{inr v}\\
-\iruleinv{shuffle}{(inl (inl v))}{inl v}\\
-\iruleinv{shuffle}{(inl (inr v))}{inr (inl v)}\\
-\iruleinv{shuffle}{(inr v)}{inr (inr v)}\\
-\irule{retag}{(inl v)}{inr v}\\
-\irule{retag}{(inr v)}{inl v}\\
-\iruleinv{retag}{}{retag}\\
-\irule{untagL}{(inr v)}{v}\\
-\irule{untag}{(inl v)}{v}\\
-\irule{untag}{(inr v)}{v}\\
-\irule{tagL}{(v)}{inl v}\\ 
-\irule{assoc}{(v,(w, x))}{((v, w), x)}\\
-\iruleinv{assoc}{((v, w), x)}{(v,(w, x))}\\
-\irule{swap}{(v,())}{((), v)}\\
-\iruleinv{swap}{((), v)}{(v,())}\\
-\irule{proj}{((), w)}{w}\\
-\iruleinv{proj}{(w)}{((), w)}\\
-\irule{distL}{(v, inl w)}{inl (v, w)}\\
-\irule{distL}{(v, inr x)}{inr (v, x)}\\
-\iruleinv{distL}{(inl (v, w))}{(v, inl w)}\\
-\iruleinv{distL}{(inr (v, x))}{(v, inr x)}\\
-\irule{distR}{(inl v, w)}{inl (v, w)}\\
-\irule{distR}{(inr v, x)}{inr (v, x)}\\
-\iruleinv{distR}{(inl (v, w))}{(inl v, w)}\\
-\iruleinv{distR}{(inr (v, x))}{(inr v, x)}\\
-\irule{wrap}{(v)}{fold v}\\
-\dslcominv{wrap}(\textsf{(v)})=\dslcominv{fold}\\
-\irule{id}{v}{v}\\
-\iruleinv{id}{}{id}\\
-\irule{(c; d)}{(v)}{d(c(v))}\\
-\irule{(c + d)}{(inl v)}{inl (c(v))}\\
-\irule{(c + d)}{(inr w)}{inr (d(w))}\\
-\irule{(c × d)}{(v, w)}{(c(v), d(w))}\\
-\irule{(fix f.c)}{(v)}{c[fixf.c/f](v)}\\
-\irule{(peek c)}{fold (inl ())}{inl ()}\\
-\irule{(peek c)}{fold (inr (v,x))}{(peek c)(x)}\quad \text{if }\irule{c}{v}{inl ()}\\
-\irule{(peek c)}{fold (inr (v,x))}{inr (w,x)}\quad \text{if }\irule{c}{v}{inr w}
+% \irule{shuffle}{inl v}{inl (inl v)}\\
+% \irule{shuffle}{inr v}{inl (inr v)}\\
+% \irule{shuffle}{(inr (inr v))}{inr v}\\
+% \iruleinv{shuffle}{(inl (inl v))}{inl v}\\
+% \iruleinv{shuffle}{(inl (inr v))}{inr (inl v)}\\
+% \iruleinv{shuffle}{(inr v)}{inr (inr v)}\\
+% \irule{retag}{(inl v)}{inr v}\\
+% \irule{retag}{(inr v)}{inl v}\\
+% \iruleinv{retag}{}{retag}\\
+% \irule{untagL}{(inr v)}{v}\\
+% \irule{untag}{(inl v)}{v}\\
+% \irule{untag}{(inr v)}{v}\\
+% \irule{tagL}{(v)}{inl v}\\ 
+% \irule{assoc}{(v,(w, x))}{((v, w), x)}\\
+% \iruleinv{assoc}{((v, w), x)}{(v,(w, x))}\\
+% \irule{swap}{(v,())}{((), v)}\\
+% \iruleinv{swap}{((), v)}{(v,())}\\
+% \irule{proj}{((), w)}{w}\\
+% \iruleinv{proj}{(w)}{((), w)}\\
+% \irule{distL}{(v, inl w)}{inl (v, w)}\\
+% \irule{distL}{(v, inr x)}{inr (v, x)}\\
+% \iruleinv{distL}{(inl (v, w))}{(v, inl w)}\\
+% \iruleinv{distL}{(inr (v, x))}{(v, inr x)}\\
+% \irule{distR}{(inl v, w)}{inl (v, w)}\\
+% \irule{distR}{(inr v, x)}{inr (v, x)}\\
+% \iruleinv{distR}{(inl (v, w))}{(inl v, w)}\\
+% \iruleinv{distR}{(inr (v, x))}{(inr v, x)}\\
+% \irule{wrap}{(v)}{fold v}\\
+% \dslcominv{wrap}(\textsf{(v)})=\dslcominv{fold}\\
+% \irule{id}{v}{v}\\
+% \iruleinv{id}{}{id}\\
+% \irule{(c; d)}{(v)}{d(c(v))}\\
+% \irule{(c + d)}{(inl v)}{inl (c(v))}\\
+% \irule{(c + d)}{(inr w)}{inr (d(w))}\\
+% \irule{(c × d)}{(v, w)}{(c(v), d(w))}\\
+% \irule{shuffle}{inl v}{inl (inl v)}\\
+% \irule{shuffle}{inr v}{inl (inr v)}\\
+% \irule{shuffle}{(inr (inr v))}{inr v}\\
+% \iruleinv{shuffle}{(inl (inl v))}{inl v}\\
+% \iruleinv{shuffle}{(inl (inr v))}{inr (inl v)}\\
+% \iruleinv{shuffle}{(inr v)}{inr (inr v)}\\
+\infer{\interp{\fix~\dslcom{f}.\dslcom{c}}_{\sigma_{\Gamma}}(v)=\rec{f}{x}{\interp{\dslcom{c}}(x)_{\mathsf{var~f} \mapsto f \cdot \sigma_{\Gamma}}}{f}(v)}{} \qquad
+\infer{\interp{\mathsf{f}}_{\sigma_{\Gamma}}(a,v)=(a,(\sigma_{\Gamma}~\mathsf{f})(v))}{f \in \mathbf{Dom}(\sigma_{\Gamma})}
+\\\\
+\infer{\interpsig{peek c}{fold (inl ())}{inl ()}}{} \qquad
+\infer{\interpsig{peek c}{fold (inr (v,x))}{(\dslcom{peek c})(x)}}{\interpsig{c}{v}{inl ()}}
+\\\\
+\infer{\interpsig{peek c}{fold (inr (v,x))}{inr (w,x)}}{\interpsig{c}{v}{inr~w}}
     \end{array}
   \end{displaymath}
-  \caption{Interpretation semantics}
-\end{figure}
-Before we present the interpreter, we show how one represents the coercion system in Coq.
-In Coq the coercion system we represent a derivation of $\containsG{c}{A}{B}$ as the term  \textsf{c : dsl Gamma A B}.
+\end{definition}
+\begin{lemma}[Termination]
+For any coercion derivation $\contains{}{c}{A}{B}$ and $\mathsf{t} : \type{A}$,\\ 
+$\interp{c}_\emptyset(\mathsf{t})$ is defined  %and preserves the string of $\mathsf{t}$
+\end{lemma}
+\begin{proof}[Sketch]
+Show $\containsG{c}{A}{B}$ implies $\interp{c}_{\sigma_{\Gamma}}(\mathsf{t})$ is defined, assuming that forall $\mathsf{f} : C \leq D \in \Gamma$ and $\mathsf{v} : \type{C}$, where $|\mathsf{v}|_0 < |\mathsf{t}|_0$, that $(\sigma_{\Gamma}~\mathsf{f})(\mathsf{v})$ is defined.\\
+Proof by induction on $\containsG{c}{A}{B}$. By the IH it suffices to show $f_{\mathsf{t}}(\mathsf{v})$ is defined, assuming $|\mathsf{v}|_0 < |\mathsf{t}|_0$. One can show $f_{\mathsf{t}}(\mathsf{v})$ is defined with $|\cdot|_0$ as termination measure.\\
+The variable rule and non-recursive rule of $\dslcom{peek}$ are immediate. The latter two rules of $\dslcom{peek}$ can be shown terminating using $|\cdot|_1$ as termination measure.
+\end{proof}
+\begin{lemma}[Soundness of interpretation]
+ For any coercion derivation $\contains{}{c}{A}{B}$\\ 
+$\interp{c}_\emptyset :\type{A} \rightarrow \type{B}$ is a coercion
+\end{lemma}
+\begin{corollary}[Soundness]
+$\contains{}{c}{A}{B}$ implies $A \subseteq B$
+\end{corollary}
+%  \caption{Interpretation semantics:  $\Gamma \vdash \dslcom{c}(v)=v'$: We present only the new rules for $\dslcom{peek}$ and changed rule for ($\fix f$). All other rules are identical to the presentation by Henglein and Nielsen and to see these definitions we refer to their work.}
+\subsection{Representation}
+In Coq we represent a derivation of $\containsG{c}{A}{B}$ as the term  \textsf{c : dsl Gamma A B}.
 \mycomment{change drop to peek in code}
 \begin{minted}{Coq}
 Inductive dsl (Gamma: seq (regex * regex)) : regex -> regex -> Type := 
@@ -889,73 +926,120 @@ Inductive dsl (Gamma: seq (regex * regex)) : regex -> regex -> Type :=
 | dfix A B : dsl ((A,B):: Gamma) A B -> dsl Gamma A B.
 | var a A B :   (A,B) \in Gamma -> dsl Gamma (Event a _;_ A) (Event a _;_  B) 
 ...
-
-Lemma pf_in : ((1 + Star a),(Star a)) \in [(1 + Star a) (Star a)].
-Proof. ... Qed.
-
+\end{minted}
+One builds a variable using two regular expressions \textsf{A} and \textsf{B} and a proof that their pair is in the environment. 
+\begin{minted}{Coq}
+Lemma pf_in : (A,B) \in [(A,B)]. Proof. ... Qed.
+Definition var_example : dsl [(A,B)] (a * A) (a * B)  := var a A B pf_in
+\end{minted}
+Applying \textsf{dfix} extends the environment. In the derivation below, we \textsf{dfix} extends the empty environment \textsf{nil} with \textsf{((1 + Star a),(Star a))} and \textsf{var a (1 + Star a) (Star a) pf\_in2} refers to this entry.
+\begin{minted}{Coq}
+Lemma pf_in2 : ((1 + Star a),(Star a)) \in [(1 + Star a) (Star a)].
 Definition example : dsl nil (1 + Star a) (Star a) := 
 dfix (ctrans (peek cid)
-     (ctrans (cplus cid (dsl_var pf_in)) wrap))
+     (ctrans (cplus cid (var a (1+(Star a)) (Star a) pf_in2)) wrap))
 \end{minted}
-The type of the interpretation function is seen below
-\begin{minted}{Coq}
-Definition post {A : eqType} (r0 r1 : @regex A) (T : pTree r0) := 
-  { T' : pTree r1 | pTree_0size T' <= pTree_0size  T /\ pflatten T = pflatten T' }. 
+
+% The type of the interpretation function is seen below
+% \begin{minted}{Coq}
+% Definition post {A : eqType} (r0 r1 : @regex A) (T : pTree r0) := 
+%   { T' : pTree r1 | pTree_0size T' <= pTree_0size  T /\ pflatten T = pflatten T' }. 
 
 
-Fixpoint interp l r0 r1 (p : dsl l r0 r1) (T : pTree r0) 
-         (Gamma_f : forall x y,  (x,y) \in l -> 
-                    forall (T0 : pTree x), pRel0 T0 T -> post y T0) {struct p}:
-         post r1 T. 
-\end{minted}
-\mycomment{change semantic rules to include environment}
-\textsf{Gammaf} is used to interpret the variables, and its type ensures that it can only be used on parse trees of smaller $0$-size..
+% Fixpoint interp l r0 r1 (p : dsl l r0 r1) (T : pTree r0) 
+%          (Gamma_f : forall x y,  (x,y) \in l -> 
+%                     forall (T0 : pTree x), pRel0 T0 T -> post y T0) {struct p}:
+%          post r1 T. 
+% \end{minted}
+% \mycomment{change semantic rules to include environment}
+% \textsf{Gammaf} is used to interpret the variables, and its type ensures that it can only be used on parse trees of smaller $0$-size..
+
+\newcommand{\dentry}[2]{\begin{tabular}{l} #1 \\ #2 \end{tabular}}
+\newcommand{\tabline}[6]{#1 & #2 & #3 & #4 & #5 & #6}
+%\newcommand{\tabline}[11]{#1 & \dentry{#2}{#7} & \dentry{#3}{#8} & \dentry{#4}{#9} & \dentry{#5}{#10} & \dentry{#6}{#11}}
 \section{Benchmarking}
-Implementations we compare\\
+The benchmarks have been run on a machine with a 2,6 GHz processor with six cores and 16GB of memory. Results can be seen in Figure (\ref{fig:bench}). The figure lists 8 equivalences and one containment for regular expressions with $\Sigma= \{a,b\}$. For each of the equivalences $A = B$ we synthesize coercions $\contains{}{c}{A}{B}$ and $\contains{}{\dslcominv{c}}{B}{A}$. In total we generate 17 coercions where we record the following:
+\begin{itemize}
+\item Synthesis time (in seconds)
+\item Size of the synthesised program as the number of constructors 
+\item Interpretation time for parse trees with string sizes of respectively $50$,$500$ and $5000$.
+\end{itemize}
+We see that synthesis is fast, completing in under 10 mili-seconds for all containments. The fastest synthesis, $(1 + a)^* \leq a^*$, being about one order of magnitude faster than the slowest, $(a + b)^* \leq a^* + (b^* \times a^*)^*$. As expected, synthesis time correlates with program size yielding a program of size $1032$ for the fastest synthesis and $7281$ for the slowest. For all containments, we observe a growth in interpretation time with respect to the string size of the input parse tree.
 \begin{figure}
   \centering
-  \begin{tabular}{l | l | l | l | l | l}
-Containment & Synthesis time & $|p|$=10 &  $|p|$=100 &  $|p|$=1000 \\
+  \begin{tabular}{l | l | l | l | l | l | l}
+Containment & Synthesis & Program size & $|s|=50$ &  $|s|=500$ &  $|s|=5000$ \\
 \hline
-$a^* \times \dstar a \leq a^*$ & ? & & &\\
+\tabline
+{$a ^* = a^* \times  (a^*)^*$}
+{\dentry{.001537}{.001130}}
+{\dentry{1428}{1534}}
+{\dentry{.000919}{.000760}}
+{\dentry{.007399}{.005309}}
+{\dentry{.082023}{.089442}}\\
 \hline
-$\dstar a \leq a^*$ & ? & & &\\
+\tabline
+{$(a^*)^* = a^*$}
+{\dentry{.000679}{.000995}}
+{\dentry{1234}{1342}}
+{\dentry{.000757}{.000847}}
+{\dentry{.008137}{.005861}}
+{\dentry{.077686}{.078434}}\\
 \hline
-$(1 + a)^* \leq a^*$ & ? & & &\\
+\tabline
+{$(1 + a)^* = a^*$}
+{\dentry{.000509}{.001133}}
+{\dentry{1032}{1254}}
+{\dentry{.001710}{.000782}}
+{\dentry{.005517}{.005085}}
+{\dentry{.070280}{.073624}}\\ 
 \hline
-$(a+b)^* \leq a^* + (b \times a^*)^*$ & ? & & &\\
+\tabline
+{$(a+b)^* = a^* + (b^* \times a^*)^*$}
+{\dentry{.007009}{.003012}}
+{\dentry{7281}{2793}}
+{\dentry{.000643}{.000956}}
+{\dentry{.004882}{.005989}}
+{\dentry{.073752}{.079130}}\\
 \hline
-$a^* \times b^* \leq ((1 + a) \times (1+ B))^*$ & ? & & &
+\tabline
+{$ a^* \times (1 + a) = a^*$}
+{\dentry{.000988}{.001238}}
+{\dentry{1640}{1626}}
+{\dentry{.000541}{.000588}}
+{\dentry{.005414}{.005429}}
+{\dentry{.076216}{.079477}}\\
+\hline
+\tabline
+{$(a + b)^* = (a^* + b^*)^*$}
+{\dentry{.004171}{.004643}}
+{\dentry{5169}{4226}}
+{\dentry{.000826}{.000923}}
+{\dentry{.006507}{.005989}}
+{\dentry{.087849}{.092896}}\\
+\hline
+\tabline
+{$(a^* + b^*)^* = (a^* \times b^*)^*$}
+{\dentry{.005818}{.006281}}
+{\dentry{5990}{5913}}
+{\dentry{.000956}{.000898}}
+{\dentry{.007027}{.009935}}
+{\dentry{.098359}{.095056}}\\
+\hline
+\tabline
+{$a^* \times b^* < ((1 + a) \times (1 + b))^*$}
+{~~.005293}
+{~~7304}
+{~~.001099}
+{~~.007267}
+{~~.101217}\\
+\hline
 \end{tabular}
-  \caption{Synthesis and execution time for coercion with $\Sigma=\{0...4\}$ and resp. $\Sigma=\{0..99\}$}
+  \caption{Benchmark results for containments with $\Sigma=\{a,b\}$}
   \label{fig:bench}
 \end{figure}
-
-\begin{itemize}
-\item Proof search approch
-\item Inductive dsl with environment as list. Does expensive decomposition
-\item Inductive dsl with fast decomposition
-\item Coinductive dsl with environment as function (that is build in a list-like way) (expensive decompositoin)
-\item Missing Coinductive dsl fast
-\item With or without implicit variables
-\end{itemize}
-
-We are interested in the time it takes to synthesize and execute coercions. How do we test this?\\
-\subsection{examples}
-Examples from the paper:\\
-\begin{align}
-a ^* \times (a^*)^* \leq a^*
-\end{align}
-Also try a simpler example that highligts the peek rule. 
-\subsection{Approach}
-Syntheses: Build $f$.\\
-Execution: Run $f a$\\
-We separate the two because you can synthesize once and use many times.\\
-How does this relate to code extraction?
-\begin{itemize}
-\item Extract synthesis and interpretation procedures and call them both in OCaml. 
-\end{itemize}
-
+\mycomment{Check rules are correct}
+\mycomment{mention fold/unfold isorecursion 1.3 notation and terminology}
 \section{discussion and related work}
 Computational interpretations of linear logic \cite{A93}\\
 Regular expression containment as a proof search problem Vladimir Komendantsky[Misc url].\\
@@ -966,6 +1050,14 @@ white board and mechanisation leads to interesting results.
 \\
 Though the set of derivatives quotiented by ACI is finite for any regular expression, in a proof assistant it can be easier to formulate such finiteness arguments constructively as the existence of an inductive list that contains all the derivatives. This can be done by considering the partial derivatives $\partial_a$ of regular expressions. Convenient finitness arguments have been well studied by others in the litterature to show termination for regular expression equivalence decision procedures. Doing this through partial derivatives was introduced by Almeida et al. \cite{AMR09} and in \cite{MPS12}, they mechanize in Coq the \textsf{equivP} procedure of Almeida et al. \mycomment{How does their termination argument work?}. There is also \cite{A12} who take a different approach, turning regular expression into point-automata, making it straigtforward to compute the enumeration of reachable derivatives. We combine their approaches, which we show in a moment
 \mycomment{Two files for this, extensional and extensionalpartial which one is correct I think extensional partial, clean up code later}\\
+\begin{itemize}
+\item Proof search approch
+\item Inductive dsl with environment as list. Does expensive decomposition
+\item Inductive dsl with fast decomposition
+\item Coinductive dsl with environment as function (that is build in a list-like way) (expensive decompositoin)
+\item Missing Coinductive dsl fast
+\item With or without implicit variables
+\end{itemize}
 \bibliography{ref}  
 
 \end{document}
