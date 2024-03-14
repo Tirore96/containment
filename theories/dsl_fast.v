@@ -1678,7 +1678,7 @@ Definition rp4 := ("(a+b)^* <= a^* + (b^* x a^*)^*",(Star (a _+_ b), (Star a) _+
 Definition rp4' := ("a^* + (b^* x a^*)^* <= (a + b)^*",((Star a) _+_ (Star (b _;_ (Star a))), Star (a _+_ b) )).
 
 Definition rp5 := ("a^* x b^* <= ((1 + a) x (1 + b))^*",((Star a) _;_ (Star b),Star ((Eps _+_ a) _;_ (Eps _+_ b)))). 
-Definition rp5' := ("((1 + a) x (1 + b))^* <= a^* x b^*  ",(Star (Eps _+_ a) _;_ (Eps _+_ b),((Star a) _;_ (Star b)))).
+(*Definition rp5' := ("((1 + a) x (1 + b))^* <= a^* x b^*  ",(Star ((Eps _+_ a) _;_ (Eps _+_ b)),((Star a) _;_ (Star b)))).*) (*Not true*)
 
 Definition rp6 := ("a^* x (1 + a) <= a^*",((Star a) _;_ (Eps _+_ a),Star a)).
 Definition rp6' := ("a^* <= a^* x (1 + a)",(Star a,(Star a) _;_ (Eps _+_ a))).
@@ -1711,7 +1711,7 @@ Definition test4 := make_test rp4.
 Definition test4' := make_test rp4'.
 
 Definition test5 := make_test rp5.
-Definition test5' := make_test rp5'.
+(*Definition test5' := make_test rp5'.*)
 
 Definition test6 := make_test rp6.
 Definition test6' := make_test rp6'.
@@ -1735,7 +1735,10 @@ Definition test_bad7 := make_test2 rp7.
 Definition test_bad7' := make_test2 rp7'.
 Definition test_bad8 := make_test2 rp8.
 Definition test_bad := (test_bad7,test_bad7',test_bad8).*)
-Definition test := (test1,test1',test2,test2',test3,test3',test4,test4',test5,test5',test6,test6',test7,test7',test8,test8'). (*,test9,test9',test10,test10',test_bad).*)
+Definition test := (test1,test1',test2,test2',test3,test3',test4,test4',test5,test6,test6',test7,test7',test8,test8'). (*,test9,test9',test10,test10',test_bad).*)
+
+(*Extraction "../bench/lib/mytest" test.*)
+
 
 (*Extraction "../bench/lib/testsuite" test.*)
 
@@ -1771,7 +1774,10 @@ Definition slow_make_test (rp : re_pair) := fun (_ : unit) => slow_eval_test rp.
 
 Definition slowtest := slow_make_test rp1.
 
-Extraction "../bench/lib/slowtest" slowtest.
+
+
+
+(*Extraction "../bench/lib/slowtest" slowtest.*)
 
 
 (*Definition rps := [::rp1;rp1';rp2;rp2';rp3;rp3';rp4;rp4';rp5;rp5';rp6;rp6';rp7;rp7';rp8;rp8';rp9;rp9;rp10;rp10'].*)
