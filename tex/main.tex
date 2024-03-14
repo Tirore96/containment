@@ -735,7 +735,7 @@ A^* &\leq  1 + A \times A^* && \text{by unfold}\\
 \end{align}
 \end{proof}
 Where we define $\dslcom{peek}$ as.
-\[ \infer{\containsG{peek ~ c}{A^*}{1 + B \times A^*}}{\containsG{c}{A}{1 + B}} \]
+\[ \infer{\contains{}{peek ~ c}{A^*}{1 + B \times A^*}}{\contains{}{c}{A}{1 + B}} \]
 \begin{remark}
 It seems likely that a variant of the Kozen measure could be defined that would allow $\dslcom{peek}$ to be derived from the Henglein and Nielsen's fix rule. This is no consequence to us as we are aiming at replacing the general fixpoint construct with a stricter construct that only allows obviously terminating recursion
 \end{remark}
@@ -783,8 +783,12 @@ So long that we restrict discharge of an assumption till after the consumption o
 \]
 Let us call this for event guarded recursion. Notice that event guardedness is built into the syntax; the assumption $\mathsf{f}$ with input type $A$ can be used only to build $\mathsf{var~f}$ which has input type $a \times A$.
 
-We can now replace the general fix rule with event guarded recursion and $\dslcom{peek}$. The effect of restricting the coercion language is that firstly; Only fast proofs are derivable. Secondly, the system has no exotic terms, $\fix f. f$ is not derivable. Put differently, all rules are compositional, and context is not necessary in order to build a subterm in the coercion sytem. The proof of soundeness, that is,  $\contains{}{c}{E}{F}$ is only derivable if $E \subseteq F$. It is not relevant for completeness, essentially comes down to proving termination and string preservation of interpretation. Restricting the syntax of coercions simplifies the termination argument for the interpreter. Completeness on the other hand is essentially coercion synthesis and the elimination of the side conditions eliminates the need for repeatedly executing side conditions to check the well-formedness during synthesis. In particular the Kozen side condition takes time linear in the size of the coercion syntax.\\\\
-The full coercion axiomatization we present in this work is the coercions for weak equivalence with $\dslcom{peek}$ along with the new fix and variable rules. The full rule set is presented in Figure (\ref{fig:system})
+We can now replace the general fix rule with event guarded recursion and $\dslcom{peek}$. The effect of restricting the coercion language is that firstly; Only fast proofs are derivable. Secondly, the system has no exotic terms, $\fix f. f$ is not derivable. Put differently, all rules are compositional, and context is not necessary in order to build a subterm in the coercion sytem. 
+
+These changes simplifies the soundness proof which essentially comes down to proving termination of interpretation. Restricting the syntax of coercions simplifies the termination argument for the interpreter. 
+
+Completeness on the other hand is essentially coercion synthesis and the elimination of the side condition removes the computation cost of checking the side conditions during synthesis. This is significant for side condition $S_2$ which takes time linear in the size of the coercion.\\\\
+The new definition of the coercion system can be seen in Figure (\ref{fig:system})
 \begin{figure}
 \caption{The new coercion system is the rules of Henglein and Nielsen, with fixpoint and variable rules replaced by these rules}
 \label{fig:system}
@@ -815,7 +819,7 @@ The full coercion axiomatization we present in this work is the coercions for we
 
 % \infer{\containsG{c \times d}{A \times B}{ C \times D}}{\containsG{c}{A}{C} & \containsG{d}{B}{D}} 
 % \\\\
-\infer{\containsG{\dslcom{peek}~d}{A^*}{1 + B \times A^*}}{\containsG{d}{A}{1 + B}} \qquad
+\infer{\contains{}{\dslcom{peek}~d}{A^*}{1 + B \times A^*}}{\contains{}{d}{A}{1 + B}} \qquad
 \\\\
 \infer{\contains{\Gamma}{\fix ~f.d}{A}{B}}{ \contains{\Gamma, \dslcom{f}: A \leq B}{d}{A}{B}} \qquad
 \infer{\contains{\Gamma, \mathsf{f} : A \leq B, \Gamma'}{var~f}{a \times A}{a \times B}}{}
@@ -1012,7 +1016,7 @@ We have that
 We can also verify that Grabmeyer recursion satisfies the $\onem{\cdot}$ measure because none of the rules increases the $\onem{\cdot}$ measure, and because of the discharge rule:
 \[\infer{\contains{\Gamma, f : A \leq B, \Gamma'}{id \times f}{a \times A}{a \times B}}{}\]
 This means that if the application $\dslcom{fix f.c}(t)$ recurses, then reduction will lead to a term $\dslcom{f}(a,t')$ where $\onem{t'} < \onem{(a,t')}\leq \onem{t}$\\
-\subsection{Semantics}
+\subsection{Interpretation}
 We define the interpretation function $\llbracket \cdot \rrbracket_{\sigma_{\Gamma}}$ that translates a coercion derivation $\containsG{c}{A}{B}$ to a function on parse trees $\interp{\dslcom{c}}_{\sigma_{\Gamma}} : \mathcal{T}\llbracket A \rrbracket  \rightarrow \mathcal{T}\llbracket B \rrbracket$. The subscript, $\sigma_{\Gamma} : \{ \dslcom{f} ~|~\dslcom{f} : A \leq B  \in \Gamma \ \} \rightharpoonup  (\type{A} \rightarrow \type{B})$, is a partial map from assumptions $\dslcom{f} : A \leq B  \in \Gamma$, to functions on parse trees $\type{A} \rightarrow \type{B}$. 
 
 The interpretation rules for all context rules as well as axioms, such as $\dslcom{shuffle}$, are exactly those presented in Henglein and Nielsen. As an example, a rule for shuffle is 
