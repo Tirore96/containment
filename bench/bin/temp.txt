@@ -1,0 +1,113 @@
+let time_synth_coercion =
+  fun x y-> 
+  let t = Sys.time() in 
+  let fx = synth_coercion_wrap x y in
+  Printf.printf "Synthesis time: %fs\n" (Sys.time() -. t);
+    fx
+
+(** val time_interp_wrap :
+    regex -> regex -> dsl -> pTree -> post **)
+
+let time_interp_wrap =
+  fun x y z q -> 
+  let t = Sys.time() in 
+  let fx = interp_wrap x y z q in 
+  Printf.printf "Interpetation time: %fs\n" (Sys.time() -. t);
+  fx
+
+
+let string_of_chars chars = 
+  let buf = Buffer.create 16 in
+  List.iter (Buffer.add_char buf) chars;
+  Buffer.contents buf
+
+let eval_test rp =
+Printf.printf "Testcase: %s\n" (string_of_chars (fst rp));
+  synth_interp_applied (fst (snd rp))
+    (snd (snd rp))
+
+
+
+
+
+
+
+
+let interp_size r0 r1 prog t0 =
+let s0 = (pTree_1size
+     (fintype_ordinal__canonical__eqtype_Equality
+       (Stdlib.Int.succ (Stdlib.Int.succ 0)))
+     r0 t0)
+  
+ in  Printf.printf "String length: %d\n" s0; 
+    (s0,time_interp_wrap r0 r1 prog t0)
+
+(** val synth_interp : int -> int list -> regex -> regex -> (int * (int * pTree) list) option **)
+
+let synth_interp n0 l r0 r1 =
+  match time_synth_coercion r0 r1 with
+  | Some prog ->
+    let ts =
+      pmap (fun x -> my_parse n0 x r0) l
+    in
+    if negb
+         (eq_op0
+           datatypes_nat__canonical__eqtype_Equality
+           (Obj.magic size ts)
+           (Obj.magic size l))
+    then None
+    else let n = (dsl_size [] r0 r1 prog) in 
+Printf.printf "Coercion size: %d\n" n;
+ Some (n, (map (interp_size r0 r1 prog) ts))
+  | None -> None
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let interp_size r0 r1 prog t0 =
+let s0 = (pTree_1size
+     (fintype_ordinal__canonical__eqtype_Equality
+       (Stdlib.Int.succ (Stdlib.Int.succ 0)))
+     r0 t0)
+  
+ in  Printf.printf "String length: %d\n" s0; 
+    (s0,time_interp_wrap r0 r1 prog t0)
+
+
+
+let synth_interp n0 l r0 r1 =
+  match time_synth_coercion r0 r1 with
+  | Some prog ->
+    let ts =
+      pmap (fun x -> my_parse n0 x r0) l
+    in
+    if negb
+         (eq_op0
+           datatypes_nat__canonical__eqtype_Equality
+           (Obj.magic size ts)
+           (Obj.magic size l))
+    then None
+    else let n = (dsl_size [] r0 r1 prog) in 
+Printf.printf "Coercion size: %d\n" n;
+ Some (n, (map (interp_size r0 r1 prog) ts))
+  | None -> None

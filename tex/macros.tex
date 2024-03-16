@@ -1,10 +1,10 @@
 \newcommand{\eqBody}[3]{#1 \vdash #2 = #3}
 \newcommand{\eqBodyG}[2]{\eqBody{\Gamma}{#1} {#2}}
-\newcommand{\eqBodyE}[2]{{#1} = {#2}}
+\newcommand{\eqBodyE}[2]{{#1} \leq {#2}}
 
 \newcommand{\myaxiomE}[3]{\infer{\eqBody{#1}{#2}{#3}}{}}
 \newcommand{\myaxiom}[2]{\infer{#1 = #2}{}}
-\newcommand{\myaxiomN}[2]{\Gamma \vdash #1 = #2}
+\newcommand{\myaxiomN}[2]{\Gamma \vdash #1 \leq #2}
 \newcommand{\myaxiomC}[3]{\Gamma \vdash \mathsf{#1} :  #2 = #3}
 
 
@@ -25,7 +25,7 @@
 \newcommand{\mynu}[1]{\mathsf{nu}(#1)}
 \newcommand{\true}{\mathsf{true}}
 \newcommand{\false}{\mathsf{false}}
-\newcommand{\containsG}[3]{\Gamma \vdash \mathsf{#1} : #2 \leq #3 }
+\newcommand{\containsG}[3]{\Gamma \vdash_P \mathsf{#1} : #2 \leq #3 }
 \newcommand{\contains}[4]{#1 \vdash \mathsf{#2} : #3 \leq #4 }
 \newcommand{\fix}{\mathsf{fix}}
 \newcommand{\oft}[2]{#1 : #2}
@@ -52,6 +52,13 @@
 \newcommand{\flatten}[1]{\mathsf{flatten}(#1)}
 \newcommand{\pres}[1]{\mathsf{pres}(#1)}
 \newcommand{\irule}[3]{\dslcom{#1}(\textsf{#2})=\textsf{#3}}
+\newcommand{\iruleG}[4]{#1 \vdash \dslcom{#1}(\textsf{#2})=\textsf{#3}}
+
 \newcommand{\iruleinv}[3]{\dslcominv{#1}(\textsf{#2})=\textsf{#3}}
 \newcommand{\zerom}[1]{|\mathsf{#1}|_0}
 \newcommand{\onem}[1]{|\mathsf{#1}|_1}
+\newcommand{\rec}[4]{\mathsf{let}~\mathsf{rec}~#1(#2)=#3 ~\mathsf{in}~#4}
+\newcommand{\interpsig}[3]{\interp{\dslcom{#1}}_{\sigma_{\Gamma}}(\mathsf{#2})=\mathsf{#3}}
+\newcommand{\measure}[1]{|\mathsf{#1}|}
+\newcommand{\containsP}[5]{#1 \vdash_{#5} \mathsf{#2} : #3 \leq #4 }
+\newcommand{\denesting}{a^* \times \dstar{a}}
