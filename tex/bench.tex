@@ -1,0 +1,147 @@
+The benchmarks have been run on a machine with a 2,6 GHz processor with six cores and 16GB of memory. Results can be seen in Figure (\ref{fig:bench}). The figure lists 8 equivalences and one containment for regular expressions with $\Sigma= \{a,b\}$. For each of the equivalences $A = B$ we synthesize coercions $\contains{}{c}{A}{B}$ and $\contains{}{\dslcominv{c}}{B}{A}$. In total we generate 17 coercions where we record the following:
+\begin{itemize}
+\item Synthesis time (in seconds)
+\item Size of the synthesised program as the number of constructors 
+\item Interpretation time for parse trees with string sizes of respectively $50$,$500$ and $5000$.
+\end{itemize}
+We see that synthesis is fast, completing in under 10 mili-seconds for all containments. The fastest synthesis, $(1 + a)^* \leq a^*$, being about one order of magnitude faster than the slowest, $(a + b)^* \leq a^* + (b^* \times a^*)^*$. As expected, synthesis time correlates with program size yielding a program of size $1032$ for the fastest synthesis and $7281$ for the slowest. For all containments, we observe a growth in interpretation time with respect to the string size of the input parse tree.
+\begin{figure}
+  \centering
+
+\npdecimalsign{.}
+\nprounddigits{\decn}
+\npfourdigitnosep
+\small \begin{tabular}{c | c | c | c | c | c | c}
+{Equivalence/Containment} & {Synthesis} & {Size} & $|s|=50$ &  $|s|=500$ &  $|s|=5000$ \\
+\hline
+\tabline
+{\rentryone{a^* \times  (a^*)^*}{a^*}}
+{\ddentryone{.001537}{.001130}{.016175}{.017021}}
+{\ddentrysone{1428}{1534}{15596}{15512}}
+{\ddentryone{.000919}{.000760}{.005371}{.004729}}
+{\ddentryone{.007399}{.005309}{.052115}{.057192}}
+{\ddentryone{.082023}{.089442}{.607844}{.698274}}\\
+\hline
+\tabline
+{\rentrytwo{a^* \times  (a^*)^*}{a^*}}
+{\ddentryone{.001537}{.001130}{.016175}{.017021}}
+{\ddentrysone{1428}{1534}{15596}{15512}}
+{\ddentryone{.000919}{.000760}{.005371}{.004729}}
+{\ddentryone{.007399}{.005309}{.052115}{.057192}}
+{\ddentryone{.082023}{.089442}{.607844}{.698274}}\\
+\hline
+\tabline
+{\rentryone{(a^*)^*}{a^*}}
+{\ddentryone{.000679}{.000995}{.009196}{.008747}}
+{\ddentrysone{1234}{1342}{14990}{14891}}
+{\ddentryone{.000757}{.000847}{.009078}{.003994}}
+{\ddentryone{.008137}{.005861}{.058283}{.043017}}
+{\ddentryone{.077686}{.078434}{.600414}{.591864}}\\
+\hline
+\tabline
+{\rentrytwo{(a^*)^*}{a^*}}
+{\ddentrytwo{.000679}{.000995}{.009196}{.008747}}
+{\ddentrystwo{1234}{1342}{14990}{14891}}
+{\ddentrytwo{.000757}{.000847}{.009078}{.003994}}
+{\ddentrytwo{.008137}{.005861}{.058283}{.043017}}
+{\ddentrytwo{.077686}{.078434}{.600414}{.591864}}\\
+
+\hline
+\tabline
+{\rentryone{(1 + a)^*}{a^*}}
+{\ddentryone{.000509}{.001133}{.007855}{.015388}}
+{\ddentrysone{1032}{1254}{14360}{14246}}
+{\ddentryone{.001710}{.000782}{.032632}{.028932}}
+{\ddentryone{.005517}{.005085}{2.659040}{2.013159}}
+{\ddentryone{.070280}{.073624}{276.753069}{247.026963}}\\
+\hline
+\tabline
+{\rentrytwo{(1 + a)^*}{a^*}}
+{\ddentrytwo{.000509}{.001133}{.007855}{.015388}}
+{\ddentrystwo{1032}{1254}{14360}{14246}}
+{\ddentrytwo{.001710}{.000782}{.032632}{.028932}}
+{\ddentrytwo{.005517}{.005085}{2.659040}{2.013159}}
+{\ddentrytwo{.070280}{.073624}{276.753069}{247.026963}}\\
+ 
+\hline
+\tabline
+{\rentryone{(a+b)^*}{a^* + (b^* \times a^*)^*}}
+{\ddentryone{.007009}{.003012}{.048355}{.012353}}
+{\ddentrysone{7281}{2793}{36282}{20444}}
+{\ddentryone{.000643}{.000956}{.004202}{.003447}}
+{\ddentryone{.004882}{.005989}{.036712}{.035351}}
+{\ddentryone{.073752}{.079130}{.486243}{.487134}}\\
+\hline
+\tabline
+{\rentrytwo{(a+b)^*}{a^* + (b^* \times a^*)^*}}
+{\ddentrytwo{.007009}{.003012}{.048355}{.012353}}
+{\ddentrystwo{7281}{2793}{36282}{20444}}
+{\ddentrytwo{.000643}{.000956}{.004202}{.003447}}
+{\ddentrytwo{.004882}{.005989}{.036712}{.035351}}
+{\ddentrytwo{.073752}{.079130}{.486243}{.487134}}\\
+
+\hline
+\tabline
+{\rentryone{a^* \times (1 + a)}{a^*}}
+{\ddentryone{.000988}{.001238}{.009770}{.019891}}
+{\ddentrysone{1640}{1626}{16260}{16224}}
+{\ddentryone{.000541}{.000588}{.003715}{.003635}}
+{\ddentryone{.005414}{.005429}{.036957}{.038813}}
+{\ddentryone{.076216}{.079477}{.478733}{.485656}}\\
+\hline
+\tabline
+{\rentrytwo{a^* \times (1 + a)}{a^*}}
+{\ddentrytwo{.000988}{.001238}{.009770}{.019891}}
+{\ddentrystwo{1640}{1626}{16260}{16224}}
+{\ddentrytwo{.000541}{.000588}{.003715}{.003635}}
+{\ddentrytwo{.005414}{.005429}{.036957}{.038813}}
+{\ddentrytwo{.076216}{.079477}{.478733}{.485656}}\\
+\hline
+\tabline
+{\rentryone{(a + b)^*}{(a^* + b^*)^*}}
+{\ddentryone{.004171}{.004643}{.039428}{.027062}}
+{\ddentrysone{5169}{4226}{27649}{28096}}
+{\ddentryone{.000826}{.000923}{.004074}{.003746}}
+{\ddentryone{.006507}{.005989}{.039359}{.038567}}
+{\ddentryone{.087849}{.092896}{.509120}{.509756}}\\
+\hline
+\tabline
+{\rentrytwo{(a + b)^*}{(a^* + b^*)^*}}
+{\ddentrytwo{.004171}{.004643}{.039428}{.027062}}
+{\ddentrystwo{5169}{4226}{27649}{28096}}
+{\ddentrytwo{.000826}{.000923}{.004074}{.003746}}
+{\ddentrytwo{.006507}{.005989}{.039359}{.038567}}
+{\ddentrytwo{.087849}{.092896}{.509120}{.509756}}\\
+
+\hline
+\tabline
+{\rentryone{(a^* + b^*)^*}{(a^* \times b^*)^*}}
+{\ddentryone{.005818}{.006281}{.045740}{.048248}}
+{\ddentrysone{5990}{5913}{30239}{30031}}
+{\ddentryone{.000956}{.000898}{.004202}{.005260}}
+{\ddentryone{.007027}{.009935}{.042625}{.044285}}
+{\ddentryone{.098359}{.095056}{.587315}{.580131}}\\
+\hline
+\tabline
+{\rentrytwo{(a^* + b^*)^*}{(a^* \times b^*)^*}}
+{\ddentrytwo{.005818}{.006281}{.045740}{.048248}}
+{\ddentrystwo{5990}{5913}{30239}{30031}}
+{\ddentrytwo{.000956}{.000898}{.004202}{.005260}}
+{\ddentrytwo{.007027}{.009935}{.042625}{.044285}}
+{\ddentrytwo{.098359}{.095056}{.587315}{.580131}}\\
+\hline
+\tabline
+{\rentryone{a^* \times b^*} {((1 + a) \times (1 + b))^*}}
+{\dlentry{.005293}{.031442}}
+{\dlentrys{7304}{37753}}
+{\dlentry{.001099}{.031442}}
+{\dlentry{.007267}{3.085835}}
+{\dlentry{.101217}{396.063779}}\\
+\hline
+\end{tabular}
+  \caption{Performance of coercion synthesis and coercion execution with $\Sigma=\{a,b\}$. For each containment we synthesize two coercions, recording two numbers in each cell. One coercion implements the effecient decomposition presented in Section 4.1 (top). The other implements the Salomaa decomposition from 3.2 (bototm). }
+  \label{fig:bench}
+\end{figure}
+\mycomment{Check rules are correct}
+\mycomment{mention fold/unfold isorecursion 1.3 notation and terminology}
+\mycomment{Mention the final containment is slow }
