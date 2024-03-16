@@ -7,72 +7,72 @@ The benchmarks have been run on a machine with a 2,6 GHz processor with six core
 We see that synthesis is fast, completing in under 10 mili-seconds for all containments. The fastest synthesis, $(1 + a)^* \leq a^*$, being about one order of magnitude faster than the slowest, $(a + b)^* \leq a^* + (b^* \times a^*)^*$. As expected, synthesis time correlates with program size yielding a program of size $1032$ for the fastest synthesis and $7281$ for the slowest. For all containments, we observe a growth in interpretation time with respect to the string size of the input parse tree.
 \begin{figure}
   \centering
-  \begin{tabular}{l | l | l | l | l | l | l}
-Containment & Synthesis & Program size & $|s|=50$ &  $|s|=500$ &  $|s|=5000$ \\
+  \begin{tabular}{c | c | c | c | c | c | c}
+Containment & Synthesis & Size & $|s|=50$ &  $|s|=500$ &  $|s|=5000$ \\
 \hline
 \tabline
-{$a ^* = a^* \times  (a^*)^*$}
-{\dentry{.001537}{.001130}}
-{\dentry{1428}{1534}}
-{\dentry{.000919}{.000760}}
-{\dentry{.007399}{.005309}}
-{\dentry{.082023}{.089442}}\\
+{$a^* \times  (a^*)^* = a^*$}
+{\ddentry{.001537}{.001130}{.016175}{.017021}}
+{\ddentry{1428}{1534}{15596}{15512}}
+{\ddentry{.000919}{.000760}{.005371}{.004729}}
+{\ddentry{.007399}{.005309}{.052115}{.057192}}
+{\ddentry{.082023}{.089442}{.607844}{.698274}}\\
 \hline
 \tabline
 {$(a^*)^* = a^*$}
-{\dentry{.000679}{.000995}}
-{\dentry{1234}{1342}}
-{\dentry{.000757}{.000847}}
-{\dentry{.008137}{.005861}}
-{\dentry{.077686}{.078434}}\\
+{\ddentry{.000679}{.000995}{.009196}{.008747}}
+{\ddentry{1234}{1342}{14990}{14891}}
+{\ddentry{.000757}{.000847}{.009078}{.003994}}
+{\ddentry{.008137}{.005861}{.058283}{.043017}}
+{\ddentry{.077686}{.078434}{.600414}{.591864}}\\
 \hline
 \tabline
 {$(1 + a)^* = a^*$}
-{\dentry{.000509}{.001133}}
-{\dentry{1032}{1254}}
-{\dentry{.001710}{.000782}}
-{\dentry{.005517}{.005085}}
-{\dentry{.070280}{.073624}}\\ 
+{\ddentry{.000509}{.001133}{.007855}{.015388}}
+{\ddentry{1032}{1254}{14360}{14246}}
+{\ddentry{.001710}{.000782}{.032632}{.028932}}
+{\ddentry{.005517}{.005085}{2.659040}{2.013159}}
+{\ddentry{.070280}{.073624}{276.753}{247.026}}\\ 
 \hline
 \tabline
 {$(a+b)^* = a^* + (b^* \times a^*)^*$}
-{\dentry{.007009}{.003012}}
-{\dentry{7281}{2793}}
-{\dentry{.000643}{.000956}}
-{\dentry{.004882}{.005989}}
-{\dentry{.073752}{.079130}}\\
+{\ddentry{.007009}{.003012}{.048355}{.012353}}
+{\ddentry{7281}{2793}{36282}{20444}}
+{\ddentry{.000643}{.000956}{.004202}{.003447}}
+{\ddentry{.004882}{.005989}{.036712}{.035351}}
+{\ddentry{.073752}{.079130}{.486243}{.487134}}\\
 \hline
 \tabline
 {$ a^* \times (1 + a) = a^*$}
-{\dentry{.000988}{.001238}}
-{\dentry{1640}{1626}}
-{\dentry{.000541}{.000588}}
-{\dentry{.005414}{.005429}}
-{\dentry{.076216}{.079477}}\\
+{\ddentry{.000988}{.001238}{.009770}{.019891}}
+{\ddentry{1640}{1626}{16260}{16224}}
+{\ddentry{.000541}{.000588}{.003715}{.003635}}
+{\ddentry{.005414}{.005429}{.036957}{.038813}}
+{\ddentry{.076216}{.079477}{.478733}{.485656}}\\
 \hline
 \tabline
 {$(a + b)^* = (a^* + b^*)^*$}
-{\dentry{.004171}{.004643}}
-{\dentry{5169}{4226}}
-{\dentry{.000826}{.000923}}
-{\dentry{.006507}{.005989}}
-{\dentry{.087849}{.092896}}\\
+{\ddentry{.004171}{.004643}{.039428}{.027062}}
+{\ddentry{5169}{4226}{27649}{28096}}
+{\ddentry{.000826}{.000923}{.004074}{.003746}}
+{\ddentry{.006507}{.005989}{.039359}{.038567}}
+{\ddentry{.087849}{.092896}{.509120}{.509756}}\\
 \hline
 \tabline
 {$(a^* + b^*)^* = (a^* \times b^*)^*$}
-{\dentry{.005818}{.006281}}
-{\dentry{5990}{5913}}
-{\dentry{.000956}{.000898}}
-{\dentry{.007027}{.009935}}
-{\dentry{.098359}{.095056}}\\
+{\ddentry{.005818}{.006281}{.045740}{.048248}}
+{\ddentry{5990}{5913}{30239}{30031}}
+{\ddentry{.000956}{.000898}{.004202}{.005260}}
+{\ddentry{.007027}{.009935}{.042625}{.044285}}
+{\ddentry{.098359}{.095056}{.587315}{.580131}}\\
 \hline
 \tabline
 {$a^* \times b^* < ((1 + a) \times (1 + b))^*$}
-{~~.005293}
-{~~7304}
-{~~.001099}
-{~~.007267}
-{~~.101217}\\
+{\dlentry{.005293}{.031442}}
+{\dlentry{7304}{37753}}
+{\dlentry{.001099}{.031442}}
+{\dlentry{007267}{3.085835}}
+{\dlentry{.101217}{396.063779}}\\
 \hline
 \end{tabular}
   \caption{Benchmark results for containments with $\Sigma=\{a,b\}$}

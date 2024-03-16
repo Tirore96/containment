@@ -1,0 +1,149 @@
+Testcase: a^* x (a^*)^* <= a^*
+Synthesis time: 0.001537s
+Coercion size: 1428
+String length: 52
+Interpetation time: 0.000919s
+String length: 502
+Interpetation time: 0.007399s
+String length: 5002
+Interpetation time: 0.082023s
+
+Testcase: a ^* <= a^* x (a^*)^*
+Synthesis time: 0.001130s
+Coercion size: 1534
+String length: 51
+Interpetation time: 0.000760s
+String length: 501
+Interpetation time: 0.005309s
+String length: 5001
+Interpetation time: 0.089442s
+
+Testcase: (a^*)^* <= a^*
+Synthesis time: 0.000679s
+Coercion size: 1234
+String length: 52
+Interpetation time: 0.000757s
+String length: 502
+Interpetation time: 0.008137s
+String length: 5002
+Interpetation time: 0.077686s
+
+Testcase:  a^* <= (a^*)^*
+Synthesis time: 0.000995s
+Coercion size: 1342
+String length: 51
+Interpetation time: 0.000847s
+String length: 501
+Interpetation time: 0.005861s
+String length: 5001
+Interpetation time: 0.078434s
+
+Testcase: (1 + a)^* <= a^*
+Synthesis time: 0.000509s
+Coercion size: 1032
+String length: 51
+Interpetation time: 0.001710s
+String length: 501
+Interpetation time: 0.005517s
+String length: 5001
+Interpetation time: 0.070280s
+
+Testcase: a^* <= (1 + a)^*
+Synthesis time: 0.001133s
+Coercion size: 1254
+String length: 51
+Interpetation time: 0.000782s
+String length: 501
+Interpetation time: 0.005085s
+String length: 5001
+Interpetation time: 0.073624s
+
+Testcase: (a+b)^* <= a^* + (b^* x a^*)^*
+Synthesis time: 0.007009s
+Coercion size: 7281
+String length: 51
+Interpetation time: 0.000643s
+String length: 501
+Interpetation time: 0.004882s
+String length: 5001
+Interpetation time: 0.073752s
+
+Testcase: a^* + (b^* x a^*)^* <= (a + b)^*
+Synthesis time: 0.003012s
+Coercion size: 2793
+String length: 51
+Interpetation time: 0.000956s
+String length: 501
+Interpetation time: 0.005989s
+String length: 5001
+Interpetation time: 0.079130s
+
+Testcase: a^* x b^* <= ((1 + a) x (1 + b))^*
+Synthesis time: 0.005293s
+Coercion size: 7304
+String length: 52
+Interpetation time: 0.001099s
+String length: 502
+Interpetation time: 0.007267s
+String length: 5002
+Interpetation time: 0.101217s
+
+Testcase: a^* x (1 + a) <= a^*
+Synthesis time: 0.000988s
+Coercion size: 1640
+String length: 52
+Interpetation time: 0.000541s
+String length: 502
+Interpetation time: 0.005414s
+String length: 5002
+Interpetation time: 0.076216s
+
+Testcase: a^* <= a^* x (1 + a)
+Synthesis time: 0.001238s
+Coercion size: 1626
+String length: 51
+Interpetation time: 0.000588s
+String length: 501
+Interpetation time: 0.005429s
+String length: 5001
+Interpetation time: 0.079477s
+
+Testcase: (a + b)^* <= (a^* + b^*)^*
+Synthesis time: 0.004171s
+Coercion size: 5169
+String length: 51
+Interpetation time: 0.000826s
+String length: 501
+Interpetation time: 0.006507s
+String length: 5001
+Interpetation time: 0.087849s
+
+Testcase: (a^* + b^*)^* <= (a + b)^*
+Synthesis time: 0.004643s
+Coercion size: 4226
+String length: 52
+Interpetation time: 0.000923s
+String length: 502
+Interpetation time: 0.005989s
+String length: 5002
+Interpetation time: 0.092896s
+
+Testcase: (a^* + b^*)^* <= (a^* x b^*)^*
+Synthesis time: 0.005818s
+Coercion size: 5990
+String length: 52
+Interpetation time: 0.000956s
+String length: 502
+Interpetation time: 0.007027s
+String length: 5002
+Interpetation time: 0.098359s
+
+Testcase: (a^* x b^*)^* <= (a^* + b^*)^*
+Synthesis time: 0.006281s
+Coercion size: 5913
+String length: 53
+Interpetation time: 0.000898s
+String length: 503
+Interpetation time: 0.009935s
+String length: 5003
+Interpetation time: 0.095056s
