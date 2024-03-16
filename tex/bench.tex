@@ -1,0 +1,83 @@
+The benchmarks have been run on a machine with a 2,6 GHz processor with six cores and 16GB of memory. Results can be seen in Figure (\ref{fig:bench}). The figure lists 8 equivalences and one containment for regular expressions with $\Sigma= \{a,b\}$. For each of the equivalences $A = B$ we synthesize coercions $\contains{}{c}{A}{B}$ and $\contains{}{\dslcominv{c}}{B}{A}$. In total we generate 17 coercions where we record the following:
+\begin{itemize}
+\item Synthesis time (in seconds)
+\item Size of the synthesised program as the number of constructors 
+\item Interpretation time for parse trees with string sizes of respectively $50$,$500$ and $5000$.
+\end{itemize}
+We see that synthesis is fast, completing in under 10 mili-seconds for all containments. The fastest synthesis, $(1 + a)^* \leq a^*$, being about one order of magnitude faster than the slowest, $(a + b)^* \leq a^* + (b^* \times a^*)^*$. As expected, synthesis time correlates with program size yielding a program of size $1032$ for the fastest synthesis and $7281$ for the slowest. For all containments, we observe a growth in interpretation time with respect to the string size of the input parse tree.
+\begin{figure}
+  \centering
+  \begin{tabular}{l | l | l | l | l | l | l}
+Containment & Synthesis & Program size & $|s|=50$ &  $|s|=500$ &  $|s|=5000$ \\
+\hline
+\tabline
+{$a ^* = a^* \times  (a^*)^*$}
+{\dentry{.001537}{.001130}}
+{\dentry{1428}{1534}}
+{\dentry{.000919}{.000760}}
+{\dentry{.007399}{.005309}}
+{\dentry{.082023}{.089442}}\\
+\hline
+\tabline
+{$(a^*)^* = a^*$}
+{\dentry{.000679}{.000995}}
+{\dentry{1234}{1342}}
+{\dentry{.000757}{.000847}}
+{\dentry{.008137}{.005861}}
+{\dentry{.077686}{.078434}}\\
+\hline
+\tabline
+{$(1 + a)^* = a^*$}
+{\dentry{.000509}{.001133}}
+{\dentry{1032}{1254}}
+{\dentry{.001710}{.000782}}
+{\dentry{.005517}{.005085}}
+{\dentry{.070280}{.073624}}\\ 
+\hline
+\tabline
+{$(a+b)^* = a^* + (b^* \times a^*)^*$}
+{\dentry{.007009}{.003012}}
+{\dentry{7281}{2793}}
+{\dentry{.000643}{.000956}}
+{\dentry{.004882}{.005989}}
+{\dentry{.073752}{.079130}}\\
+\hline
+\tabline
+{$ a^* \times (1 + a) = a^*$}
+{\dentry{.000988}{.001238}}
+{\dentry{1640}{1626}}
+{\dentry{.000541}{.000588}}
+{\dentry{.005414}{.005429}}
+{\dentry{.076216}{.079477}}\\
+\hline
+\tabline
+{$(a + b)^* = (a^* + b^*)^*$}
+{\dentry{.004171}{.004643}}
+{\dentry{5169}{4226}}
+{\dentry{.000826}{.000923}}
+{\dentry{.006507}{.005989}}
+{\dentry{.087849}{.092896}}\\
+\hline
+\tabline
+{$(a^* + b^*)^* = (a^* \times b^*)^*$}
+{\dentry{.005818}{.006281}}
+{\dentry{5990}{5913}}
+{\dentry{.000956}{.000898}}
+{\dentry{.007027}{.009935}}
+{\dentry{.098359}{.095056}}\\
+\hline
+\tabline
+{$a^* \times b^* < ((1 + a) \times (1 + b))^*$}
+{~~.005293}
+{~~7304}
+{~~.001099}
+{~~.007267}
+{~~.101217}\\
+\hline
+\end{tabular}
+  \caption{Benchmark results for containments with $\Sigma=\{a,b\}$}
+  \label{fig:bench}
+\end{figure}
+\mycomment{Check rules are correct}
+\mycomment{mention fold/unfold isorecursion 1.3 notation and terminology}
+\mycomment{Mention the final containment is slow }
