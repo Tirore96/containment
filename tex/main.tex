@@ -1285,25 +1285,7 @@ Containment & Synthesis & Program size & $|s|=50$ &  $|s|=500$ &  $|s|=5000$ \\
 \mycomment{mention fold/unfold isorecursion 1.3 notation and terminology}
 \mycomment{Mention the final containment is slow }
 \section{discussion and related work}
-Computational interpretations of linear logic \cite{A93}\\
-Regular expression containment as a proof search problem Vladimir Komendantsky[Misc url].\\
-Also mention Marco and Carstens result-
-
-Greedy parse trees and preservatino of greediness by coercions. Proof relevance computational properties.\\
-white board and mechanisation leads to interesting results.
-\\
-Though the set of derivatives quotiented by ACI is finite for any regular expression, in a proof assistant it can be easier to formulate such finiteness arguments constructively as the existence of an inductive list that contains all the derivatives. This can be done by considering the partial derivatives $\partial_a$ of regular expressions. Convenient finitness arguments have been well studied by others in the litterature to show termination for regular expression equivalence decision procedures. Doing this through partial derivatives was introduced by Almeida et al. \cite{AMR09} and in \cite{MPS12}, they mechanize in Coq the \textsf{equivP} procedure of Almeida et al. \mycomment{How does their termination argument work?}. There is also \cite{A12} who take a different approach, turning regular expression into point-automata, making it straigtforward to compute the enumeration of reachable derivatives. We combine their approaches, which we show in a moment
-\mycomment{Two files for this, extensional and extensionalpartial which one is correct I think extensional partial, clean up code later}\\
-\begin{itemize}
-\item Proof search approch
-\item Inductive dsl with environment as list. Does expensive decomposition
-\item Inductive dsl with fast decomposition
-\item Coinductive dsl with environment as function (that is build in a list-like way) (expensive decompositoin)
-\item Missing Coinductive dsl fast
-\item With or without implicit variables
-\end{itemize}
-\bibliography{ref}  
-\mycomment{We use a similar measure in ITP 2023 projection}
+\input related
 \end{document}
 
 %%% Local Variables:
