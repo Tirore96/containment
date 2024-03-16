@@ -19,7 +19,7 @@
 
 \bibliographystyle{plainurl}% the mandatory bibstyle
 
-\title{Computationally interpreting regular expression containment proofs to effecient procedures } %TODO Please add
+\title{Computationally interpreting regular expression containment proofs to efficient procedures } %TODO Please add
 
 %\titlerunning{Dummy short title} %TODO optional, please use if title is longer than one line
 
@@ -81,33 +81,38 @@
 
 %TODO mandatory: add short abstract of the document
 \begin{abstract}
-% Regular expressions are ubiqutious. They are theoretically relevant to automata theory for being syntactic representations of finite state automata and essential in practice for text processing. Theory and practice share an extensional view of regular expressions, caring more about the binary property of whether a string matches an expression, and less about the more informative property of how it matches the expression as a parse tree. Regular expressions can be viewed as types that have parse trees as their terms and Henglein and Nielsen demonstrate how these parse trees can represent compressed text. In most typed programming languages one expects type checking to work up to subtyping. Incorporating \textit{regular expressions as types} into such a language requires coercive subtyping to preserve that the only terms of regular expression types are their parse trees. Henglein and Nielsen show how such coercions can be derived by a computational interpretation of intuitionistic proofs of regular expression containments. They prove their system sound and complete with respect to language containment. We extend on their work by proving that effecient coercions can be synthesized effeciently and mechanise this result, along with soundness and completeness, in the Coq proof assistant. As part of the solution to synthesis, we also introduce a technique for mechanising decidability of regular expression containment and equivalence in under 900 loc. Finally we extract the synthesis procedure and benchmark the performance of the coercions.
+% Regular expressions are ubiqutious. They are theoretically relevant to automata theory for being syntactic representations of finite state automata and essential in practice for text processing. Theory and practice share an extensional view of regular expressions, caring more about the binary property of whether a string matches an expression, and less about the more informative property of how it matches the expression as a parse tree. Regular expressions can be viewed as types that have parse trees as their terms and Henglein and Nielsen demonstrate how these parse trees can represent compressed text. In most typed programming languages one expects type checking to work up to subtyping. Incorporating \textit{regular expressions as types} into such a language requires coercive subtyping to preserve that the only terms of regular expression types are their parse trees. Henglein and Nielsen show how such coercions can be derived by a computational interpretation of intuitionistic proofs of regular expression containments. They prove their system sound and complete with respect to language containment. We extend on their work by proving that efficient coercions can be synthesized efficiently and mechanize this result, along with soundness and completeness, in the Coq proof assistant. As part of the solution to synthesis, we also introduce a technique for mechanizing decidability of regular expression containment and equivalence in under 900 loc. Finally we extract the synthesis procedure and benchmark the performance of the coercions.
 % \\\\
- Regular expressions are typically studied in automata and formal language theory as a formalism for denoting the class of regular languages, where the only observable property is whether a string belongs to the denoted set of strings or not, and any two regular expressions are observably equivalent if they satisfy the same membership tests.  In programming practice, however, regular expressions are typically used to extract more detailed information: not only whether but also how a string matches a regular expression, ranging from extracting a particular substring to constructing a full parse tree. Many automata theory techniques are not applicable in this setting; for example, a deterministic finite automaton constructed from a regular expression provides no way of constructing a parse tree for the given regular expression.  
+ It is known that proofs of membership of strings in (the language denoted by) a regular expression are in one-to-one correspondence to parse trees; and that a formal proof of a regular expression containment $A \leq B$ in an axiomatization of regular expression containment can be operationally interpreted as a coercion, a function that maps any proof of containment of a string in $A$ into a proof of containment of the same string in $B$.  Different containment proofs may yield extensionally different functions, however, since regular expressions, considered as grammars, can be ambiguous. Additionally, even if extensionally the same, one proof of containment may yield a slow implementation, another an efficient one.
 
-It is known that proofs of membership of strings in (the language denoted by) a regular expression are in one-to-one correspondence to parse trees; and that a formal proof of a regular expression containment $A \leq B$ in an axiomatization of regular expression containment can be operationally interpreted as a coercion, a function that maps any proof of containment of a string in $A$ into a proof of containment of the same string in $B$.  Different containment proofs may yield extensionally different functions, however, since regular expressions, considered as grammars, can be ambiguous. Additionally, even if extensionally the same, one proof of containment may yield a slow implementation, another an efficient one.
+In this paper we prove that efficient coercions can be synthesized efficiently and mechanize this result in Coq, along with soundness (only terminating coercions are inferred) and completeness (for each valid containment at least one coercion is derivable). We extract our efficient coercion synthesis procedure and benchmark the performance of the synthesized coercions. We also present a technique used in the synthesis procedure, that can prove regular expression equivalence in under 900 lines of code. This is to the best of our knowledge, the shortest mechanized proof in the literature for such a decision procedure.
 
-In this paper we prove that efficient coercions can be synthesized efficiently and mechanize this result in Coq, along with soundness (only terminating coercions are inferred) and completeness (for each valid containment at least one coercion is derivable). We extract our efficient coercion synthesis procedure and benchmark the performance of the synthesized coercions. We also present a technique used in the synthesis procedure, that can prove regular expression equivalence in under 900 lines of code. This is to the best of our knowledge, the shortest mechanised proof in the litterature for such a decision procedure.
 \end{abstract}
 
-% \section{Introduction}
-% Regular expressions is inductive syntax that represents finite state automaton. Regular expressions equivalence and inequalities are well understood and studied. Often these proof systems are considered in a proof-irrelevant way, not caring what the inference tree is, only that it exists. Brandt and Henglein [cite] show how regular expression containment proofs can be interpreted to functional programs on parse trees. Such interpretation has applications in string compression, which we shall explain more later. The rules of their containment axiomatization corresponds to an intrinscially typed domain specific language. They derive the constructs of this language by combining the rules of idempotent semirings, unfolding $A`* \leq 1 +  A \times A^*$, with a powerful fix rule that is a of coinductive nature. 
+ \section{Introduction}
+ 
+In this paper we treat regular expressions as, essentially, grammars by interpreting them as types; 
+define coercions as string preserving functions on parse trees (elements of those types); 
+synthesize computationally efficient coercions; and perform such synthesis itself efficiently.  
+This is motivated by the prospect of employing nonstandard compact data structures for strings that are statically known to belong to a particular regular expression.  While being outside the scope this paper, this application is discussed briefly at the end.  The key contextual aspect from this use case is this: It is insufficient to just know whether or not a regular expression is contained in another regular expression; it is even insufficient to know that the containment has a constructive proof that can be interpreted operationally as a function on parse trees; we also need to make sure that the operational interpretation is computationally efficient.   
 
-% Our goal is effecient coercions on parse trees with applications for string compression. 
-% Existing work by Brandt and Henglein formalize this using a powerful fix rule, whose soundness they ensure by instantiating it with a proper side condition. This side condition makes the coercion proofs less compositional and thus harder (as well as more expensive) to synthesize. This side condition checks for contractiveness. We derive a similar coercion system with a much weaker (but compositional) fixpoint rule that both simplifies (and makes more effecient) the synthesis of coercions, and implies contractiveness. The system is inspired by parameterized coinduction and allows us simple intepretation (our definition is good for simple termination arguments) and synthesis. These simple approaches would not have worked in Brandt and Henglein's origina system [detail why].\\\\
-% We derive this inductive coercion system in the following steps: 
-% \begin{enumerate}
-% \item The coercion system is an axiomatization of language containment, which can be obtained by adding a few rules to axiomatizations of language equivalence. Starting with Grabmeyer's coinductive characterization, we prove it equivalent to another coinductive characterization that is free of operational notions. 
-% \item We then prove this equivalent to an inductive version of this (why is it important to go inductive? Depends on the performance between the two dsls). 
-% \item The inductive system for language equivalence is the altered to create one for language containment, and we go from Prop to Type.
-% \end{enumerate}
-\section{Preliminaries}
-\mycomment{double check it is 900 lines it takes to prove this}
-Cardelli and Fresch introduce regular expressions as types.
-\begin{definition}[Regular expression and semantics]
-Regular expressions over a finite base set $a$ are given by the syntax:\\
-$A ::= A + B~| A \times B ~|~A ^* ~|~ 1 ~|~ 0 ~|~ a$\\
-Matching is defined as:\\
+All parts are mechanized in Coq.  While achieving a mechanization is a pleasant result in itself, the process of mechanization has helped us develop both theory and pragmatics of efficient coercion synthesis.  In other words, even if somebody is only interested in getting a good tool for coercion synthesis, mechanization as 
+
+  
+\subsection{Regular expressions as types}
+
+Regular expressions are typically studied in automata and formal language theory as a formalism for denoting the class of regular languages, where the only observable property is whether a string belongs to the denoted set of strings or not, and any two regular expressions are observably equivalent if they satisfy the same membership tests.  In programming practice, however, regular expressions are typically used to extract not only whether but also how a string matches a regular expression, ranging from extracting a particular substring to constructing a full parse tree. Many common automata theory techniques are not applicable in this setting; for example, a deterministic finite automaton constructed from a regular expression provides no general way of constructing a parse tree for the given regular expression. 
+
+Here we provide background concepts and results on interpreting regular expressions as types \cite{frca2004,nihe2011}. Note that we are informal here.  Mechanizations are provided later. 
+
+\begin{definition}[Regular expression]
+\emph{Regular expressions} $A, B$ over a finite alphabet $\Sigma$ are given by the abstract syntax
+$$A, B ::= A + B \mid A \times B \mid A ^* \mid 1 \mid 0 \mid a$$
+where $a \in \Sigma$.
+\end{definition}
+
+\begin{definition}[Regular expression as language]
+The \emph{matching} relation between strings $s \in \Sigma^*$ and regular expressions $A, B$ is defined inductively by
 \begin{displaymath} 
 \infer{\match{\epsilon}{1}}{}\qquad
 \infer{\match{s s'}{A \times B}}{\match{s}{A} & \match{s'}{B}} \qquad
@@ -116,149 +121,198 @@ Matching is defined as:\\
 \infer{\match{\epsilon}{A^*}}{}\qquad
 \infer{\match{s s'}{A^*}}{\match{s}{A} & \match{s'}{A^*}}\qquad
 \end{displaymath}
-Intrinsically typed parse trees:
-\begin{displaymath}
-\begin{array}{l}
+where string juxtaposition denotes concatenation and $\epsilon$ the empty string.
+
+We write $\vdash s \in A$ if there exists a derivation of $s \in A$ and say that \emph{$s$ matches $A$}.
+We define $\lang{A} = \{ s \mid \vdash s \in A \}$ and call it the \emph{language} denoted by $A$.
+\end{definition}
+
+We can, as usual, make derivations of matchings explicit as proof terms, which yields a type system with judgements of the form 
+$t : s \in A$.  Since $s$ is a function of $t$, it can be left out, which yields judgements of the form $t : A$.  
+By inspection of the resulting inference system it can be seen that each proof term corresponds to a unique element of the type corresponding to the regular expression.
+
+\begin{definition}[Regular expression as type]
+\emph{Regular expressions as types} $A, B$ over a finite alphabet $\Sigma$ are the types constructible from singleton types of $\Sigma$-elements,
+product, sum, unit, zero and (finite) list type constructors:
+$$A, B ::= A + B \mid A \times B \mid A^* \mid 1 \mid 0 \mid a$$
+where $a \in \Sigma$.
+The binary relation between terms $t$ and regular expressions as types $A$ is defined inductively by
+\[ \begin{array}{l}
 \infer{\oft{()}{1}}{} \qquad 
-\infer{\oft{a}{a}}{} \qquad \infer{\oft{\pair{t}{t'}}{A \times B}}{\oft{t}{A} & \oft{t'}{B}}
-\qquad \infer{\oft{\inl {t}}{A + B}}{\oft{t}{A}} \qquad
+\infer{\oft{\inj{a}}{a}}{} \qquad
+\infer{\oft{\pair{t}{t'}}{A \times B}}{\oft{t}{A} & \oft{t'}{B}} \qquad 
+\infer{\oft{\inl {t}}{A + B}}{\oft{t}{A}} \qquad
 \infer{\oft{\inr {t}}{A + B}}{\oft{t}{B}}  \qquad
-\infer{\oft{\fold{t}{A^*}}}{\oft{t}{1 + A \times A^*}}
-\end{array}
-\end{displaymath}
+\infer{\oft{\fold{t}}{A^*}}{\oft{t}{1 + A \times A^*}}
+\end{array} \]
+\begin{proposition}
+We write $\vdash t: A$ and say $t$ is an \emph{element} of $A$ if $t: A$ is derivable.
+We define $\type{A} = \{ t \mid \,\, \vdash t : A \}$ and call it the \emph{type} denoted by $A$.
+\end{proposition}
+
 \end{definition}
-\begin{definition}[Equivalence] \noindent \\
-Language equivalence: $\forall s, \match s\in A \iff s \in B$\\
-Language containment: $\forall s, s \in A \implies s \in B$
+
+Intuitively, a term $t : A$ represents a parse tree for a particular string $s$ in the language denoted by $A$.
+\begin{definition}[Flattening terms to strings]
+The function $\flatten{\cdot}$ is defined by
+\[ \begin{array}{rclrcl}
+\flatten{()} & = & \epsilon &
+\flatten{\inj{a}} & = & a \\
+\flatten{\pair{t}{u}} & = & \flatten{t} \, \flatten{u} &
+\flatten{\inl{t}} & = & \flatten{t} \\
+\flatten{\inr{u}} & = & \flatten{u} &
+\flatten{\fold{t}} & = & \flatten{t}
+\end{array} \]
 \end{definition}
-\begin{definition}[Derivative (standard/partial) and nullariness]
-\begin{displaymath}
-\begin{array}{l}
-\mynu{a} = \false \qquad
-\mynu{\epsilon} = \true \qquad
-\mynu{0} = \false
-\\\\
-\mynu{A + B} = \mynu A  \lor \mynu B \qquad
-\mynu{A \times B} = \mynu A  \land \mynu B
-\end{array}
-\end{displaymath}
-\begin{displaymath}
-\begin{array}{l}
-\derive {a}{1} = \qquad
-\derive{a}{0} = 0 \qquad
-\derive{a}{b} = \epsilon if a = b\qquad
-\derive{a}{b} = 0 if a \neq b\qquad
-\derive {a}{(A + B)} = \derive{a}{A} +  \derive{a}{B}\qquad
-\\\\
-\derive {a}{(A \times B)} = \derive{a}{A} \times B +  \derive{a}{B} ~if \mynu{A} \qquad
-\derive {a}{(A \times B)} = \derive{a}{A} \times B ~if not \nu{A} \qquad
-\derive {a}{(A^*)} = \derive{a}{A} \times A^*
-\end{array}
-\end{displaymath}
-\end{definition}j
-\begin{definition}[Parameterized coinduction]
-  fill out....
+Informally, $\flatten{}$ unparses a term $t$ into a string by listing its characters in the order they occur in $t$. 
+While finding a derivation of $s \in A$ corresponds to \emph{parsing}, the result of which is a term $t$ of the same $A$, but read as a type,
+flattening corresponds to unparsing the term to the parsed string $s$ again.  
+
+\begin{proposition} 
+$\vdash s \in A$ if and only if there exists a term $t$ such that $\vdash \oft{t}{A}$ and $\flatten{t} = s$.
+\end{proposition}
+This expresses that the matching of a string to regular expression $A$ is witnessed by a(ny) term $t$ of type $A$ that flattens to $s$.
+
+Regular expressions interpreted as types provide a convenient theoretical and practical conceptual framework, for studying the intensional structure of regular expressions beyond their common extensional interpretation as sets of strings.  For example,
+
+\begin{definition}[Ambiguity] 
+A regular expression $A$ is \emph{ambiguous} if there exist $t, t': A$ such that $t \neq t'$ and $\flatten{t} = \flatten{t'}$.  
 \end{definition}
-% \section{Axiomatizations:  Prior ones and a new one}
-% The first axiomatization of equivalence was given by Salomaa [cite]. We shall do as Brandt and Henglein, refering jointly to the laws of semiring, equality and the unfold rule $A^* = 1 + A \times A^*$ as \textit{weak equivalence}. Salomaa provec soundness and completeness of the system $F_1$ which consists of the rules of weak equivalence with the rules in Figure (\ref{fig:salomaa}).
-% \begin{definition}[Laws of idempotent semi-ring]
-% \label{definition:ring}
-% \begin{displaymath}
-% \begin{array}{lll}
-% \myaxiom{A + B + C}{A + (B + C)} \qquad  
-% \myaxiom{A + B}{B + A} \qquad 
-% \myaxiom{A + 0}{A} \qquad
-% \myaxiom{A + A}{A} \qquad
-% \\\\
-% \myaxiom{A \times B \times C}{A \times (B \times C)} \qquad
-% \myaxiom{1 \times A}{A} \qquad
-% \myaxiom{A \times 1}{A} \qquad 
-% \myaxiom{0 \times A}{0} \qquad
-% \\\\
-% \myaxiom{A \times 0}{0} \qquad
-% \myaxiom{A \times (B + C)} {A \times B + A \times C} \qquad
-% \myaxiom{(A + B)\times C}{A \times C + B \times C}
-% \end{array}
-% \end{displaymath}
-% \end{definition}
+Note that the same regular language can be denoted by both ambiguous and unambiguous regular expressions.
 
-% \begin{definition}[Laws of equality]
-% \label{definition:equality}
-% \begin{displaymath}
-% \begin{array}{lll}
-% \infer{A = A}{}\qquad
-% \infer{A = B}{B = A}\qquad
-% \infer{A = C}{A = B & B = C}
-% \end{array}
-% \end{displaymath}
-% \end{definition}
-% \begin{figure}
-% \caption{Rules of Salomaa}
-% \label{fig:salomaa}
-% \begin{displaymath}
-% \infer[A_{11}]{\eqBodyE{A^*}{B^*}}
-%   {\eqBodyE{A}{B}} \qquad
-% \myaxiomN{(1 + A)^*}{A^*} \qquad \infer[\mynu{F}=\false]{\eqBodyE{E}{F^* \times G}}{\eqBodyE{E}{F \times E + G}}
-% \end{displaymath}
-% \end{figure}
-% Salomaa proved that from the rules of weak equivalence with the unfold-rule and $A_{11}$, one can derive the decmosition:
-% \begin{lemma} \label{lem:salomaa}
-% \[A = \mynu{A} + \Sigma_{a \in \Sigma} \derive{a}{A}\]
-% \end{lemma}
-% We will return to this decomposition again later.
+\subsection{Coercions}
 
+Recall regular expressions interpreted as types whose elements represent parse trees of strings that can be flattened (unparsed) to their underlying strings again.  
 
-
-
-% \subsection{Why axiomatizations matter}
-% \mycomment{Mention regular expressions as types}
-% Regular expressions denote an important class of automata deserving of its study on equivalences and containments. From an automata theoretic view, axiomatizations improve our understanding on the properties of finite state automaton. The shape of the proof within an axiomatization is of no importance, one only cares about soundness and completeness. Brand and Henglein showed why it is worth to consider not only \textit{what} an axiomatization lets you prove, but also \textit{how} the proof rule lets build your derivation. To see the benefit of taking a proof-relevant approach to regular expression axiomatizations we start by presenting the problem we investigate in this paper.
-% [Example of simple coercion]
-% [Explain why parse trees is equal to proof-relevance]
-% [Hint at comleteteness here]
-% [Containment is more essential than equivalence because it is more than bijection] 
-% \begin{center}
-% \textit{Given regular expressions $A$ and $B$ and language inclusion $A \subseteq  B$, how does one define a procedure that outputs an effecient function mapping parse trees of $A$ to parse trees of $B$}.\\
-% \end{center}
-% Such a function, $f : A \rightarrow B$, must exist, otherwise the language inclusion would not hold. This is especially the case in the dependent type theory of Coq which follows Curry-Howard proof as programs philosophy. Let us consider a definition of language containment in Coq:
-% \begin{minted}{Coq}
-% Definition Contains A B := forall s, Match s A -> Match s B
-% \end{minted}
-% \textsf{Contains} is a map on \textsf{Match} derivations, which are essentially parse trees. 
-% They are defined as 
-% \begin{minted}{Coq}
-% Inductive Match : trace -> regex -> Prop :=
-%   | MEps : Match [::]  Eps
-%   | MEvent x : Match [::x] (Event x)
-%   | MSeq s1 c1 s2 c2 : Match s1 c1 ->  Match s2 c2 -> Match (s1 ++ s2) (c1 _;_ c2)
-%   | MPlusL s1 c1 c2:  Match s1 c1 -> Match s1 (c1 _+_ c2)
-%   | MPlusR c1 s2 c2:  Match s2 c2 ->  Match s2 (c1 _+_ c2)
-%   | MStar0 c  : Match [::] (Star c)
-%   | MStarSeq c s1 s2:  Match s1 c -> Match s2 (Star c) -> Match (s1 ++ s2) (Star c).
-% \end{minted}
-% The definition of parse trees is
-% \begin{minted}{Coq}
-% Inductive pTree : @regex A -> Type := 
-% | p_tt : pTree Eps 
-% | p_singl a : pTree (Event a)
-% | p_inl r0 r1 : pTree r0 -> pTree (r0 _+_ r1) 
-% | p_inr r0 r1 : pTree r1 -> pTree (r0 _+_ r1) 
-% | p_pair r0 r1 : pTree r0 -> pTree r1 -> pTree (r0 _;_ r1)
-% | p_fold r : pTree (Eps _+_ (r _;_ (Star r))) -> pTree (Star r).
-% \end{minted}
-% One crucial difference between the two is \textsf{Match} derivations live in \prop, making the shape of the derivation inaccesible for case distinction during computatioin in \myset \footnote{To be precise pTree lives in Type because it is parameterized by A which lives in Type. This is due to parameterizing the entire development over the ssreflect finite type which lives in Type }. Though we can not use \textsf{Contains} directly in constructing $f : A \rightarrow B$, knowing that the containment \textsf{Contains A B} holds, can be used as a termination argument for proof search. A mapping $f : A \rightarrow B$ can be obtained by lifting a parse tree \textsf{t} of regular expression $A$, \textsf{t : pTree A}, to a Match derivation \textsf{Match (flatten t) A}, where \textsf{flatten} returns the underlying string of the parse tree. Translating to a match derivation takes linear time in the size of the parse tree. From here we can apply the \textsf{Contains A B} assumption as a function returning \textsf{Match (flatten t) B}, from which me must construct a \textsf{t' : pTree B}, preserving the underlying string, that is,\textsf{flatten t' = flatten t}. Building \textsf{t' : pTree B} is where need proof search. With \textsf{Match (flatten t) B} living in Prop, we may not case distinct on the derivation to learn the shape \textsf{t'} should take. But the presence of \textsf{Match (flatten t) B} means that there exists a natural number $n$, such that the set of parse trees of at most $n$ constructor applications, will contain our desired parse tree. We show this in file \textsf{Constructive.v}, following the technique of the Constructive Epsilon Coq libarary [cite].\\
-% Now with a procedure in hand to transform a language containment \textsf{Contains A B} into a map on parse trees \textsf{f : pTree A -> pTree B} all we need is a decision procedure for language containment, which there exists several of in the litteratue[cite]. We now have a way to synthesize mapping on parse trees (which we from now on will call coercions)
-.
 \begin{definition}[Coercion]
-A function $f :\type{E} \rightarrow \type{F}$ is a coercion iff $\forall \mathsf{t}. \flatten{f~\mathsf{t}} = \flatten{\mathsf{t}}$.\\
+A function $f :\type{A} \rightarrow \type{B}$ is a \emph{coercion} if $\flatten{f(t)} = \flatten{t}$ for all $t \in \type{A}$.
+We write $f : A \leq B$ if $f$ is a coercion.
 \end{definition}
- % This is of course too slow to be of any real use and only serves to show why we might wish to limit the function space of coercions to include only linear time programs that process the underlying string of the parse tree in a streaming fashion rather than brute forcing the problem. How should the function space be constrained? The coercion is not allowed to alter the underlying string (soundness). What ever constructs we do decide on must let us build any mapping that can be proved with \textsf{Contains} (completeness). As we shall see in a moment, Brandt and Henglein found that axiomatizing regular expression containment, is the same as defining the primitives and combinators of a set of rules for building coercions.
-%Characterising (in)-equalties of regular expressions by a set of compositional rules is what we mean by an axiomatization. Many such axiomatizations exist. Brandt and Henglein presents an axiomatization of containment: $\Gamma \vdash A \leq B$, which is related to equivalence since $A = B \iff A \subseteq B \land B \subseteq A$. They take a proof-relevant view of containment proofs, defining the judgment $\Gamma \vdash c : A \leq B$, where $c$ is an inductive term that records the shape of the contaiment proof. This proof-relevant view allows an interpretation to be given to $c$ as $[c]$ that yields a functional program mapping parse trees of $A$ to parse trees of $B$. Proving the existance of such interpretation function $[\cdot]$ corresponds to a soundness proof the containment axiomatization. On the other hand, completeness means the language containment $A \subseteq B$ implies the existence of a derivation $\vdash c : A \leq  B$, that is, we must be able to synthesize $c$ from a language containment.
-\section{A permissive coercion language}
+In other words, a function is a coercion if it transforms any parse tree $t$ of a string under regular expression $A$ into a parse tree under regular expression $B$ for the same string.  Note that coercions must be total, that is defined on each input term, but nothing is said in the definition about how efficient a coercion must be -- or that it even be computable.  
+
+We usually use $c$ and variants as metavariables for coercions.
+
+Coercions are witnesses of language containment:
+\begin{proposition}
+$\lang{A} \subseteq \lang{B}$ if and only if there exists a coercion $c : A \leq B$.
+\end{proposition}
+It is worth contemplating why this is true.
+\begin{proof}
+Assume $\lang{A} \subseteq \lang{B}$, that is $A$ is contained in $B$.  A coercion $c$ can be constructed canonically as follows.
+Given a term $t \in \type{A}$, flatten it to a string, then parse the string under regular expression $B$.  One might be tempted to construct an automaton from $B$ and then run the automaton on the string, which is guaranteed to succeed by the assumption.  But that does not yield a parse tree.  Generating a full parse tree, and doing so efficiently, is possible, but a much harder task \cite{frca2004,ghrst2016}.  
+
+Conversely, assume a coercion $c : A \leq B$ exists. Let $s \in \lang{A}$.  
+Then there exists $t \in \type{A}$ such that $\flatten{t} = s$.  
+We now have that $c(t) \in \type{B}$ and thus $\flatten{c(t)} \in \lang{B}$.  
+Since coercions preserve strings, we can conclude that 
+$\flatten{c(t)} = \flatten{t} = s \in \lang{B}$, which proves the containment.
+\end{proof}
+
+As previously observed \cite{ghrst2016} this is a useful technique for proving language containments.
+\begin{example}
+\label{C11-example}
+Consider the following regular expression equivalence \cite[Rule C11, p.~25]{conway71}:
+$$(A + B)^* \equiv (A^* \times B)^* \times A^*.$$
+We can prove it by constructing functions $c : (A + B)^* \leq (A* \times B)^* \times A^*$ and $d : (A* \times B)^* \times A^* \leq (A + B)^*$
+and checking that these are coercions.
+\begin{verbatim}
+c []        = ([], [])
+c (x :: xs) = 
+	let (l, r) = c xs
+	in case (x, l) of
+	     (inl a, []) -> ([], a :: r)
+	   | (inl a, (as, b) :: l') -> (((a :: as, b) :: l'), r)
+	   | (inr b, l) -> (([], b) :: l, r)
+\end{verbatim}
+Similarly for $d$.  In this case, the pair $c, d$ forms an isomorphism, that is $c \circ d = \id$ and $d \circ c = \id$.  In general, equivalent regular expressions are \emph{not} isomorphic, however. For example, we have $A \equiv A + A$; that is $A$ and $A + A$ denote the same language, but they are not isomorphic as types. Conversely, this equivalence is the only axiomatic regular expression equivalence without an isomorphic interpretation. 
+\end{example}
+Note that the coercion $c$ in the example above transforms a parse tree for $(A + B)^*$ directly to a parse tree for $(A^* \times B)^* \times A^*$, without the detour of unparsing and then parsing again. Intuitively, it reuses the parsing effort that has gone into parsing under $A$ to directly contstruct a parse tree for $B$.
+
+But how can we synthesize such a function automatically, given only input and output type, and how can we be sure that it is a coercion? 
+
+\section{Containment axiomatizations and their operational interpretation}
+
+Recall that coercions are string preserving functions between the type interpretations of regular expressions, which in turn represent the parse trees of strings under the regular expression.  
+
+It turns out that regular expressions, interpreted as types, form a category with products and coproducts where the coercions as the morphisms.  
+This naturally leads to the idea of building a categorical domain-specific language (DSL) of coercions and seeding it with enough primitive coercions  such that there exists at least one coercion $c : A \leq B$ for every language containment $\lang{A} \subseteq \lang{B}$.
+
+One way of getting there is equipping axiomatizations of regular expression containment via a Curry-Howard-style functional interpretation, where the proof terms constitute the sought-after DSL for coercions.
+
+\subsection{Weak containment}
+
+Axiomatizations for regular expressions are classically formulated for their language interpretation, with no little concern for their operational interpretation. The point of a proof is to ascertain whether or not a language containment or equivalence holds.  If it holds there is no expectation that the proof yields more information. Furthermore, axiomatizations are classically formulated for equivalence since this provides an algebraic framework where equivalent expressions denote the ``same'' mathematical object, with containment as a defined equational notion: $A \leq B \Leftrightarrow A + B \equiv B$.  This yields a strictly extensional interpretation, though: Two regular expressions are completely interchangeable if they satisfy the same membership tests.  This is \emph{a priori} anathema to a computational interpretation of regular expressions as parsing the input into a particular type for further processing.  In particular, interconverting distinct types that are equivalent as regular expressions are \emph{not} no-ops; this needs to be implemented and executed, and it better be efficient. 
+
+In this setting, the operational interpretation of an equivalence consists of two coercions, one for each containment, with no additional requirement to relate to each other.  For this reason, we treat containment as the primitive notion, and equivalence as a derived one:
+$A \equiv B$ if and only if $A \leq B \wedge B \leq A$.  
+
+Despite the seeming irreverence for computational interpretation of equivalence or containment proofs, it has been observed \cite{heni2011} that all outstanding complete \cite{salomaa66,kozen94,boffa1995,grabmayer2005} and (intentionally) incomplete \cite{conway71,pratt90,bcg2007} axiomatizations can be factored into two parts, a common core consisting of \emph{weak containment} and various extensions.
+Which in turn have natural operational interpretations as coercions.  See Figure~ref{fig:HN} for weak containment.  
+
+We observe that weak containment gives only rise to constant-time coercions.
+
+\begin{proposition}
+Let $\vdash c : A \leq B$ be a coercion  derivable by weak containment (Figure~\ref{fig:HN}).
+Then $c$ executes in time $O(1)$; that is, the execution time of $c$ is independent of the size of its input.
+\end{proposition}
+We presuppose a boxed representation for the elements of types. All primitive coercions are parametric polymorphic and can be implemented as constant-time operations.  Furthermore, each composition of coercions adds only constant time.
+
+From this observation alone it is intuitively clear that weak containment is incomplete. For example, implementing the coercion $c$ of 
+Example~\ref{C11-example} requires inspecting each leaf of the input parse tree.  Since input parse trees are of unbounded size, no constant-time function can do this.  Without lists all types are finite, and weak axiomatization is complete. It is thus clear that, for completeness, we need more coercions on lists than what weak containment provides.
+
+\begin{figure}
+\label{fig:HN}
+\begin{displaymath}
+\begin{array}{lll}
+\myaxiomC{shuffle}{(A + B) + C}{A + (B + C)} \qquad  
+\myaxiomC{retag}{A + B}{B + A} \qquad 
+\myaxiomC{untagL}{0 + A}{A} 
+\\\\
+\containsG{untag}{A + A}{A}   \qquad \containsG{tagL}{A}{A + B} \qquad
+
+\myaxiomC{assoc}{(A \times B) \times C}{A \times (B \times C)}
+\\\\
+\myaxiomC{swap}{A \times 1}{A} \qquad
+\myaxiomC{proj}{1 \times A}{A} \qquad
+\myaxiomC{abortR}{A \times 0}{0} \qquad
+\myaxiomC{abortL}{0 \times A}{0} 
+\\\\
+\myaxiomC{distL}{A \times (B + C)} {A \times B + A \times C} \qquad
+\myaxiomC{distR}{(A + B)\times C}{A \times C + B \times C} 
+\\\\
+\myaxiomC{wrap}{1 + A \times A^*}{A^* } \qquad \myaxiomC{id}{A}{A}
+\\\\
+\infer{\containsG{c;d}{A}{C}}{\containsG{c}{A}{B} & \containsG{d}{B}{C}} \qquad
+
+\infer{\containsG{c + d}{A + B}{ C + D}}{\containsG{c}{A}{C} & \containsG{d}{B}{D}}  \qquad
+
+\infer{\containsG{c \times d}{A \times B}{ C \times D}}{\containsG{c}{A}{C} & \containsG{d}{B}{D}} 
+%\\\\
+%\infer[P(\contains{\Gamma}{\fix~ \mathsf{f.c}}{A}{B})]{ \containsG{\fix~\mathsf{f.c}}{A}{B}}{\contains{\Gamma,f : A \leq B}{c}{A}{B}} \qquad
+% \infer{\contains{\Gamma ,f : A \leq B, \Gamma'}{ f}{A}{B}}{}
+\end{array}
+\end{displaymath}
+\caption{Weak containment with coercion interpretation \cite{heni2011}.  An equality 
+$\myaxiomC{c}{A}{B}$ denotes a pair of containments $\containsG{c}{A}{B}$ and $\containsG{c^{-1}}{B}{A}$ where $c, c^{-1}$ constitute an isomorphism.  The coercion terms are interpreted as functions in combinatory (point-free) notation; e.g.~$(c ; d)(t) = d(c(t))$
+and $(c \times d)(t, u) = (c(t), d(u))$.}
+\end{figure}
+
+\subsection{Extensions} 
+
+\subsubsection{Henglein-Nielsen}
+
+\subsubsection{Salomaa}
+
+\subsubsection{Kozen}
+
+\subsubsection{Grabmeyer}
+
+
+
 Henglein and Nielsen present a derivation system for building a coercion $\dslcom{c}$ with the judgment $\containsG{c}{A}{B}$. The judgment is parameterized by a side condition $P$. 
 This is used in the rule for $\fix~\dslcom{f. c}$ to ensure termination by checking that $P(\contains{\Gamma}{\fix~ \mathsf{f.c}}{A}{B})$ holds. This is necessary because unrestricted fixpoint definitions allows non-terminating coercions like $\fix~ \mathsf{f}.\dslcom{f}$ and it is unsound for these coercions to be derivable because they do not interpret to total functions. 
 
-The rules for $\containsG{c}{A}{B}$ can be seen in Figure (\ref{fig:HN}) where we write $\Gamma \vdash_P \mathsf{c}: {A} = {B}$ for simultanously defining the two rules  $\containsG{c}{A}{B}$ and  $\containsG{c^{-1}}{A}{B}$. We omit the subscript $\vdash_P$ for axiom rules. 
+The rules for $\containsG{c}{A}{B}$ can be seen in Figure (\ref{fig:HN}) where we write $\Gamma \vdash_P \mathsf{c}: {A} = {B}$ for simultanously defining the two rules  $\containsG{c}{A}{B}$ and  $\containsG{c^{-1}}{A}{B}$. We omit the subscript $\vdash_P$ for axioms. 
 
 The most permissive side condition that ensures termination is hereditary totality:
 \begin{definition}[Hereditary totality]
@@ -317,39 +371,7 @@ Which is terminating because of structural recursion. To use this termination ar
 % and is reminicset of Coq's fixpoint \textsf{fix} which must be defined by structural recursion.
 %A syntactic side condition reflects the derivation shape of an axiomatization. 
 %Multiple side conditions are defined to prove completeness  they each are suffecient for proving completeness of 
-\begin{figure}\label{fig:HN}
-\caption{Coercion system of Henglein and Nielsen}
-\begin{displaymath}
-\begin{array}{lll}
-\myaxiomC{shuffle}{A + B + C}{A + (B + C)} \qquad  
-\myaxiomC{retag}{A + B}{B + A} \qquad 
-\myaxiomC{untagL}{0 + A}{A} 
-\\\\
-\myaxiomC{untag}{A + A}{A}   \qquad \myaxiomC{tagL}{A}{A + B} \qquad
 
-\myaxiomC{assoc}{A \times B \times C}{A \times (B \times C)}
-\\\\
-\myaxiomC{swap}{A \times 1}{A} \qquad
-\myaxiomC{proj}{1 \times A}{A} \qquad
-\myaxiomC{abortR}{A \times 0}{0} \qquad
-\myaxiomC{abortL}{0 \times A}{0} 
-\\\\
-\myaxiomC{distL}{A \times (B + C)} {A \times B + A \times C} \qquad
-\myaxiomC{distR}{(A + B)\times C}{A \times C + B \times C} 
-\\\\
-\myaxiomC{wrap}{1 + A \times A^*}{A^* } \qquad \myaxiomC{id}{A}{A}
-\\\\
-\infer{\containsG{c;d}{A}{C}}{\containsG{c}{A}{B} & \containsG{d}{B}{C}} \qquad
-
-\infer{\containsG{c + d}{A + B}{ C + D}}{\containsG{c}{A}{C} & \containsG{d}{B}{D}}  \qquad
-
-\infer{\containsG{c \times d}{A \times B}{ C \times D}}{\containsG{c}{A}{C} & \containsG{d}{B}{D}} 
-\\\\
-\infer[P(\contains{\Gamma}{\fix~ \mathsf{f.c}}{A}{B})]{ \containsG{\fix~\mathsf{f.c}}{A}{B}}{\contains{\Gamma,f : A \leq B}{c}{A}{B}} \qquad
- \infer{\contains{\Gamma ,f : A \leq B, \Gamma'}{ f}{A}{B}}{}
-\end{array}
-\end{displaymath}
-\end{figure}
 %The syntactic side conditions all prevent deriving ill-fixpoints like $\contains{}{\fix ~ f.f}{A}{B}$. Multiple side conditions are defined to capture the derivation shape in different axtiomatizations. As an example, the first axiomatization of regular expression equivalence was Salomaa's $F_1$ where he included the rule
 % \[\infer{A^* = B^*}{A = B}\]
 % To derive such a rule, the $S_3$ conditions is suffecient.
@@ -388,7 +410,7 @@ Which is terminating because of structural recursion. To use this termination ar
 %  \myaxiomN{(1 + A)^*}{A^*} \qquad \infer[\mynu{F}=\false]{\eqBodyE{E}{F^* \times G}}{\eqBodyE{E}{F \times E + G}} \]
 % The first two rules are derivable with $S_3$ and the last by $S_1$, thus all Salomaa proofs can be coded as coercions using $S_4 = S_1 \lor S_3$.
 % % in order to understand the computational interpretation of the proofs. Henglein and Nielsen compare Salooma, Kozen and Grabmeyer, showing that using one side condition, $S_4$, they can code the proofs of Salooma and Grabmeyer, and with another side condition $S_2$ they can code Kozen.
-%  As all the axiomatizations are sound and complete, we only care which proof rules that admit proofs that interpret to effecient programs. The proof rules translates to the primitives of our coercion language, and the wrong choice leads to slow coercions
+%  As all the axiomatizations are sound and complete, we only care which proof rules that admit proofs that interpret to efficient programs. The proof rules translates to the primitives of our coercion language, and the wrong choice leads to slow coercions
 
 \begin{example}[Kozen]
 Along with the rules of weak equivalence, and the unfold rule: $1 + (E^* \times E) \leq E$ Kozen axiomatizes containment with the rules
@@ -434,7 +456,7 @@ The computational ineffeciency of these rules can be observed by deriving the de
 % \begin{align}
 % \contains{}{\dslcom{foldright}(\dslcom{foldleft}(\dslcom{retag};\dslcom{tagL};\dslcom{wrap}))}{a^* \times (a^*)^*}{a^*}
 % \end{align}
-We have created a nested loop, morever the rules presented are the only ways of manipulating kleene star so it appears that the most effecient derivaiton of denesting has a quadratic runtime.
+We have created a nested loop, morever the rules presented are the only ways of manipulating kleene star so it appears that the most efficient derivaiton of denesting has a quadratic runtime.
 \end{example}
 \begin{example}[Grabmeyer]
 %Brozowski showed that modulus rules of associativity, commutativity and transitivity, a regular expression has a finite set of unique derivatives. 
@@ -494,7 +516,7 @@ let res :=
                   end 
 in recomp res
 \end{minted}
-This yields a linear runtime assuming effecient implementations of $\mathsf{decomp}$ and $\mathsf{recomp}$.
+This yields a linear runtime assuming efficient implementations of $\mathsf{decomp}$ and $\mathsf{recomp}$.
 % This is syntactically checked by $S_1$. And important details is that this side condition is satisfied because $\myo{\Sigma_{a \in \Sigma} \derive{a}{A}} = 0$.
 \end{example}
 
@@ -534,7 +556,7 @@ This yields a linear runtime assuming effecient implementations of $\mathsf{deco
 % %             end 
 % % in recompose res1
 % % \end{minted}
-% \begin{example}[Effecient Denesting]
+% \begin{example}[efficient Denesting]
 % We prove denesting $a^* \times (a^*)^* \leq a^*$ in Grabmeyer's axiomatization and consider the computational interpretation. To keep terms of managable size we set $\Sigma = \{a\}$ 
 
 % Assume $\dslcom{f}: a^* \times \dstar a \leq a^*$. Then we prove the containment as:
@@ -560,16 +582,18 @@ This yields a linear runtime assuming effecient implementations of $\mathsf{deco
 %                   end 
 % in recompose res
 % \end{minted}
-% This terminates because the recursive call is applied to a parse tree of a shorter string and yields an effecient program assuming effecient implementations of $\mathsf{decomp}$ and $\mathsf{recomp}$.
+% This terminates because the recursive call is applied to a parse tree of a shorter string and yields an efficient program assuming efficient implementations of $\mathsf{decomp}$ and $\mathsf{recomp}$.
 % % This is syntactically checked by $S_1$. And important details is that this side condition is satisfied because $\myo{\Sigma_{a \in \Sigma} \derive{a}{A}} = 0$.
 % \end{example}
-\section{Decomposition, effeciency and polymorphism}
-In this section we define quick and slow decomposition coercions. We show that the coercion system presented so far allows effecient implementation of decomposition for a \textit{concrete} regular expression $A$. This is in contract to a generic decomposition that in one go, defines effecient decomposition for all regular expressions. Intuitively this would be a polymorphic coercion $\contains{}{c}{\forall X. X}{\myo{o} + \decomp{X}}$, but since we do not have a $\forall$- introduction rule this is not derivable in the system and only serves as an intuition for what we mean by a generic decomposition. Recomposition is analogous and is therefore not mention in this section.
+
+\section{Decomposition, efficiency and polymorphism}
+
+In this section we define quick and slow decomposition coercions. We show that the coercion system presented so far allows efficient implementation of decomposition for a \textit{concrete} regular expression $A$. This is in contrast to a generic decomposition that in one go, defines efficient decomposition for all regular expressions. Intuitively this would be a polymorphic coercion $\contains{}{c}{\forall X. X}{\myo{o} + \decomp{X}}$, but since we do not have a $\forall$- introduction rule this is not derivable in the system and only serves as an intuition for what we mean by a generic decomposition. Recomposition is analogous and is therefore not mentioned in this section.
 %Assuming constant time execution of \textsf{decompose} and \textsf{recompose}, this code executes in linear time, applying the recursive call to the parse tree corresponding to the tail of the underlying string. Assuming constant time execution of \textsf{decompose} and \textsf{recompose} is however too strong because decomposition intuitvely traverses the parse \textsf{fold (inr ((fold (inr (a,t)))))} tree to expose the event \textsf{a}.
 \subsection{Defining Effeciency}
 We express the runtime of a coercion $\contains{}{c}{A}{B}$ applied to a parse tree $\mathsf{t} : \type{A}$ as a function of the string length of $\mathsf{t}$, denoted by $\flatten{\mathsf{t}}$. We postpone the definition of interpretation, $\interp{\contains{}{c}{A}{B}} : \type{A} \rightarrow \type{B}$ to Section \ref{sec:soundinterp} and for now suffice with the intuitive interpretation of coercions as functional programs.
 
-Regular expressions are ambigous as a grammer and two parse trees of the same regular expression, $\mathsf{t} : a^*$, $\mathsf{t'} : a^*$, of the same string, $\flatten{t}=\flatten{t'}$ can differ arbitarily much in the size of the parse trees by repeatedly putting  $() : 1$ in the leaves of the tree. We say a compact parse tree $\mathsf{t} : A$, is the smallest parse tree of string $\flatten{t}$, implying that the parse tree size will differ from the string length by a constant factor. An effecient coercion, executes in time linear with respect to the size of a compact parse tree.
+Regular expressions are ambigous as a grammer and two parse trees of the same regular expression, $\mathsf{t} : a^*$, $\mathsf{t'} : a^*$, of the same string, $\flatten{t}=\flatten{t'}$ can differ arbitarily much in the size of the parse trees by repeatedly putting  $() : 1$ in the leaves of the tree. We say a compact parse tree $\mathsf{t} : A$, is the smallest parse tree of string $\flatten{t}$, implying that the parse tree size will differ from the string length by a constant factor. An efficient coercion, executes in time linear with respect to the size of a compact parse tree.
 To allow such a runtime, decomposition should be a constant time operation on compact parse trees. If the tree is sparse, the runtime should be linear the length of the path that is a depth-first-search of the parse tree for the first non $(): 1$ leaf.
 \subsection{Polymorphic but slow}
 Salomaa implicitly defined the polymorphic decomposition $\contains{}{c}{\forall X. X}{\myo{o} + \decomp{X}}$ and recomposition $\contains{}{c}{\forall X.\myo{o} + \decomp{X}}{X}$ when he proved $A = \myo{A} + \decomp{A}$ for his system $F_1$ by structural induction on $A$ \mycomment{is that the right name of system?}. Computationally this corresponds to definition by mutual structural recursion, with the direction the induction hypothesis is used to indicate a call to $\mathsf{decomp}$ or $\mathsf{recomp}$. The ineffeciency of the definition is is caused by the $A^*$ case of the proof, when  $A^*$ is a \textit{problematic} regular expression, ie. if $\mynu{A} = \textsf{true}$. In this case of the proof, one has inductiion hypotheses $A \leq 1 + \Sigma_{a \in \Sigma} \derive{a}{A}$ and  $1 + \Sigma_{a \in \Sigma} \derive{a}{A} \leq A$ and must show $A^* \leq 1  + \Sigma_{a \in \Sigma} ((\derive{a}{A})\times A)^*$ and  $1  + \Sigma_{a \in \Sigma} ((\derive{a}{A})\times A)^* \leq A^*$. A sketch of the proof for the first containment is
@@ -584,10 +608,10 @@ A^* &= ( \Sigma_{a \in \Sigma} \derive{a}{A})^* &&\text{by star context with dec
 %One turns the problematic regular expression $A^*$ into an unproblematic one $B^*$ by using drop and after a few more steps getting the shap $1 + B \times A^*$ where $\mynu{B} = \false$. 
 Thinking of $A^*$ as a list, this proof decomposes each element of the list, extracts the head, then recomposes the tail. Moreover, we used the induction hypothesis (recursive call) in both directions to achieve this. This yields an factorial time algorithm 
 \subsection{Fast but monomorphic}
-We now show how to derive an effecient decomposition for $a^* \times (a^*)^*$ with $\Sigma = \{a\}$. The return type is
+We now show how to derive an efficient decomposition for $a^* \times (a^*)^*$ with $\Sigma = \{a\}$. The return type is
 \[1 + a \times ((1 \times a^*) \times (\dstar a) +  a \times ((1 \times a^*) \times (\dstar a) )\]
-%To be precise, given that a parse tree has leaves \textsf{tt} and \textsf{Event a}, fast decomposition (and recomposition) has a recursion pattern that is a depth-first traversal of the parse tree that halt at the occurence of the first \textsf{Event a} leaf. For example, in the parse tree \textsf{fold (inr ((fold (inr (a,t)))))}, the recursive shall should not be applied to the subterm \textsf{t} in \textsf{(a,t)}. It is important to emphasize that we only are interested in effecient decomposition/recomposition \mycomment{any aspects of recomposition that might differ from decomposition? Yes I think recomposition does not need fixpoints, which could be mentioned, also check code}, since this might be performed multiple times in a Grabmeyer-style coercion derivation. Salomaa proved that $A = \decomp{A}$ and by completeness of the HN system, there must exist decomposition and recomposition coercions, but they are very slow. They take exponential time to compute. In the rest of this section we focus mostly on decomposition as recomposition is analogous.\\\\
-%Haven emphasized the importance of effecient decomposition we now show an effecient decomposition of $a^*\times \dstar a$ into $\leq 1 + a \times (((1 \times a^*) \times \dstar a) + (1 \times a^*) \times \dstar a)$ derivable in HN: Given the input type $a^*\times \dstar a$, our input is parse tree $(t_1,t_2)$ and we should only inspect $t_2$ if the leaves of $t_1$ are all \textsf{tt}. 
+%To be precise, given that a parse tree has leaves \textsf{tt} and \textsf{Event a}, fast decomposition (and recomposition) has a recursion pattern that is a depth-first traversal of the parse tree that halt at the occurence of the first \textsf{Event a} leaf. For example, in the parse tree \textsf{fold (inr ((fold (inr (a,t)))))}, the recursive shall should not be applied to the subterm \textsf{t} in \textsf{(a,t)}. It is important to emphasize that we only are interested in efficient decomposition/recomposition \mycomment{any aspects of recomposition that might differ from decomposition? Yes I think recomposition does not need fixpoints, which could be mentioned, also check code}, since this might be performed multiple times in a Grabmeyer-style coercion derivation. Salomaa proved that $A = \decomp{A}$ and by completeness of the HN system, there must exist decomposition and recomposition coercions, but they are very slow. They take exponential time to compute. In the rest of this section we focus mostly on decomposition as recomposition is analogous.\\\\
+%Haven emphasized the importance of efficient decomposition we now show an efficient decomposition of $a^*\times \dstar a$ into $\leq 1 + a \times (((1 \times a^*) \times \dstar a) + (1 \times a^*) \times \dstar a)$ derivable in HN: Given the input type $a^*\times \dstar a$, our input is parse tree $(t_1,t_2)$ and we should only inspect $t_2$ if the leaves of $t_1$ are all \textsf{tt}. 
 Intuitively a parse tree $\mathsf{t} : a^* \times (a^*)^*$ is a list $\mathsf{l} : \mathsf{list~a}$ paired with a nested list $\mathsf{ll} : \mathsf{list~(list~a)}$. We want to define a function that tries to find the first $\mathsf{a}$ in $(\mathsf{l},\mathsf{ll}) : \mathsf{list~a} \times \mathsf{list~(list~a)}$
 \begin{minted}{Haskell}
 decomp ([],[]) = inl ()
@@ -608,7 +632,7 @@ decomp (a::l',ll) = inr (a,(l',ll))
 %               end
 % end
 % \end{minted}
-The program is terminating because we only recurse on subterms of the input. It is effecient it stops at the first event leaf. We now derive the coercion assuming the hypohtesis $\dslcom{f} : \denesting \leq \myo{\denesting} + a \times \derive{a}{(\denesting)}$
+The program is terminating because we only recurse on subterms of the input. It is efficient it stops at the first event leaf. We now derive the coercion assuming the hypohtesis $\dslcom{f} : \denesting \leq \myo{\denesting} + a \times \derive{a}{(\denesting)}$
 % \begin{align*}
 % a^* \times \dstar{a} &\leq (1 + a \times a^*) \times \dstar{a}  &&\dslcominv{wrap}  \\
 %                      &\leq 1 \times \dstar{a} + (a \times a^* ) \times \dstar{a} &&\dslcom{distR}\\
@@ -665,7 +689,7 @@ This consists of the outer fixpoint $\fix f$ satisfying $S_1$ and a nested fixpo
 We believe that language containments can always be expressed as Grabmeyer coercions using $S_5$ but proving this is difficult due to the non-compositional nature of $S_2$. This side condition dictates that a recursive call may not happen after $\dslcominv{proj}$ which prevents a polymorphic decomposition by structural recursion on the regular expression.
 \end{remark}
 \subsection{Fast and polymoprhic}
-We would like an effecient and polymorphic decomposition but its natural definition is not admissible in the coercion system. To see why, assume, consider again the $A^*$ case with $\mynu{A} = \true$. We have induction hypothesis $\dslcom{IH} : A \leq 1 + \decomp A$ and add hypothesis $\dslcom{f} : A^* \leq 1 + (\decomp{A}) \times A^*$
+We would like an efficient and polymorphic decomposition but its natural definition is not admissible in the coercion system. To see why, assume, consider again the $A^*$ case with $\mynu{A} = \true$. We have induction hypothesis $\dslcom{IH} : A \leq 1 + \decomp A$ and add hypothesis $\dslcom{f} : A^* \leq 1 + (\decomp{A}) \times A^*$
 \begin{proof} (Sketch)
 \begin{align}
 A^* &\leq  1 + A \times A^* && \text{by unfold}\\
@@ -691,7 +715,7 @@ In the previous example, we satisfied $S_2$ by sequencing $\dslcominv{proj}$ aft
 \mycomment{They now need disjunct of Kozen and Grabmeyer measure}
 \mycomment{Kozen alone is not suffecient because decomposition uses projinv}
 \mycomment{If we instead werer to prove nesting (not denesting), would we need projinv before recursive call}
-\mycomment{Did we define recomposition effeciently in the code?}
+\mycomment{Did we define recomposition efficiently in the code?}
 \mycomment{Recomposition is not interesting because tagL can be used to make it work without recursion}
 \mycomment{Our approach leads to tailrecursive decomposition I think, which could be faster in a tail recursion optimizing language like ocaml}
 
@@ -700,7 +724,7 @@ In the previous example, we satisfied $S_2$ by sequencing $\dslcominv{proj}$ aft
 \mycomment{This subsection should change structure, we want to land at the introduction of peek rule. We get there from limitation of HN rules due to side conditions. Exemplified by example on paper. Relate to Salomaas proof of decomposition? A possible structure: Grabmeyer uses decomposition, HN show this leads to fast proofs, Salomaas decomposition, HN's decomposition, our decomposition with peek}
 \section{A restrictive coercion language}
 In this section we present a novel variant of the coercion system that: 1) Allows fast polymorphic decomposition; 2) restrict the variable rule for recursive call such that all derivable coercions become terminating without imposing a side condition on the fixpoint rule. This restriction has some advantages which explain.
-% The decomposition operation can be viweed as a polymorphic coercion $\contains{}{c}{\forall X. X}{\myo{o} + \decomp{X}}$. Since we do not have a $\forall$- introduction rule this is not derivable in the Henglein and Nielsen system, but it serves as an intuition for how we might define in one go, a effecient generic decomposition, for all regular expressions. In Coq this would look like:
+% The decomposition operation can be viweed as a polymorphic coercion $\contains{}{c}{\forall X. X}{\myo{o} + \decomp{X}}$. Since we do not have a $\forall$- introduction rule this is not derivable in the Henglein and Nielsen system, but it serves as an intuition for how we might define in one go, a efficient generic decomposition, for all regular expressions. In Coq this would look like:
 % \begin{minted}{Coq}
 % Fixpoint (A : regex) : A -> (o A) +  
 %                             \big[Plus/Empt]_(i <- l) ((Event i)_;_(i \ Event a) :=
@@ -710,7 +734,7 @@ In this section we present a novel variant of the coercion system that: 1) Allow
 % \end{minted}
 % In fact, 
 %HERE
-%  Henglein and Nielsen sketch an approach to build effecient coercions by following the shape of a Grabmeyer derivation. Assuming that $A \subseteq B$,
+%  Henglein and Nielsen sketch an approach to build efficient coercions by following the shape of a Grabmeyer derivation. Assuming that $A \subseteq B$,
 %  prove that they can code proofs consisting solely of COMP-fix with transitivity, context-rules and ACI. To do this they make use of the the animorov decomposition in building their coercions. The decomposition and its adaptation to containment can be seen in Figure \ref{fig:decomp}
 %  \begin{figure}
 %    \centering
@@ -724,7 +748,7 @@ In this section we present a novel variant of the coercion system that: 1) Allow
 %    \label{fig:decomp}
 %  \end{figure}
 % Salooma show this can derived using the rules of weak equivalence along with $(1 + A)^* = A^*$. Henglein and Nielsen prove that they can code Salomaas derivations; which implies they can derive coercions in (\ref{eq:derive1}, \ref{eq:derive2}). 
-% Their claim however that Grabmeyer style coercions, as seen in (\ref{eq:coerce}), are always effecient linear time programs, is unfortunately wrong. In particular, for the synthesis approach given by Henglein and Nielsen it is slower than Kozen. The reason for this is that the effeciency of Grabmeyes style coercions relies on implementing constant time decomposition $\contains{}{d}{A}{\mynu{A} + \Sigma_{a \in \Sigma} \derive{a}{A}}$ and re-composition $\contains{}{e}{\mynu{A} + \Sigma_{a \in \Sigma} \derive{a}{A}}{A}$.\\
+% Their claim however that Grabmeyer style coercions, as seen in (\ref{eq:coerce}), are always efficient linear time programs, is unfortunately wrong. In particular, for the synthesis approach given by Henglein and Nielsen it is slower than Kozen. The reason for this is that the effeciency of Grabmeyes style coercions relies on implementing constant time decomposition $\contains{}{d}{A}{\mynu{A} + \Sigma_{a \in \Sigma} \derive{a}{A}}$ and re-composition $\contains{}{e}{\mynu{A} + \Sigma_{a \in \Sigma} \derive{a}{A}}{A}$.\\
 \subsection{A new language construct}
 To solve the issue from the last section, rather than defining yet another side condition, we recognize that replacing $A$ with $(1 + \decomp A)$ caused the problematic reappearence of $A^*$ after distribution (\ref{align:problematic}). If we could replace $A$ with $(\decomp A)$, there would be no need for the fixpoint. The derivation would go like this:
 \begin{proof} (Sketch)
@@ -741,7 +765,7 @@ It seems likely that a variant of the Kozen measure could be defined that would 
 \end{remark}
 
 \subsection{Restricting the fixpoint}
-We have described an algorithm to synthesize effecient decomposition coercions using $\dslcom{peek}$. In particular, the decomposition makes no use of the general fixpoint. For now we however use this decomposition to build Grabmeyer coercions that however do make use of the general fixpoint rule
+We have described an algorithm to synthesize efficient decomposition coercions using $\dslcom{peek}$. In particular, the decomposition makes no use of the general fixpoint. For now we however use this decomposition to build Grabmeyer coercions that however do make use of the general fixpoint rule
 \[\infer{\containsP{}{\fix ~f.decomp_A;(id + \Sigma_{a \in \Sigma} id\times f_a); recomp_B}{A}{B}{S_1}}{\containsP{\dslcom{f} : A \leq B}{f_a}{\derive{a}{A}}{\derive{a}{B}}{S_1}, \forall a \in \Sigma} \]
 
 % \begin{minted}{Coq}
@@ -769,12 +793,12 @@ We have described an algorithm to synthesize effecient decomposition coercions u
 %\end{lemma}
 % \[
 % \contains{}{\fix ~f.d;(id + \Sigma_{a \in \Sigma} id\times f_a); e}{A}{B} \qquad \text{assuming }f_a : \derive{a}{A} \rightarrow \derive{a}{B}, \forall ~ a \in \Sigma \]
-In the work of Henglein and Nielsen it is beneficial to have a general fixpoint rule that can be instantiated with different side conditions, as it makes their proof space so large that they can derive all the rules in each of the three axiomatizations they study (Salomaa,Kozen,Grabmeyer). Their proof space thus contains fast linear-time coercion and slow exponential time-coercions. In this work however, our interests differ, we are interested in: 1) Effecient and simple synthesis of coercions; 2) The interpretation of these coercions must yield linear time programs.
+In the work of Henglein and Nielsen it is beneficial to have a general fixpoint rule that can be instantiated with different side conditions, as it makes their proof space so large that they can derive all the rules in each of the three axiomatizations they study (Salomaa,Kozen,Grabmeyer). Their proof space thus contains fast linear-time coercion and slow exponential time-coercions. In this work however, our interests differ, we are interested in: 1) efficient and simple synthesis of coercions; 2) The interpretation of these coercions must yield linear time programs.
 Regarding the second point, we saw that Grabmeyer coercions interpret to fast programs, so we will aim restricting recursion to only allow us such derivations. Let us investigate the recursion pattern in a Grabmeyer coercion:\\
 For regular expression $A$, after executing decomposition $\dslcom{d}$ we have 
  \[ \myo{A} + \decomp{A} \]
  The right summand is piped into $\Sigma_{a \in \Sigma} \dslcom{id}\times f_a$, where $\dslcom{id}$ will be applied to the parse tree $\mathsf{a} : a$ for each $a \in \Sigma$. Any recursive call to $\dslcom{f}$ in any of the continuations $\mathsf{f_a}$, will thus happen in the right component $\mathsf{t} : \derive{a}{A}$ of the pair $(\mathsf{a},\mathsf{t}) : a \times \derive{a}{A}$. 
-% The general fix rule is more general than we need it to be and for mechanisation purposes it is more convenient to restrict our syntax so that it does not contain exotic terms (those that do not satisfy the side condition in Henglein and Nielsens system).
+% The general fix rule is more general than we need it to be and for mechanization purposes it is more convenient to restrict our syntax so that it does not contain exotic terms (those that do not satisfy the side condition in Henglein and Nielsens system).
 This recursion pattern tells us that we may freely add our conclusion to our set of assumptions without any sideconditions:
 \[\infer{\contains{\Gamma}{\fix ~f.d}{A}{B}}{ \contains{\Gamma, \dslcom{f}: A \leq B}{d}{A}{B}}
 \]
@@ -876,7 +900,7 @@ So long that we let $(A,B) \in V$ check membership modulus ACI. To show complete
 \item Prove $A \sim B$ implies $\simulationb{\{\}}{A}{B}$, by finitiness of distinct derivatives modulus ACI
 \item Prove $\simulationb{\{\}}{A}{B}$ implies $\exists c.~\contains{}{c}{A}{B}$ by functional induction
 \end{enumerate}
-Doing (1.) in a proof assistant like Coq is challenging because the termination argument must be translated into a property that can be characterized by an inductive judgment, which we can structurally recurse on. The Bragga method [cite] explains in detail how one may separate the termination argument from the definition of a recursive function, by instead of reucrsing on the input $x$, recursing on an inductive proof about $x$, called $\mathbb{D}~x$. We take this approach and it is easier to define $\mathbb{D}~x$ if we move from standard brozowski derivatives to partial derivatives. Normally partial derivatives are defined by mapping a regular expression to a set of regular expression. In our mechanisation we use inductive lists instead of sets, and to keep the paper formalization as close as possible to the mechanisation, we will present partial derivatives exactly as they have been defined in the code.\\
+Doing (1.) in a proof assistant like Coq is challenging because the termination argument must be translated into a property that can be characterized by an inductive judgment, which we can structurally recurse on. The Bragga method [cite] explains in detail how one may separate the termination argument from the definition of a recursive function, by instead of reucrsing on the input $x$, recursing on an inductive proof about $x$, called $\mathbb{D}~x$. We take this approach and it is easier to define $\mathbb{D}~x$ if we move from standard brozowski derivatives to partial derivatives. Normally partial derivatives are defined by mapping a regular expression to a set of regular expression. In our mechanization we use inductive lists instead of sets, and to keep the paper formalization as close as possible to the mechanization, we will present partial derivatives exactly as they have been defined in the code.\\
 \begin{definition}[Partial derivatives]
   \begin{displaymath}
     \begin{array}{lll}
@@ -944,7 +968,7 @@ We can now state a main lemma:
 \begin{lemma}
 $A \subseteq B$ iff $\simulationb{nil}{[A]}{[B]}$
 \end{lemma}
-We proved this property to get a functional induction principle that will help us to prove completeness of the coercion system. As an intermediate result we however have a mechanised decidability of regular expression containment. In the mechanisation we define $\mathsf{bisimulationb}$ analogously to show that the method is the same for deciding regular expression equivalence. Many mechanisations of this result exists in the litterature, but we think this might be the shortest proof of regular expression equivalence in the litterature. It is shorter than [cite Matita], whose main contribution was the compactness of their proof. We believe our concicseness is achieved by defining partial derivatives using lists and computing a closure by extending the standard definition of $\pi(A)$ on a single regular expression to a list of regular expresions $\pi(\tilde{A})$.\\\\
+We proved this property to get a functional induction principle that will help us to prove completeness of the coercion system. As an intermediate result we however have a mechanized decidability of regular expression containment. In the mechanization we define $\mathsf{bisimulationb}$ analogously to show that the method is the same for deciding regular expression equivalence. Many mechanizations of this result exists in the literature, but we think this might be the shortest proof of regular expression equivalence in the literature. It is shorter than [cite Matita], whose main contribution was the compactness of their proof. We believe our concicseness is achieved by defining partial derivatives using lists and computing a closure by extending the standard definition of $\pi(A)$ on a single regular expression to a list of regular expresions $\pi(\tilde{A})$.\\\\
 Now with a functional indunction principle in hand we are ready to build the coercions. Since we are working with lists of regular expressions $\tilde{A}$, to avoid clutter we will write $\tilde{A}$ in a position where a regular expression is expected to mean $\mysum{A}{\tilde{A}}$ The main theorem of the completeness proof is:
 \begin{theorem}
 Assuming for all $\pder{E}{F} \in V$ that $\pder{E}{F} \in \Gamma$, then\\
@@ -1228,9 +1252,9 @@ Regular expression containment as a proof search problem Vladimir Komendantsky[M
 Also mention Marco and Carstens result-
 
 Greedy parse trees and preservatino of greediness by coercions. Proof relevance computational properties.\\
-white board and mechanisation leads to interesting results.
+white board and mechanization leads to interesting results.
 \\
-Though the set of derivatives quotiented by ACI is finite for any regular expression, in a proof assistant it can be easier to formulate such finiteness arguments constructively as the existence of an inductive list that contains all the derivatives. This can be done by considering the partial derivatives $\partial_a$ of regular expressions. Convenient finitness arguments have been well studied by others in the litterature to show termination for regular expression equivalence decision procedures. Doing this through partial derivatives was introduced by Almeida et al. \cite{AMR09} and in \cite{MPS12}, they mechanize in Coq the \textsf{equivP} procedure of Almeida et al. \mycomment{How does their termination argument work?}. There is also \cite{A12} who take a different approach, turning regular expression into point-automata, making it straigtforward to compute the enumeration of reachable derivatives. We combine their approaches, which we show in a moment
+Though the set of derivatives quotiented by ACI is finite for any regular expression, in a proof assistant it can be easier to formulate such finiteness arguments constructively as the existence of an inductive list that contains all the derivatives. This can be done by considering the partial derivatives $\partial_a$ of regular expressions. Convenient finitness arguments have been well studied by others in the literature to show termination for regular expression equivalence decision procedures. Doing this through partial derivatives was introduced by Almeida et al. \cite{AMR09} and in \cite{MPS12}, they mechanize in Coq the \textsf{equivP} procedure of Almeida et al. \mycomment{How does their termination argument work?}. There is also \cite{A12} who take a different approach, turning regular expression into point-automata, making it straigtforward to compute the enumeration of reachable derivatives. We combine their approaches, which we show in a moment
 \mycomment{Two files for this, extensional and extensionalpartial which one is correct I think extensional partial, clean up code later}\\
 \begin{itemize}
 \item Proof search approch
@@ -1243,8 +1267,3 @@ Though the set of derivatives quotiented by ACI is finite for any regular expres
 \bibliography{ref}  
 
 \end{document}
-
-%%% Local Variables:
-%%% mode: latex
-%%% TeX-master: t
-%%% End:

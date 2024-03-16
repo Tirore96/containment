@@ -29,8 +29,9 @@
 \newcommand{\contains}[4]{#1 \vdash \mathsf{#2} : #3 \leq #4 }
 \newcommand{\fix}{\mathsf{fix}}
 \newcommand{\oft}[2]{#1 : #2}
-\newcommand{\pair}[2]{\mathsf{pair}(#1,#2)}
-\newcommand{\fold}[1]{\mathsf{fold(#1)}}
+\newcommand{\pair}[2]{(#1,#2)}
+\newcommand{\inj}[1]{\mathsf{in}(#1)}
+\newcommand{\fold}[1]{\mathsf{wrap(#1)}}
 \newcommand{\inl}[1]{\mathsf{inl}(#1)}
 \newcommand{\inr}[1]{\mathsf{inr}(#1)}
 \newcommand{\dstar}[1]{({#1^*})^*}
@@ -39,6 +40,7 @@
 \newcommand{\decomp}[1]{\Sigma_{a \in \Sigma} a\times \derive{a}{#1}}
 \newcommand{\decompp}[2]{\Sigma_{a \in \Sigma} a\times (\derive{a}{#1})\times#2}
 \newcommand{\cat}[2]{#1 \mathsf{++}#2}
+\newcommand{\id}{\mathsf{id}}
 \newcommand{\event}[1]{\mathsf{Event}~#1}
 \newcommand{\pd}[2]{\partial_{#1}(#2)}
 \newcommand{\mymap}[2]{\mathsf{map}~(#1)~#2}
@@ -48,7 +50,9 @@
 \newcommand{\simulationb}[3]{\mathsf{simulation}_{#1}(#2,#3)}
 \newcommand{\mysum}[2]{\Sigma_{#1 \in #2}}
 \newcommand{\interp}[1]{\llbracket #1 \rrbracket}
+\newcommand{\lang}[1]{\mathcal{L}\interp{#1}}
 \newcommand{\type}[1]{\mathcal{T}\interp{#1}}
+%\renewcommand{\type}[1]{#1}
 \newcommand{\flatten}[1]{\mathsf{flatten}(#1)}
 \newcommand{\pres}[1]{\mathsf{pres}(#1)}
 \newcommand{\irule}[3]{\dslcom{#1}(\textsf{#2})=\textsf{#3}}

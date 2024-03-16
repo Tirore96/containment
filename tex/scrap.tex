@@ -1,0 +1,165 @@
+%
+% Regular expressions is inductive syntax that represents finite state automaton. Regular expressions equivalence and inequalities are well understood and studied. Often these proof systems are considered in a proof-irrelevant way, not caring what the inference tree is, only that it exists. Brandt and Henglein [cite] show how regular expression containment proofs can be interpreted to functional programs on parse trees. Such interpretation has applications in string compression, which we shall explain more later. The rules of their containment axiomatization corresponds to an intrinscially typed domain specific language. They derive the constructs of this language by combining the rules of idempotent semirings, unfolding $A`* \leq 1 +  A \times A^*$, with a powerful fix rule that is a of coinductive nature. 
+%
+% Our goal is effecient coercions on parse trees with applications for string compression. 
+% Existing work by Brandt and Henglein formalize this using a powerful fix rule, whose soundness they ensure by instantiating it with a proper side condition. This side condition makes the coercion proofs less compositional and thus harder (as well as more expensive) to synthesize. This side condition checks for contractiveness. We derive a similar coercion system with a much weaker (but compositional) fixpoint rule that both simplifies (and makes more effecient) the synthesis of coercions, and implies contractiveness. The system is inspired by parameterized coinduction and allows us simple intepretation (our definition is good for simple termination arguments) and synthesis. These simple approaches would not have worked in Brandt and Henglein's origina system [detail why].\\\\
+% We derive this inductive coercion system in the following steps: 
+% \begin{enumerate}
+% \item The coercion system is an axiomatization of language containment, which can be obtained by adding a few rules to axiomatizations of language equivalence. Starting with Grabmeyer's coinductive characterization, we prove it equivalent to another coinductive characterization that is free of operational notions. 
+% \item We then prove this equivalent to an inductive version of this (why is it important to go inductive? Depends on the performance between the two dsls). 
+% \item The inductive system for language equivalence is the altered to create one for language containment, and we go from Prop to Type.
+% \end{enumerate}
+% 
+ 
+
+
+
+
+
+\section{Preliminaries}
+\mycomment{double check it is 900 lines it takes to prove this}
+Cardelli and Fresch introduce regular expressions as types.
+\begin{definition}[Regular expression and semantics]
+Regular expressions over a finite base set $a$ are given by the syntax:\\
+$A ::= A + B~| A \times B ~|~A ^* ~|~ 1 ~|~ 0 ~|~ a$\\
+Matching is defined as:\\
+\begin{displaymath} 
+\infer{\match{\epsilon}{1}}{}\qquad
+\infer{\match{s s'}{A \times B}}{\match{s}{A} & \match{s'}{B}} \qquad
+\infer{\match{s} {A + B}}{\match{s}{A}} \qquad
+\infer{\match{s} {A + B}}{\match{s}{B}} \qquad
+\infer{\match{\epsilon}{A^*}}{}\qquad
+\infer{\match{s s'}{A^*}}{\match{s}{A} & \match{s'}{A^*}}\qquad
+\end{displaymath}
+Intrinsically typed parse trees:
+\begin{displaymath}
+\begin{array}{l}
+\infer{\oft{()}{1}}{} \qquad 
+\infer{\oft{a}{a}}{} \qquad \infer{\oft{\pair{t}{t'}}{A \times B}}{\oft{t}{A} & \oft{t'}{B}}
+\qquad \infer{\oft{\inl {t}}{A + B}}{\oft{t}{A}} \qquad
+\infer{\oft{\inr {t}}{A + B}}{\oft{t}{B}}  \qquad
+\infer{\oft{\fold{t}{A^*}}}{\oft{t}{1 + A \times A^*}}
+\end{array}
+\end{displaymath}
+\end{definition}
+\begin{definition}[Equivalence] \noindent \\
+Language equivalence: $\forall s, \match s\in A \iff s \in B$\\
+Language containment: $\forall s, s \in A \implies s \in B$
+\end{definition}
+\begin{definition}[Derivative (standard/partial) and nullariness]
+\begin{displaymath}
+\begin{array}{l}
+\mynu{a} = \false \qquad
+\mynu{\epsilon} = \true \qquad
+\mynu{0} = \false
+\\\\
+\mynu{A + B} = \mynu A  \lor \mynu B \qquad
+\mynu{A \times B} = \mynu A  \land \mynu B
+\end{array}
+\end{displaymath}
+\begin{displaymath}
+\begin{array}{l}
+\derive {a}{1} = \qquad
+\derive{a}{0} = 0 \qquad
+\derive{a}{b} = \epsilon if a = b\qquad
+\derive{a}{b} = 0 if a \neq b\qquad
+\derive {a}{(A + B)} = \derive{a}{A} +  \derive{a}{B}\qquad
+\\\\
+\derive {a}{(A \times B)} = \derive{a}{A} \times B +  \derive{a}{B} ~if \mynu{A} \qquad
+\derive {a}{(A \times B)} = \derive{a}{A} \times B ~if not \nu{A} \qquad
+\derive {a}{(A^*)} = \derive{a}{A} \times A^*
+\end{array}
+\end{displaymath}
+\end{definition}j
+\begin{definition}[Parameterized coinduction]
+  fill out....
+\end{definition}
+% \section{Axiomatizations:  Prior ones and a new one}
+% The first axiomatization of equivalence was given by Salomaa [cite]. We shall do as Brandt and Henglein, refering jointly to the laws of semiring, equality and the unfold rule $A^* = 1 + A \times A^*$ as \textit{weak equivalence}. Salomaa provec soundness and completeness of the system $F_1$ which consists of the rules of weak equivalence with the rules in Figure (\ref{fig:salomaa}).
+% \begin{definition}[Laws of idempotent semi-ring]
+% \label{definition:ring}
+% \begin{displaymath}
+% \begin{array}{lll}
+% \myaxiom{A + B + C}{A + (B + C)} \qquad  
+% \myaxiom{A + B}{B + A} \qquad 
+% \myaxiom{A + 0}{A} \qquad
+% \myaxiom{A + A}{A} \qquad
+% \\\\
+% \myaxiom{A \times B \times C}{A \times (B \times C)} \qquad
+% \myaxiom{1 \times A}{A} \qquad
+% \myaxiom{A \times 1}{A} \qquad 
+% \myaxiom{0 \times A}{0} \qquad
+% \\\\
+% \myaxiom{A \times 0}{0} \qquad
+% \myaxiom{A \times (B + C)} {A \times B + A \times C} \qquad
+% \myaxiom{(A + B)\times C}{A \times C + B \times C}
+% \end{array}
+% \end{displaymath}
+% \end{definition}
+
+% \begin{definition}[Laws of equality]
+% \label{definition:equality}
+% \begin{displaymath}
+% \begin{array}{lll}
+% \infer{A = A}{}\qquad
+% \infer{A = B}{B = A}\qquad
+% \infer{A = C}{A = B & B = C}
+% \end{array}
+% \end{displaymath}
+% \end{definition}
+% \begin{figure}
+% \caption{Rules of Salomaa}
+% \label{fig:salomaa}
+% \begin{displaymath}
+% \infer[A_{11}]{\eqBodyE{A^*}{B^*}}
+%   {\eqBodyE{A}{B}} \qquad
+% \myaxiomN{(1 + A)^*}{A^*} \qquad \infer[\mynu{F}=\false]{\eqBodyE{E}{F^* \times G}}{\eqBodyE{E}{F \times E + G}}
+% \end{displaymath}
+% \end{figure}
+% Salomaa proved that from the rules of weak equivalence with the unfold-rule and $A_{11}$, one can derive the decmosition:
+% \begin{lemma} \label{lem:salomaa}
+% \[A = \mynu{A} + \Sigma_{a \in \Sigma} \derive{a}{A}\]
+% \end{lemma}
+% We will return to this decomposition again later.
+
+
+
+
+% \subsection{Why axiomatizations matter}
+% \mycomment{Mention regular expressions as types}
+% Regular expressions denote an important class of automata deserving of its study on equivalences and containments. From an automata theoretic view, axiomatizations improve our understanding on the properties of finite state automaton. The shape of the proof within an axiomatization is of no importance, one only cares about soundness and completeness. Brand and Henglein showed why it is worth to consider not only \textit{what} an axiomatization lets you prove, but also \textit{how} the proof rule lets build your derivation. To see the benefit of taking a proof-relevant approach to regular expression axiomatizations we start by presenting the problem we investigate in this paper.
+% [Example of simple coercion]
+% [Explain why parse trees is equal to proof-relevance]
+% [Hint at comleteteness here]
+% [Containment is more essential than equivalence because it is more than bijection] 
+% \begin{center}
+% \textit{Given regular expressions $A$ and $B$ and language inclusion $A \subseteq  B$, how does one define a procedure that outputs an effecient function mapping parse trees of $A$ to parse trees of $B$}.\\
+% \end{center}
+% Such a function, $f : A \rightarrow B$, must exist, otherwise the language inclusion would not hold. This is especially the case in the dependent type theory of Coq which follows Curry-Howard proof as programs philosophy. Let us consider a definition of language containment in Coq:
+% \begin{minted}{Coq}
+% Definition Contains A B := forall s, Match s A -> Match s B
+% \end{minted}
+% \textsf{Contains} is a map on \textsf{Match} derivations, which are essentially parse trees. 
+% They are defined as 
+% \begin{minted}{Coq}
+% Inductive Match : trace -> regex -> Prop :=
+%   | MEps : Match [::]  Eps
+%   | MEvent x : Match [::x] (Event x)
+%   | MSeq s1 c1 s2 c2 : Match s1 c1 ->  Match s2 c2 -> Match (s1 ++ s2) (c1 _;_ c2)
+%   | MPlusL s1 c1 c2:  Match s1 c1 -> Match s1 (c1 _+_ c2)
+%   | MPlusR c1 s2 c2:  Match s2 c2 ->  Match s2 (c1 _+_ c2)
+%   | MStar0 c  : Match [::] (Star c)
+%   | MStarSeq c s1 s2:  Match s1 c -> Match s2 (Star c) -> Match (s1 ++ s2) (Star c).
+% \end{minted}
+% The definition of parse trees is
+% \begin{minted}{Coq}
+% Inductive pTree : @regex A -> Type := 
+% | p_tt : pTree Eps 
+% | p_singl a : pTree (Event a)
+% | p_inl r0 r1 : pTree r0 -> pTree (r0 _+_ r1) 
+% | p_inr r0 r1 : pTree r1 -> pTree (r0 _+_ r1) 
+% | p_pair r0 r1 : pTree r0 -> pTree r1 -> pTree (r0 _;_ r1)
+% | p_fold r : pTree (Eps _+_ (r _;_ (Star r))) -> pTree (Star r).
+% \end{minted}
+% One crucial difference between the two is \textsf{Match} derivations live in \prop, making the shape of the derivation inaccesible for case distinction during computatioin in \myset \footnote{To be precise pTree lives in Type because it is parameterized by A which lives in Type. This is due to parameterizing the entire development over the ssreflect finite type which lives in Type }. Though we can not use \textsf{Contains} directly in constructing $f : A \rightarrow B$, knowing that the containment \textsf{Contains A B} holds, can be used as a termination argument for proof search. A mapping $f : A \rightarrow B$ can be obtained by lifting a parse tree \textsf{t} of regular expression $A$, \textsf{t : pTree A}, to a Match derivation \textsf{Match (flatten t) A}, where \textsf{flatten} returns the underlying string of the parse tree. Translating to a match derivation takes linear time in the size of the parse tree. From here we can apply the \textsf{Contains A B} assumption as a function returning \textsf{Match (flatten t) B}, from which me must construct a \textsf{t' : pTree B}, preserving the underlying string, that is,\textsf{flatten t' = flatten t}. Building \textsf{t' : pTree B} is where need proof search. With \textsf{Match (flatten t) B} living in Prop, we may not case distinct on the derivation to learn the shape \textsf{t'} should take. But the presence of \textsf{Match (flatten t) B} means that there exists a natural number $n$, such that the set of parse trees of at most $n$ constructor applications, will contain our desired parse tree. We show this in file \textsf{Constructive.v}, following the technique of the Constructive Epsilon Coq libarary [cite].\\
+% Now with a procedure in hand to transform a language containment \textsf{Contains A B} into a map on parse trees \textsf{f : pTree A -> pTree B} all we need is a decision procedure for language containment, which there exists several of in the litteratue[cite]. We now have a way to synthesize mapping on parse trees (which we from now on will call coercions)
