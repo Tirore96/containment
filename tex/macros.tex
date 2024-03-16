@@ -38,13 +38,14 @@
 \newcommand{\myset}{Set}
 \newcommand{\decomp}[1]{\Sigma_{a \in \Sigma} a\times \derive{a}{#1}}
 \newcommand{\decompp}[2]{\Sigma_{a \in \Sigma} a\times (\derive{a}{#1})\times#2}
-\newcommand{\cat}[2]{#1 \mathsf{++}#2}
+\newcommand{\cat}[2]{#1 \cdot #2}
 \newcommand{\event}[1]{\mathsf{Event}~#1}
 \newcommand{\pd}[2]{\partial_{#1}(#2)}
 \newcommand{\mymap}[2]{\mathsf{map}~(#1)~#2}
+\newcommand{\mymapn}[2]{\mathsf{map}~#1~#2}
 \newcommand{\domm}[2]{\mathbb{D}~{#1}~#2}
 \newcommand{\pder}[2]{(\tilde{#1},\tilde{#2})} 
-\newcommand{\mypar}[2]{\partial{#1}(#2)}
+\newcommand{\mypar}[2]{\partial_{#1}(#2)}
 \newcommand{\simulationb}[3]{\mathsf{simulation}_{#1}(#2,#3)}
 \newcommand{\mysum}[2]{\Sigma_{#1 \in #2}}
 \newcommand{\interp}[1]{\llbracket #1 \rrbracket}
@@ -62,3 +63,8 @@
 \newcommand{\measure}[1]{|\mathsf{#1}|}
 \newcommand{\containsP}[5]{#1 \vdash_{#5} \mathsf{#2} : #3 \leq #4 }
 \newcommand{\denesting}{a^* \times \dstar{a}}
+
+\newcommand{\monarrow}{\xrightarrow{{\text{mon}}}}
+\newcommand{\simind}{\sim_{ind}}
+\newcommand{\derivearrow}[1]{\xrightarrow{\derive{#1}{\cdot}}}
+\newcommand{\re}{re}
