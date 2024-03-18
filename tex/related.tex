@@ -1,19 +1,31 @@
-Computational interpretations of linear logic \cite{A93}\\
-Regular expression containment as a proof search problem Vladimir Komendantsky[Misc url].\\
-Also mention Marco and Carstens result-
+Frisch and Cardelli \cite{FC04} introduced the idea of viewing regular expressions as types whose terms are parse trees. This was done in the context of XML-oriented functional programming, where they implement a linear time (with respect to string length) parsing algorithm that employs a greedy disambiguation strategy. Henglein and Nielsen \cite{HN11} extends their work with a method to derive coercions on regular expression types from intuitionistic proofs of regular expression containments. The coercion is derived by giving a computational interpretation to their proof rules. Our work extends \cite{HN11} by defining a procedure to synthesize effecient coercions. To obtain such a procedure, some of the proof rules in \cite{HN11} where changed. 
 
-Greedy parse trees and preservatino of greediness by coercions. Proof relevance computational properties.\\
+
+Papers:
+%Greedy Regular Expression Matching \cite{FC04}
+Regular expression containment as a proof search problem Vladimir Komendantsky \cite{K11}.
+Parametric polymorphism for XML.
+Henglein and Nielsen
+Least and greatest fixed points in linear logic
+
+Interpreting constructive proofs
+Computational interpretations of linear logic \cite{A93}
+A Computational Interpretation of Modal Proofs
+
+Coinductive subtyping
+Coinductive Axiomatization of Recursive Type Equality and Subtyping
+
+Inferring coercions:
+
+Discussion
+%Classical processes?
+Greedy parse trees and preservatino of greediness by coercions. 
 white board and mechanisation leads to interesting results.
-\\
-Though the set of derivatives quotiented by ACI is finite for any regular expression, in a proof assistant it can be easier to formulate such finiteness arguments constructively as the existence of an inductive list that contains all the derivatives. This can be done by considering the partial derivatives $\partial_a$ of regular expressions. Convenient finitness arguments have been well studied by others in the litterature to show termination for regular expression equivalence decision procedures. Doing this through partial derivatives was introduced by Almeida et al. \cite{AMR09} and in \cite{MPS12}, they mechanize in Coq the \textsf{equivP} procedure of Almeida et al. \mycomment{How does their termination argument work?}. There is also \cite{A12} who take a different approach, turning regular expression into point-automata, making it straigtforward to compute the enumeration of reachable derivatives. We combine their approaches, which we show in a moment
-\mycomment{Two files for this, extensional and extensionalpartial which one is correct I think extensional partial, clean up code later}\\
-\begin{itemize}
-\item Proof search approch
-\item Inductive dsl with environment as list. Does expensive decomposition
-\item Inductive dsl with fast decomposition
-\item Coinductive dsl with environment as function (that is build in a list-like way) (expensive decompositoin)
-\item Missing Coinductive dsl fast
-\item With or without implicit variables
-\end{itemize}
+
+
+
+%Though the set of derivatives quotiented by ACI is finite for any regular expression, in a proof assistant it can be easier to formulate such finiteness arguments constructively as the existence of an inductive list that contains all the derivatives. This can be done by considering the partial derivatives $\partial_a$ of regular expressions. Convenient finitness arguments have been well studied by others in the litterature to show termination for regular expression equivalence decision procedures. Doing this through partial derivatives was introduced by Almeida et al. \cite{AMR09} and in \cite{MPS12}, they mechanize in Coq the \textsf{equivP} procedure of Almeida et al. \mycomment{How does their termination argument work?}. There is also \cite{A12} who take a different approach, turning regular expression into point-automata, making it straigtforward to compute the enumeration of reachable derivatives. We combine their approaches, which we show in a moment
+%\mycomment{Two files for this, extensional and extensionalpartial which one is correct I think extensional partial, clean up code later}\\
+%\mycomment{Implicit Variables}
+%\mycomment{We use a similar measure in ITP 2023 projection}
 \bibliography{ref}  
-\mycomment{We use a similar measure in ITP 2023 projection}
