@@ -1,6 +1,5 @@
 From HB Require Import structures.
 Require Import Program. 
-From Equations Require Import Equations.  
 From mathcomp Require Import all_ssreflect zify.
 Require Import Relation_Definitions Setoid.
 From deriving Require Import deriving. 
@@ -9,18 +8,17 @@ Require Import Coq.btauto.Btauto.
 Require Import ConstructiveEpsilon.
 Require Import Numbers.BinNums.
 Require Import PArith.BinPos.
-From Containment Require Import  tactics utils regex pred modules constructiveEps enum (*dsl_module*) extensional_partial.
+From Containment Require Import  tactics utils regex pTree enum. (* constructiveEps enum (*dsl_module*) extensional_partial.*)
 Set Implicit Arguments.
 Set Maximal Implicit Insertion.
 
 Let inE := tactics.inE.
 
 
-Module CoDSL (M : FModule).
-(*Module CM := Constructive M.*)
-Module PM := ContainsF M.
-Module EM := ExtensionalPartial PM.
-Import M PM EM.
+(*Module IndDSL (M : FModule).*)
+Section DSL.
+Variable (Af : finType).
+
 Inductive dslF (R: regex -> regex -> Type) : regex -> regex -> Type := 
 | shuffle A B C : dslF R ((A _+_ B) _+_ C) (A _+_ (B _+_ C))
 | shuffleinv A B C : dslF R (A _+_ (B _+_ C)) ((A _+_ B) _+_ C)
@@ -65,8 +63,8 @@ Inductive dslF (R: regex -> regex -> Type) : regex -> regex -> Type :=
 | cstar A B: dslF R  A B -> dslF R (Star A)  (Star B)
 (*| cfix r r' (p  : dslF R dslF) : dslF R r  r' p[d (cfix p) .: dslF R var_dslF] ->  r  r' (cfix p) (*guarded p otherwise unsound*)*)
 (*| guard a A B  : R A B -> dslF R ((Event a) _;_ A)  ((Event a) _;_ B)*)
-| guard (F F' : A -> regex)  : (forall a, R (F a) (F' a)) -> dslF R (\big[Plus/Empt]_(a: A) ((Event a) _;_ F a))
-                                                          (\big[Plus/Empt]_(a: A) ((Event a) _;_ F' a)).
+| guard (F F' : Af -> regex)  : (forall a, R (F a) (F' a)) -> dslF R (\big[Plus/Empt]_(a: Af) ((Event a) _;_ F a))
+                                                          (\big[Plus/Empt]_(a: Af) ((Event a) _;_ F' a)).
 (**)
 Hint Constructors dslF.
 CoInductive dsl_co : regex -> regex -> Type := 

@@ -734,7 +734,7 @@ elim;try solve [auto].
 - con. eauto. rewrite /o /=. lct2. lct2. apply:untagL. apply:retag. 
   lcp1. lcid. lct1.  apply:eq_big_plus_c. intro. intros. apply:abortR. apply: plus_empt_l. 
 *)
-- move=> s. con.
+- move=> s. 
  *  rewrite /o /=. lct2. apply:retag. lct2. apply:tagL.  
     apply:big_event_in_r. rewrite mem_index_enum //. 
 (* *  rewrite /o /=. lct1. apply:untagL. apply:big_event_in_l. rewrite mem_index_enum //. *)

@@ -1,83 +1,72 @@
-
-\documentclass[a4paper,UKenglish,cleveref, autoref, thm-restate]{lipics-v2021}
-%This is a template for producing LIPIcs articles. 
-%See lipics-v2021-authors-guidelines.pdf for further information.
-%for A4 paper format use option "a4paper", for US-letter use option "letterpaper"
-%for british hyphenation rules use option "UKenglish", for american hyphenation rules use option "USenglish"
-%for section-numbered lemmas etc., use "numberwithinsect"
-%for enabling cleveref support, use "cleveref"
-%for enabling autoref support, use "autoref"
-%for anonymousing the authors (e.g. for double-blind review), add "anonymous"
-%for enabling thm-restate support, use "thm-restate"
-%for enabling a two-column layout for the author/affilation part (only applicable for > 6 authors), use "authorcolumns"
-%for producing a PDF according the PDF/A standard, add "pdfa"
-
-%\pdfoutput=1 %uncomment to ensure pdflatex processing (mandatatory e.g. to submit to arXiv)
-%\hideLIPIcs  %uncomment to remove references to LIPIcs series (logo, DOI, ...), e.g. when preparing a pre-final version to be uploaded to arXiv or another public repository
-
-%\graphicspath{{./graphics/}}%helpful if your graphic files are in another directory
-
-\bibliographystyle{plainurl}% the mandatory bibstyle
-
-\title{Computationally interpreting regular expression containment proofs to efficient procedures } %TODO Please add
-
-%\titlerunning{Dummy short title} %TODO optional, please use if title is longer than one line
-
-\author{Fritz Henglein}{University of Copenhagen, Denmark}{johnqpublic@dummyuni.org}{https://orcid.org/0000-0002-1825-0097}{(Optional) author-specific funding acknowledgements}%TODO mandatory, please use full name; only 1 author per \author macro; first two parameters are mandatory, other parameters can be empty. Please provide at least the name of the affiliation and the country. The full address is optional. Use additional curly braces to indicate the correct name splitting when the last name consists of multiple name parts.
-
-\author{Dawit Tirore\footnote{corresponding author}}{IT University of Copenhagen, Dummy College, [optional: Address], Country}{dati@itu.dk}{[orcid]}{[funding]}
-
-\author{Nobuko Yohsida}{University of Oxford}{mail}{[orcid]}{}
-
-\authorrunning{J. Open Access and J.\,R. Public} %TODO mandatory. First: Use abbreviated first/middle names. Second (only in severe cases): Use first author plus 'et al.'
-
-\Copyright{Jane Open Access and Joan R. Public} %TODO mandatory, please use full first names. LIPIcs license is "CC-BY";  +http://creativecommons.org/licenses/by/3.0/
-
-\ccsdesc[100]{\textcolor{red}{Replace ccsdesc macro with valid one}} %TODO mandatory: Please choose ACM 2012 classifications from https://dl.acm.org/ccs/ccs_flat.cfm 
-
-\keywords{Dummy keyword} %TODO mandatory; please add comma-separated list of keywords
-
-\category{} %optional, e.g. invited paper
-
-\relatedversion{} %optional, e.g. full version hosted on arXiv, HAL, or other respository/website
-%\relatedversiondetails[linktext={opt. text shown instead of the URL}, cite=DBLP:books/mk/GrayR93]{Classification (e.g. Full Version, Extended Version, Previous Version}{URL to related version} %linktext and cite are optional
-
-%\supplement{}%optional, e.g. related research data, source code, ... hosted on a repository like zenodo, figshare, GitHub, ...
-%\supplementdetails[linktext={opt. text shown instead of the URL}, cite=DBLP:books/mk/GrayR93, subcategory={Description, Subcategory}, swhid={Software Heritage Identifier}]{General Classification (e.g. Software, Dataset, Model, ...)}{URL to related version} %linktext, cite, and subcategory are optional
-
-%\funding{(Optional) general funding statement \dots}%optional, to capture a funding statement, which applies to all authors. Please enter author specific funding statements as fifth argument of the \author macro.
-
-\acknowledgements{I want to thank \dots}%optional
-
-%\nolinenumbers %uncomment to disable line numbering
-
-
-
-%Editor-only macros:: begin (do not touch as author)%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\EventEditors{John Q. Open and Joan R. Access}
-\EventNoEds{2}
-\EventLongTitle{42nd Conference on Very Important Topics (CVIT 2016)}
-\EventShortTitle{CVIT 2016}
-\EventAcronym{CVIT}
-\EventYear{2016}
-\EventDate{December 24--27, 2016}
-\EventLocation{Little Whinging, United Kingdom}
-\EventLogo{}
-\SeriesVolume{42}
-\ArticleNo{23}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% This is samplepaper.tex, a sample chapter demonstrating the
+% LLNCS macro package for Springer Computer Science proceedings;
+% Version 2.21 of 2022/01/12
+%
+\documentclass[runningheads]{llncs}
+%
+\usepackage[T1]{fontenc}
+% T1 fonts will be used to generate the final print and online PDFs,
+% so please use T1 fonts in your manuscript whenever possible.
+% Other font encondings may result in incorrect characters.
+%
+\usepackage{graphicx}
+\usepackage{hyperref}
 \usepackage{proof}
 \usepackage{minted}
 \usepackage{xcolor}
 \usepackage{stmaryrd}
 \usepackage{numprint}
-%\newcommand\mycomment[1]{\textcolor{red}{#1}}
-\newcommand\mycomment[1]{}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\newcommand\mycomment[1]{\textcolor{red}{#1}}
+%\newcommand\mycomment[1]{}
 
+% \begin{document}
+\input macros
+
+% Used for displaying a sample figure. If possible, figure files should
+% be included in EPS format.
+%
+% If you use the hyperref package, please uncomment the following two lines
+% to display URLs in blue roman font according to Springer's eBook style:
+%\usepackage{color}
+%\renewcommand\UrlFont{\color{blue}\rmfamily}
+%\urlstyle{rm}
+%
 \begin{document}
-\include{macros}
+%
+\title{Computationally interpreting regular expression containment proofs to efficient procedures } %TODO Please add
+%
+%\titlerunning{Abbreviated paper title}
+% If the paper title is too long for the running head, you can set
+% an abbreviated paper title here
+%
+\author{Fritz Henglein\inst{1}\orcidID{0000-0001-5190-2125} \and
+Dawit Tirore\inst{2,3}\orcidID{0000-0002-1997-5161} \and
+Nobuko Yoshida\inst{3}\orcidID{0000-0002-3925-8557}}
+%
+\authorrunning{F. Henglein et al.}
+% First names are abbreviated in the running head.
+% If there are more than two authors, 'et al.' is used.
+%
+\institute{University of Copenhagen, Universitetsparken 1, 2100 Copenhagen, Denmark
+\email{henglein@diku.dk}
+ \and 
+IT University of Copenhagen, Rued Langgaards Vej 7, 2300 Copenhagen, Denmark
+\email{dati@itu.dk}
+ \and 
+University of Oxford, Wellington Square, Oxford OX1 2JD, England
+\email{nobuko.yoshida@cs.ox.ac.uk}
+}
+%Springer Heidelberg, Tiergartenstr. 17, 69121 Heidelberg, Germany
+% \email{lncs@springer.com}\\
+% \url{http://www.springer.com/gp/computer-science/lncs} \and
+% ABC Institute, Rupert-Karls-University Heidelberg, Heidelberg, Germany\\
+% \email{\{abc,lncs\}@uni-heidelberg.de}}
+%
+\maketitle    
 
-\maketitle
+
 
 %TODO mandatory: add short abstract of the document
 \begin{abstract}
@@ -90,7 +79,7 @@ In this paper we prove that efficient coercions can be synthesized efficiently a
 \end{abstract}
 
  \section{Introduction}
- 
+\mycomment{Where to put GIT url?} 
 In this paper we treat regular expressions as, essentially, grammars by interpreting them as types; 
 define coercions as string preserving functions on parse trees (elements of those types); 
 synthesize computationally efficient coercions; and perform such synthesis itself efficiently.  
@@ -309,35 +298,37 @@ and $(c \times d)(t, u) = (c(t), d(u))$.}
 
 
 
-Henglein and Nielsen present a derivation system for building a coercion $\dslcom{c}$ with the judgment $\containsG{c}{A}{B}$. The judgment is parameterized by a side condition $P$. 
+Henglein and Nielsen \cite{HN11} present a derivation system for building a coercion $\dslcom{c}$ with the judgment $\containsG{c}{A}{B}$. The judgment is parameterized by a side condition $P$. 
 This is used in the rule for $\fix~\dslcom{f. c}$ to ensure termination by checking that $P(\contains{\Gamma}{\fix~ \mathsf{f.c}}{A}{B})$ holds. This is necessary because unrestricted fixpoint definitions allows non-terminating coercions like $\fix~ \mathsf{f}.\dslcom{f}$ and it is unsound for these coercions to be derivable because they do not interpret to total functions. 
 
-The rules for $\containsG{c}{A}{B}$ can be seen in Figure (\ref{fig:HN}) where we write $\Gamma \vdash_P \mathsf{c}: {A} = {B}$ for simultanously defining the two rules  $\containsG{c}{A}{B}$ and  $\containsG{c^{-1}}{A}{B}$. We omit the subscript $\vdash_P$ for axioms. 
+The rules for $\containsG{c}{A}{B}$ are defined in Figure (\ref{fig:HN}) where we write $\Gamma \vdash_P \mathsf{c}: {A} = {B}$ for simultanously defining the two rules  $\containsG{c}{A}{B}$ and  $\containsG{c^{-1}}{A}{B}$. We omit the subscript $\vdash_P$ for axioms. 
 
 The most permissive side condition that ensures termination is hereditary totality:
 \begin{definition}[Hereditary totality]
 $\containsG{c}{A}{B}$ is hereditarily total if $\mathsf{f}: A \leq B$ is total, $\forall \mathsf{f} : A \leq B \in \Gamma$.
 \end{definition}
-This property is the most permissive side condition and it is undecidable. For the coercion system instantiated with hereditary totality they prove soundness.
+Hereditary totality is the most permissive side condition and it is undecidable. For the coercion system instantiated with hereditary totality \cite{HN11} proves soundness. \mycomment{Add more explanation}
 \[ \contains{}{c}{A}{B} \implies A \subseteq B\]
 This holds because all constructs are string preserving transformations and all derivable coercions are terminating.
-Parameterizing the coercion language by a side condition makes it possible to compare different axiomatizations. For each of three distinct axiomatizations of regular expression equivalence and containment they give side conditions that are suffecient to translate proofs in the axiomatization into coercion derivations.
+Parameterizing the coercion language by a side condition makes it possible to compare different axiomatizations. For each of three distinct axiomatizations of regular expression equivalence and containment \cite{HN11} give side conditions that are suffecient to translate proofs in the axiomatization into coercion derivations.
+\mycomment{Define constant function o}
 \begin{definition}[Syntactic side conditions $S_i$]
- Define predicates $S_1$,$S_2$,$S_3$,$S_4$ on coercion judgments of the form $\containsG{\fix f. c}{E}{F}$ as follows:
+ Define predicates $S_1$,$S_2$,$S_3$,$S_4$ on coercion judgments of the form $\containsG{\myfix f. c}{E}{F}$ as follows:
  \begin{itemize}
- \item $S_1(\containsG{\fix f. c}{E}{F})$ if and only if each occurence of $f$ in $c$ is left-guarded by a $d$ where, $\contains{\Gamma ,...}{d}{E'}{F'}$ is the coercion judgment for $d$ occuring in the derivation of $\containsG{\fix f. c}{E}{F}$ and $\myo{(E')}=0$\\
- \item $S_2(\containsG{\fix f. c}{E}{F})$ if and only if each occurence of $f$ in $c$ is eft-guarded and for each subterm of the form $c_1;c_2$ in $c$ at least one of the following conditions is satisfied:
+ \item $S_1(\containsG{\myfix{f}{\dslcomm{c}}}{E}{F})$ if and only if each occurence of $\dslcomm f$ in $\dslcomm c$ is left-guarded by a $\dslcom d$ where, $\contains{\Gamma ,...}{d}{E'}{F'}$ is the coercion judgment for $\dslcomm d$ occuring in the derivation of $\containsG{\myfix{f}{\dslcom c}}{E}{F}$ and $\myo{E'}=0$\\
+ \item $S_2(\containsG{\myfix{f}{\dslcom{c}}}{E}{F})$ if and only if each occurence of $\dslcomm f$ in $\dslcomm c$ is eft-guarded and for each subterm of the form $\dslcom{c_1}; \dslcom{c_2}$ in $\dslcom c$ at least one of the following conditions is satisfied:
    \begin{itemize}
-   \item $c_1$ is closed and $\dslcominv{proj}$ free
-     \item $c_2$ is closed
+   \item $\dslcomm{c_1}$ is closed and $\dslcominv{proj}$ free
+     \item $\dslcomm {c_2}$ is closed
    \end{itemize}
-\item $S_3(\containsG{\fix f. c}{E}{F}) \textit{if c is of the form } \dslcominv{wrap};(\dslcom{id}+\dslcom{e} \times \dslcom{f});d \textit{ where d and e are closed}$ \footnote{In Henglein and Nielsen, the $S_3$ sidecondition has a minor mistake because it instead expects the shape $\dslcominv{wrap};(\dslcom{id}+\dslcom{id} \times \dslcom{f});d \textit{ where d is closed}$. This is insuffecient to derive the example above, used in their proof of completeness. It is however minor as replacing \dslcom{id} with \dslcom{e} does not affect the underlying termination measure}
+\item $S_3(\containsG{\fix f. c}{E}{F})$ if $\dslcom{c}$ is of the form $\dslcominv{wrap};(\dslcomm{id}+\dslcom{e} \times \dslcom{f});\dslcomm{d}$  where $\dslcom d$ and $\dslcom e$ are closed \footnote{In Henglein and Nielsen, the $S_3$ sidecondition has a minor mistake because it instead expects the shape $\dslcominv{wrap};(\dslcom{id}+\dslcomm{id} \times \dslcom{f});\dslcom d$ \textit{where }$\dslcom{d}$ \textit{is closed}. This is insuffecient to derive the example above, used in their proof of completeness. It is however minor as replacing $\dslcom{id}$ with $\dslcom{e}$ does not affect the underlying termination measure}
 \item $S_4 = S_1 \lor S_3$
    \end{itemize}
 %\item  $S_3(\containsG{\fix f. c}{E}{F})$ if $c$ is of the form $\dslcominv{wrap};(\dslcom{id} + \dslcom{d} \times f) ; \dslcom{e}$ where $d$ and $e$ are closed \footnote{This is slightly different from Henglein and Nielsen because their version is not suffecient for their completeness proof via encoding to salomaa}
 %\item 
 \end{definition}
 %Henglein and Nielsen show that multiple distinct axiomatizations of regular expression containment, such as the one proposed by GBrabmeyer for example, all can be captured coinductively motivated rule, which in the context of proof-relevance translates nicely to a fixpoint construction. Unrestricted fixpoint definitions allows non-termination, which is unsound, and to avoid this they apply a side condition to restrict it to safe use. The rules for declaring and calling fixpoints are seen below:
+\mycomment{Add citations to examples, warn the reader what this section is going to be about, (translating inferences rules to coercions and comparing effeciency)}
 \begin{example}[Salomaa]\label{ex:map}
 The Salomaa axiomatization of regular expression equivalence includes a context rule for kleene-star. We translate this into a coercion derivation. Expressed as a containment the context rule is
 %\[ \infer{A^* = B^*}{A=B} \]
@@ -347,15 +338,17 @@ The Salomaa axiomatization of regular expression equivalence includes a context 
 %They can however be derived using the fixpoint rule. Reusing their example we show to derive the first rule.
 We assume coercion derivation $\contains{}{c}{A}{B}$, and construct a coercion of $ A^* \leq B^*$.\\
 Assume $\dslcom{f}: A^* \leq B^*$ as a hypothesis and derive
-\begin{align}
+\mycomment{Motivate why do this derivation: We are translating a Salomaa rule into a coercion}
+\begin{align*}
   A^* &\leq (1 + A \times A^*) && \textsf{ by} ~\dslcominv{wrap}\\
 &\leq  (1 + B \times B^*) &&\textsf{ by} ~\dslcom{id}+ \dslcom{c} \times \dslcom{f}\\
 &\leq B^*
-\end{align}
+\end{align*}
 This derives:
 $\contains{f : A^* \leq B^*}{\dslcominv{wrap} ; \dslcom{id} + \dslcom{c} \times \dslcom{f};  \dslcom{wrap}}{A^*}{B^*}$\\
 By the fix-rule with %$S_3$ we get
 we get $\contains{}{\fix~f. \dslcominv{wrap} ; \dslcom{id} + \dslcom{c} \times \dslcom{f};  \dslcom{wrap}}{A^*}{B^*}$ which is just the map function on a list 
+\mycomment{Replace with code font Fritz used}
 \begin{minted}{Coq}
 Definition map :=  fix f (a : Star) := let v := match fold a with 
                        | inl () => inl ()
@@ -414,6 +407,7 @@ Which is terminating because of structural recursion. To use this termination ar
 
 \begin{example}[Kozen]
 Along with the rules of weak equivalence, and the unfold rule: $1 + (E^* \times E) \leq E$ Kozen axiomatizes containment with the rules
+\mycomment{Naming the rules?}
 \begin{displaymath}
 \infer{A^* \times B \leq B}{A \times B \leq B} \qquad \infer{A \times B^* \leq A}{A \times B \leq A}
 \end{displaymath}
@@ -589,12 +583,14 @@ This yields a linear runtime assuming efficient implementations of $\mathsf{deco
 \section{Decomposition, efficiency and polymorphism}
 
 In this section we define quick and slow decomposition coercions. We show that the coercion system presented so far allows efficient implementation of decomposition for a \textit{concrete} regular expression $A$. This is in contrast to a generic decomposition that in one go, defines efficient decomposition for all regular expressions. Intuitively this would be a polymorphic coercion $\contains{}{c}{\forall X. X}{\myo{o} + \decomp{X}}$, but since we do not have a $\forall$- introduction rule this is not derivable in the system and only serves as an intuition for what we mean by a generic decomposition. Recomposition is analogous and is therefore not mentioned in this section.
+\mycomment{Recomposition has not been defined}
+\mycomment{Use larger subscript for sigma}
 %Assuming constant time execution of \textsf{decompose} and \textsf{recompose}, this code executes in linear time, applying the recursive call to the parse tree corresponding to the tail of the underlying string. Assuming constant time execution of \textsf{decompose} and \textsf{recompose} is however too strong because decomposition intuitvely traverses the parse \textsf{fold (inr ((fold (inr (a,t)))))} tree to expose the event \textsf{a}.
 \subsection{Defining Effeciency}
 We express the runtime of a coercion $\contains{}{c}{A}{B}$ applied to a parse tree $\mathsf{t} : \type{A}$ as a function of the string length of $\mathsf{t}$, denoted by $\flatten{\mathsf{t}}$. We postpone the definition of interpretation, $\interp{\contains{}{c}{A}{B}} : \type{A} \rightarrow \type{B}$ to Section \ref{sec:soundinterp} and for now suffice with the intuitive interpretation of coercions as functional programs.
-
+\mycomment{Check font of pare tree examples}
 Regular expressions are ambigous as a grammer and two parse trees of the same regular expression, $\mathsf{t} : a^*$, $\mathsf{t'} : a^*$, of the same string, $\flatten{t}=\flatten{t'}$ can differ arbitarily much in the size of the parse trees by repeatedly putting  $() : 1$ in the leaves of the tree. We say a compact parse tree $\mathsf{t} : A$, is the smallest parse tree of string $\flatten{t}$, implying that the parse tree size will differ from the string length by a constant factor. An efficient coercion, executes in time linear with respect to the size of a compact parse tree.
-To allow such a runtime, decomposition should be a constant time operation on compact parse trees. If the tree is sparse, the runtime should be linear the length of the path that is a depth-first-search of the parse tree for the first non $(): 1$ leaf.
+To allow such a runtime, decomposition should be a constant time operation on compact parse trees. If the tree is sparse, the runtime should be linear the length of the path that is a depth-first-search of the parse tree for the first non $(): 1$ leaf \mycomment{Define leaf}.
 \subsection{Polymorphic but slow}
 Salomaa implicitly defined the polymorphic decomposition $\contains{}{c}{\forall X. X}{\myo{o} + \decomp{X}}$ and recomposition $\contains{}{c}{\forall X.\myo{o} + \decomp{X}}{X}$ when he proved $A = \myo{A} + \decomp{A}$ for his system $F_1$ by structural induction on $A$ \mycomment{is that the right name of system?}. Computationally this corresponds to definition by mutual structural recursion, with the direction the induction hypothesis is used to indicate a call to $\mathsf{decomp}$ or $\mathsf{recomp}$. The ineffeciency of the definition is is caused by the $A^*$ case of the proof, when  $A^*$ is a \textit{problematic} regular expression, ie. if $\mynu{A} = \textsf{true}$. In this case of the proof, one has inductiion hypotheses $A \leq 1 + \Sigma_{a \in \Sigma} \derive{a}{A}$ and  $1 + \Sigma_{a \in \Sigma} \derive{a}{A} \leq A$ and must show $A^* \leq 1  + \Sigma_{a \in \Sigma} ((\derive{a}{A})\times A)^*$ and  $1  + \Sigma_{a \in \Sigma} ((\derive{a}{A})\times A)^* \leq A^*$. A sketch of the proof for the first containment is
 \begin{proof} (Sketch)
@@ -608,6 +604,7 @@ A^* &= ( \Sigma_{a \in \Sigma} \derive{a}{A})^* &&\text{by star context with dec
 %One turns the problematic regular expression $A^*$ into an unproblematic one $B^*$ by using drop and after a few more steps getting the shap $1 + B \times A^*$ where $\mynu{B} = \false$. 
 Thinking of $A^*$ as a list, this proof decomposes each element of the list, extracts the head, then recomposes the tail. Moreover, we used the induction hypothesis (recursive call) in both directions to achieve this. This yields an factorial time algorithm 
 \subsection{Fast but monomorphic}
+\mycomment{Check font of lists ll}
 We now show how to derive an efficient decomposition for $a^* \times (a^*)^*$ with $\Sigma = \{a\}$. The return type is
 \[1 + a \times ((1 \times a^*) \times (\dstar a) +  a \times ((1 \times a^*) \times (\dstar a) )\]
 %To be precise, given that a parse tree has leaves \textsf{tt} and \textsf{Event a}, fast decomposition (and recomposition) has a recursion pattern that is a depth-first traversal of the parse tree that halt at the occurence of the first \textsf{Event a} leaf. For example, in the parse tree \textsf{fold (inr ((fold (inr (a,t)))))}, the recursive shall should not be applied to the subterm \textsf{t} in \textsf{(a,t)}. It is important to emphasize that we only are interested in efficient decomposition/recomposition \mycomment{any aspects of recomposition that might differ from decomposition? Yes I think recomposition does not need fixpoints, which could be mentioned, also check code}, since this might be performed multiple times in a Grabmeyer-style coercion derivation. Salomaa proved that $A = \decomp{A}$ and by completeness of the HN system, there must exist decomposition and recomposition coercions, but they are very slow. They take exponential time to compute. In the rest of this section we focus mostly on decomposition as recomposition is analogous.\\\\
@@ -655,6 +652,7 @@ a^* \times \dstar{a} &\leq (1 + a \times a^*) \times \dstar{a}  &&\dslcominv{wra
                      &\quad(1 \times a^*) \times \dstar a\Big)  + a \times (a^*  \times \dstar{a}) && \dslcom{f} \\
                      &\leq 1 + a \times (((1 \times a^*) \times \dstar a) + (1 \times a^*) \times \dstar a) && \dslcom{untag}
 \end{align}
+\mycomment{Not readable, maybe in fewer lines as well?}
 The coercion we have built is:
 \begin{align}
 \fix f.~&(\dslcominv{wrap} \times \dslcom{id});\dslcom{distR};\\
@@ -662,7 +660,7 @@ The coercion we have built is:
        &\dslcom{untag} + ((\dslcom{id} \times \dslcom{f});\dslcom{proj});\\
        &\dslcominv{assoc};(\dslcom{untag} + \dslcom{untag}) \\
 &+\\
- &\dslcom{id} \times \dslcom{projinv} \times \dslcom{id} \Big);\\
+ &\dslcom{id} \times \dslcominv{proj} \times \dslcom{id} \Big);\\
  & \Big(\dslcom{id} + \dslcom{assoc} ; \dslcom{untag} \Big)
 \end{align}
 % \begin{align}
@@ -685,7 +683,7 @@ This is derivable with side condition $S_2$ because no use of $\dslcominv{proj}$
 Refering to the decomposition coercion above as $\dslcom{d}$, and the recomposition coercion which we have omitted as $\dslcom{e}$, the Grabmeyer coercion for denesting is
 \[ \fix~f. \dslcom{d}; (\dslcom{id} + \dslcom{untag} ; \dslcom{assoc} ; (\dslcom{id} \times \dslcom{f})) ;\dslcom{r} \]
 This consists of the outer fixpoint $\fix f$ satisfying $S_1$ and a nested fixpoint in $\dslcom{d}$ satisfying $S_2$. We have thus given an example of a fast coercion that in order to be derivable requires a side condition $S_5 = S_1 \lor S_2$ not present in Henglein and Nielsen.
-
+\mycomment{Unclear, explain or remove}
 We believe that language containments can always be expressed as Grabmeyer coercions using $S_5$ but proving this is difficult due to the non-compositional nature of $S_2$. This side condition dictates that a recursive call may not happen after $\dslcominv{proj}$ which prevents a polymorphic decomposition by structural recursion on the regular expression.
 \end{remark}
 \subsection{Fast and polymoprhic}
@@ -703,7 +701,7 @@ The dsl program this proof builds is \mycomment{did not check details}
 \[ \fix ~f.\dslcom{wrap};(\dslcom{id} + (\dslcom{IH};\dslcom {id});\dslcom{distR};(\dslcom{proj};\dslcom{f})+\dslcom{id});\dslcom{shuffle};(\dslcom{untag} + \dslcom{untag}) \]
 Termination is ensured by recursing only on subterms of the input parse tree. Though it is terminating, it does not satisfy and of the decidable side conditions in Henglein and Nielsen. It only satisfies their most general, but undecidable, side condition, hereditary totalilty
 % \footnote{All side conditions except for the one used to code Kozen derivations are immediate to verify. The Kozen side condition fails because it disallows use of \dslcom{projinv} before the recursive call and \dslcom{e} uses this command in the event case of the decomposition}.
-In the previous example, we satisfied $S_2$ by sequencing $\dslcominv{proj}$ after the recursive call. This is not possible here since the coercoin $\dslcom{IH}$, appearing before the recursive call, might use $\dslcom{projinv}$. Indeed if the regular expression contains an event $a$ and we for illustration take $\Sigma = \{a\}$, derivation of the decomposition $a \leq 0 + a \times 1 $ uses $\dslcominv{proj}$. Using the fixpoint rule would result in a terminating coercion because recursion would be on a subterm of the parse tree but syntactically this is not recognized by any of the side conditions that have been presented.
+In the previous example, we satisfied $S_2$ by sequencing $\dslcominv{proj}$ after the recursive call. This is not possible here since the coercoin $\dslcom{IH}$, appearing before the recursive call, might use $\dslcominv{proj}$. Indeed if the regular expression contains an event $a$ and we for illustration take $\Sigma = \{a\}$, derivation of the decomposition $a \leq 0 + a \times 1 $ uses $\dslcominv{proj}$. Using the fixpoint rule would result in a terminating coercion because recursion would be on a subterm of the parse tree but syntactically this is not recognized by any of the side conditions that have been presented.
 
 
 %\[
@@ -936,6 +934,7 @@ So long that we let $(A,B) \in V$ check membership modulus ACI. To show complete
 \item Prove $\simulationb{\{\}}{A}{B}$ implies $\exists c.~\contains{}{c}{A}{B}$ by functional induction
 \end{enumerate}
 Doing (1.) in a proof assistant like Coq is challenging because the termination argument must be translated into a property that can be characterized by an inductive judgment, which we can structurally recurse on. The Bragga method [cite] explains in detail how one may separate the termination argument from the definition of a recursive function, by instead of reucrsing on the input $x$, recursing on an inductive proof about $x$, called $\mathbb{D}~x$. We take this approach and it is easier to define $\mathbb{D}~x$ if we move from standard brozowski derivatives to partial derivatives. Normally partial derivatives are defined by mapping a regular expression to a set of regular expression. In our mechanization we use inductive lists instead of sets, and to keep the paper formalization as close as possible to the mechanization, we will present partial derivatives exactly as they have been defined in the code.\\
+\mycomment{In vector A, replace tilde with arrow}
 \begin{definition}[Partial derivatives]
   \begin{displaymath}
     \begin{array}{lll}
@@ -1218,6 +1217,7 @@ dfix (ctrans (peek cid)
 
 %\newcommand{\tabline}[11]{#1 & \dentry{#2}{#7} & \dentry{#3}{#8} & \dentry{#4}{#9} & \dentry{#5}{#10} & \dentry{#6}{#11}}
 \section{Benchmarking}
+\mycomment{Aim not clear}
 \input bench
 \section{discussion and related work}
 
