@@ -1,0 +1,291 @@
+
+
+
+
+
+
+
+
+
+
+% In this section we define quick and slow decomposition coercions. We show that the coercion system presented so far allows efficient implementation of decomposition for a \textit{concrete} regular expression $A$. This is in contrast to a generic decomposition that in one go, defines efficient decomposition for all regular expressions. Intuitively this would be a polymorphic coercion $\contains{}{c}{\forall X. X}{\myo{o} + \decomp{X}}$, but since we do not have a $\forall$- introduction rule this is not derivable in the system and only serves as an intuition for what we mean by a generic decomposition. Recomposition is analogous and is therefore not mentioned in this section.
+% \mycomment{Recomposition has not been defined}
+\mycomment{Use larger subscript for sigma}
+%Assuming constant time execution of \textsf{decompose} and \textsf{recompose}, this code executes in linear time, applying the recursive call to the parse tree corresponding to the tail of the underlying string. Assuming constant time execution of \textsf{decompose} and \textsf{recompose} is however too strong because decomposition intuitvely traverses the parse \textsf{fold (inr ((fold (inr (a,t)))))} tree to expose the event \textsf{a}.
+
+
+We would like an efficient and polymorphic decomposition but its natural definition is not admissible in the coercion system. To see why, assume, consider again the $A^*$ case with $\mynu{A} = \true$. We have induction hypothesis $\dslcom{IH} : A \leq 1 + \decomp A$ and add hypothesis $\dslcom{f} : A^* \leq 1 + (\decomp{A}) \times A^*$
+\begin{proof} (Sketch)
+\begin{align}
+A^* &\leq  1 + A \times A^* && \text{by unfold}\\
+ &\leq 1 + (1 + \decomp{a}) \times A^* && \text{by } \dslcom{IH}\\
+ &\leq 1 + 1 \times A^* + (\Sigma_{a \in \Sigma} \derive{a}{A} \times A^*) && \text{by distibutivity}\\
+ &\leq 1 +  1 \times (\decompp{A}{A^*}) +  (\Sigma_{a \in \Sigma} \derive{a}{A} \times A^*)  && \text{by } \dslcom{f}  \\
+ &\leq 1 + \decomp{A^*} && \text{idempotence} 
+\end{align}
+\end{proof}
+The dsl program this proof builds is \mycomment{did not check details}
+\[ \fix ~f.\dslcom{wrap};(\dslcom{id} + (\dslcom{IH};\dslcom {id});\dslcom{distR};(\dslcom{proj};\dslcom{f})+\dslcom{id});\dslcom{shuffle};(\dslcom{untag} + \dslcom{untag}) \]
+Termination is ensured by recursing only on subterms of the input parse tree. Though it is terminating, it does not satisfy and of the decidable side conditions in Henglein and Nielsen. It only satisfies their most general, but undecidable, side condition, hereditary totalilty
+% \footnote{All side conditions except for the one used to code Kozen derivations are immediate to verify. The Kozen side condition fails because it disallows use of \dslcom{projinv} before the recursive call and \dslcom{e} uses this command in the event case of the decomposition}.
+In the previous example, we satisfied $S_2$ by sequencing $\dslcominv{proj}$ after the recursive call. This is not possible here since the coercoin $\dslcom{IH}$, appearing before the recursive call, might use $\dslcominv{proj}$. Indeed if the regular expression contains an event $a$ and we for illustration take $\Sigma = \{a\}$, derivation of the decomposition $a \leq 0 + a \times 1 $ uses $\dslcominv{proj}$. Using the fixpoint rule would result in a terminating coercion because recursion would be on a subterm of the parse tree but syntactically this is not recognized by any of the side conditions that have been presented.
+
+
+%\[
+%\contains{}{\fix ~f.d;(id + \Sigma_{a \in \Sigma} id\times f_a); e}{A}{B} \qquad \text{assuming }f_a : \derive{a}{A} \rightarrow \derive{a}{B}, \forall ~ a \in \Sigma \]
+
+% It seems that any decomposition can be proved using the Kozen measure. Kozen measure relies on no projin between fixpoint and recursive call and this has some drawbacks. The decomposition of events requires projiinv and therefore the decomposition of $\dstar a$ cannot just blindly decompose the subterm because it would use projinv in an illegal position. Instead a projinv free version must be used and after finishing the recursive calls, one can fit the bill by applying the appropriate projinvs. This strictness has two drawbacks. It prevents decomposition from being recursively defined on the syntax of regular expressions, making it harder to define the parametric decomposition. Secondly it prevents tail-recursion for which ocaml can optimize code. We now introduce how we have done this...
+% \mycomment{Write a tail-recursive and non-tailrecursive example in benchmark}
+% \mycomment{Would deriving recomposition have projinv appear before recursive call, which is not allowed in Kozen measure? Recomposition does not seem to introduce anything new}
+% \mycomment{They now need disjunct of Kozen and Grabmeyer measure}
+% \mycomment{Kozen alone is not suffecient because decomposition uses projinv}
+% \mycomment{If we instead werer to prove nesting (not denesting), would we need projinv before recursive call}
+% \mycomment{Did we define recomposition efficiently in the code?}
+% \mycomment{Recomposition is not interesting because tagL can be used to make it work without recursion}
+% \mycomment{Our approach leads to tailrecursive decomposition I think, which could be faster in a tail recursion optimizing language like ocaml}
+
+\mycomment{This subsection should change structure, we want to land at the introduction of peek rule. We get there from limitation of HN rules due to side conditions. Exemplified by example on paper. Relate to Salomaas proof of decomposition? A possible structure: Grabmeyer uses decomposition, HN show this leads to fast proofs, Salomaas decomposition, HN's decomposition, our decomposition with peek}
+
+\begin{example}
+Salomaa implicitly defined the polymorphic decomposition $\contains{}{c}{\forall X. X}{\myo{o} + \decomp{X}}$ and recomposition $\contains{}{c}{\forall X.\myo{o} + \decomp{X}}{X}$ when he proved $A = \myo{A} + \decomp{A}$ for his system $F_1$ by structural induction on $A$ \mycomment{is that the right name of system?}. Computationally this corresponds to definition by mutual structural recursion, with the direction the induction hypothesis is used to indicate a call to $\mathsf{decomp}$ or $\mathsf{recomp}$. The ineffeciency of the definition is is caused by the $A^*$ case of the proof, when  $A^*$ is a \textit{problematic} regular expression, ie. if $\mynu{A} = \textsf{true}$. In this case of the proof, one has inductiion hypotheses $A \leq 1 + \Sigma_{a \in \Sigma} \derive{a}{A}$ and  $1 + \Sigma_{a \in \Sigma} \derive{a}{A} \leq A$ and must show $A^* \leq 1  + \Sigma_{a \in \Sigma} ((\derive{a}{A})\times A)^*$ and  $1  + \Sigma_{a \in \Sigma} ((\derive{a}{A})\times A)^* \leq A^*$. A sketch of the proof for the first containment is
+\begin{proof} (Sketch)
+\begin{align}
+A^* &= ( \Sigma_{a \in \Sigma} \derive{a}{A})^* &&\text{by star context with decomp then drop}\\
+ &= 1 + (\Sigma_{a \in \Sigma} \derive{a}{A}) \times (\Sigma_{a \in \Sigma} \derive{a}{A})^* &&\text{by unfold}\\
+ &= 1 + (\Sigma_{a \in \Sigma} \derive{a}{A}) \times A^* && \text{by drop then star context with recomp } \\
+ &= 1 + (\Sigma_{a \in \Sigma} (\derive{a}{A}) \times A^*) && \text{by distributivity }
+\end{align}
+\end{proof}
+%One turns the problematic regular expression $A^*$ into an unproblematic one $B^*$ by using drop and after a few more steps getting the shap $1 + B \times A^*$ where $\mynu{B} = \false$. 
+Thinking of $A^*$ as a list, this proof decomposes each element of the list, extracts the head, then recomposes the tail. Moreover, we used the induction hypothesis (recursive call) in both directions to achieve this. This yields an factorial time algorithm 
+\end{example}
+\begin{example}[Fast but monomorphic]
+
+\mycomment{Check font of lists ll}
+We now show how to derive an efficient decomposition for $a^* \times (a^*)^*$ with $\Sigma = \{a\}$. The return type is
+\[1 + a \times ((1 \times a^*) \times (\dstar a) +  a \times ((1 \times a^*) \times (\dstar a) )\]
+%To be precise, given that a parse tree has leaves \textsf{tt} and \textsf{Event a}, fast decomposition (and recomposition) has a recursion pattern that is a depth-first traversal of the parse tree that halt at the occurence of the first \textsf{Event a} leaf. For example, in the parse tree \textsf{fold (inr ((fold (inr (a,t)))))}, the recursive shall should not be applied to the subterm \textsf{t} in \textsf{(a,t)}. It is important to emphasize that we only are interested in efficient decomposition/recomposition \mycomment{any aspects of recomposition that might differ from decomposition? Yes I think recomposition does not need fixpoints, which could be mentioned, also check code}, since this might be performed multiple times in a Grabmeyer-style coercion derivation. Salomaa proved that $A = \decomp{A}$ and by completeness of the HN system, there must exist decomposition and recomposition coercions, but they are very slow. They take exponential time to compute. In the rest of this section we focus mostly on decomposition as recomposition is analogous.\\\\
+%Haven emphasized the importance of efficient decomposition we now show an efficient decomposition of $a^*\times \dstar a$ into $\leq 1 + a \times (((1 \times a^*) \times \dstar a) + (1 \times a^*) \times \dstar a)$ derivable in HN: Given the input type $a^*\times \dstar a$, our input is parse tree $(t_1,t_2)$ and we should only inspect $t_2$ if the leaves of $t_1$ are all \textsf{tt}. 
+Intuitively a parse tree $\mathsf{t} : a^* \times (a^*)^*$ is a list $\mathsf{l} : \mathsf{list~a}$ paired with a nested list $\mathsf{ll} : \mathsf{list~(list~a)}$. We want to define a function that tries to find the first $\mathsf{a}$ in $(\mathsf{l},\mathsf{ll}) : \mathsf{list~a} \times \mathsf{list~(list~a)}$
+\begin{minted}{Haskell}
+decomp ([],[]) = inl ()
+decomp ([],l::ll') = decomp (l,ll')
+decomp (a::l',ll) = inr (a,(l',ll))
+\end{minted}
+% We start from the intutive gallina program
+% \begin{minted}{Coq}
+% Fixpoint decomp (aa : (Star a) * (Star (Star a))) 
+%  : 1 + a * ((1 * Star a) * (Star (Star a)) + 
+%             (1 * Star a) * (Star (Star a)))  := 
+% match aa with 
+% | (sa,ssa) => match sa with 
+%                | fold (inl tt) => match ssa with 
+%                                    | fold (inl tt) => inl tt
+%                                    | fold (inr pp) => decomp pp
+%                | fold (inr (a,sa)) => inr (a,inl ((tt,sa),ssa))
+%               end
+% end
+% \end{minted}
+The program is terminating because we only recurse on subterms of the input. It is efficient it stops at the first event leaf. We now derive the coercion assuming the hypohtesis $\dslcom{f} : \denesting \leq \myo{\denesting} + a \times \derive{a}{(\denesting)}$
+% \begin{align*}
+% a^* \times \dstar{a} &\leq (1 + a \times a^*) \times \dstar{a}  &&\dslcominv{wrap}  \\
+%                      &\leq 1 \times \dstar{a} + (a \times a^* ) \times \dstar{a} &&\dslcom{distR}\\
+%                      &\leq 1 \times (1 + a^* \times \dstar{a})  + (a \times a^* ) \times \dstar{a} &&\dslcominv{wrap}\\
+%                      &\leq 1 \times 1 + 1 \times (a^* \times \dstar{a})  + (a \times a^* ) \times \dstar{a} &&\dslcom{distL}\\
+%                      &\leq 1 \times 1 + \Big(1 + a \times \derive{a}{(\denesting)} \Big) + (a \times a^* ) \times \dstar{a} &&\dslcom{id}+((\dslcom{id} \times \dslcom{f});\dslcom{proj})\\
+%                      &\leq 1 \times 1 + \Big(1 +  (a \times a^* ) \times \dstar{a} \Big) + (a \times a^* ) \times \dstar{a} &&\dslcominv{assoc};((\dslcom{id} \times \dslcominv{proj})\times \dslcom{id})\\
+%                      &\leq 1 + 1 \times (a^* \times \dstar{a}) +  a \times (a^*  \times \dstar{a})\\
+%                      &\leq 1 + 1\times ( 1 + a \times (((1 \times a^*) \times \dstar a)))) +\\
+%                      &\quad(1 \times a^*) \times \dstar a))  + a \times (a^*  \times \dstar{a}) \\
+%                      &\leq 1 + a \times (((1 \times a^*) \times \dstar a) + (1 \times a^*) \times \dstar a)
+% \end{align*}
+\begin{align}
+a^* \times \dstar{a} &\leq (1 + a \times a^*) \times \dstar{a}  &&\dslcominv{wrap}  \\
+                     &\leq 1 \times \dstar{a} + (a \times a^* ) \times \dstar{a} &&\dslcom{distR}\\
+                     &\leq 1 \times \dstar{a} +  a \times (a^*  \times \dstar{a}) && \dslcom{assoc} \\
+                     &\leq 1 \times (1 + a^* \times \dstar{a}) +  a \times (a^*  \times \dstar{a})&& \dslcominv{wrap} \\
+                     &\leq 1 + 1 \times (a^* \times \dstar{a}) +  a \times (a^*  \times \dstar{a})&&\dslcom{distL}\\
+                     &\leq 1 + 1\times \Big( 1 + a \times ((1 \times a^*) \times \dstar a)~+\\
+                     &\quad(1 \times a^*) \times \dstar a\Big)  + a \times (a^*  \times \dstar{a}) && \dslcom{f} \\
+                     &\leq 1 + a \times (((1 \times a^*) \times \dstar a) + (1 \times a^*) \times \dstar a) && \dslcom{untag}
+\end{align}
+\mycomment{Not readable, maybe in fewer lines as well?}
+The coercion we have built is:
+\begin{align}
+\fix f.~&(\dslcominv{wrap} \times \dslcom{id});\dslcom{distR};\\
+ \Big( &(\dslcom{id} \times \dslcominv{wrap});\dslcom{distL};\\
+       &\dslcom{untag} + ((\dslcom{id} \times \dslcom{f});\dslcom{proj});\\
+       &\dslcominv{assoc};(\dslcom{untag} + \dslcom{untag}) \\
+&+\\
+ &\dslcom{id} \times \dslcominv{proj} \times \dslcom{id} \Big);\\
+ & \Big(\dslcom{id} + \dslcom{assoc} ; \dslcom{untag} \Big)
+\end{align}
+% \begin{align}
+% a^* \times \dstar{a} &\leq (1 + a \times a^*) \times \dstar{a}   \\
+%                      &\leq 1 \times \dstar{a} + (a \times a^* ) \times \dstar{a}\\
+%                      &\leq \dstar{a} +  a \times (a^*  \times \dstar{a}) \\
+%                      &\leq 1 + a^* \times \dstar{a} +  a \times (a^*  \times \dstar{a})\\
+%                      &\leq 1 + ( 1 + a \times (((1 \times a^*) \times \dstar a) +\\
+%                      &\quad(1 \times a^*) \times \dstar a))  + a \times (a^*  \times \dstar{a}) \\
+%                      &\leq 1 + a \times (((1 \times a^*) \times \dstar a) + (1 \times a^*) \times \dstar a)
+% \end{align}
+% \begin{align}
+% \fix f.~&(\dslcominv{wrap} \times \dslcom{id});\dslcom{distR};\\
+% &\dslcom{proj};\dslcominv{wrap};(\dslcom{id} + \dslcom{f});\dslcominv{associnv};(\dslcom{untag} + \dslcom{id});\dslcom{assoc};(\dslcom{id}+\dslcom{untag})\\
+% &+\\
+%                                                                                               &(\dslcom{proj} \times \dslcom{id})
+% \end{align}
+This is derivable with side condition $S_2$ because no use of $\dslcominv{proj}$ happens before the recursive call.
+\end{example}
+\begin{remark}
+Refering to the decomposition coercion above as $\dslcom{d}$, and the recomposition coercion which we have omitted as $\dslcom{e}$, the Grabmeyer coercion for denesting is
+\[ \fix~f. \dslcom{d}; (\dslcom{id} + \dslcom{untag} ; \dslcom{assoc} ; (\dslcom{id} \times \dslcom{f})) ;\dslcom{r} \]
+This consists of the outer fixpoint $\fix f$ satisfying $S_1$ and a nested fixpoint in $\dslcom{d}$ satisfying $S_2$. We have thus given an example of a fast coercion that in order to be derivable requires a side condition $S_5 = S_1 \lor S_2$ not present in Henglein and Nielsen.
+\mycomment{Unclear, explain or remove}
+We believe that language containments can always be expressed as Grabmeyer coercions using $S_5$ but proving this is difficult due to the non-compositional nature of $S_2$. This side condition dictates that a recursive call may not happen after $\dslcominv{proj}$ which prevents a polymorphic decomposition by structural recursion on the regular expression.
+\end{remark}
+
+
+
+
+
+
+
+
+
+
+% In this section we present a novel variant of the coercion system that: 1) Allows fast polymorphic decomposition; 2) restrict the variable rule for recursive call such that all derivable coercions become terminating without imposing a side condition on the fixpoint rule. This restriction has some advantages which explain.
+
+
+
+% The decomposition operation can be viweed as a polymorphic coercion $\contains{}{c}{\forall X. X}{\myo{o} + \decomp{X}}$. Since we do not have a $\forall$- introduction rule this is not derivable in the Henglein and Nielsen system, but it serves as an intuition for how we might define in one go, a efficient generic decomposition, for all regular expressions. In Coq this would look like:
+% \begin{minted}{Coq}
+% Fixpoint (A : regex) : A -> (o A) +  
+%                             \big[Plus/Empt]_(i <- l) ((Event i)_;_(i \ Event a) :=
+% fun a => 
+% match A with 
+% | ....
+% \end{minted}
+% In fact, 
+%HERE
+%  Henglein and Nielsen sketch an approach to build efficient coercions by following the shape of a Grabmeyer derivation. Assuming that $A \subseteq B$,
+%  prove that they can code proofs consisting solely of COMP-fix with transitivity, context-rules and ACI. To do this they make use of the the animorov decomposition in building their coercions. The decomposition and its adaptation to containment can be seen in Figure \ref{fig:decomp}
+%  \begin{figure}
+%    \centering
+%    \begin{align}
+% &A = \mynu{A} + \Sigma_{a \in \Sigma} \derive{a}{A}\\
+% &\contains{}{d}{A}{\mynu{A} + \Sigma_{a \in \Sigma} \derive{a}{A}} \label{eq:derive1}\\
+% &\contains{}{e}{\mynu{A} + \Sigma_{a \in \Sigma} \derive{a}{A}}{A} \label{eq:derive2}\\
+% &\contains{}{\fix ~f.d;(id + \Sigma_{a \in \Sigma} id\times f_a); e}{A}{B} \qquad \text{assuming }f_a : \derive{a}{A} \rightarrow \derive{a}{B}, \forall ~ a \in \Sigma \label{eq:coerce}
+%    \end{align}
+%    \caption{Regular expression decomposition}
+%    \label{fig:decomp}
+%  \end{figure}
+% Salooma show this can derived using the rules of weak equivalence along with $(1 + A)^* = A^*$. Henglein and Nielsen prove that they can code Salomaas derivations; which implies they can derive coercions in (\ref{eq:derive1}, \ref{eq:derive2}). 
+% Their claim however that Grabmeyer style coercions, as seen in (\ref{eq:coerce}), are always efficient linear time programs, is unfortunately wrong. In particular, for the synthesis approach given by Henglein and Nielsen it is slower than Kozen. The reason for this is that the effeciency of Grabmeyes style coercions relies on implementing constant time decomposition $\contains{}{d}{A}{\mynu{A} + \Sigma_{a \in \Sigma} \derive{a}{A}}$ and re-composition $\contains{}{e}{\mynu{A} + \Sigma_{a \in \Sigma} \derive{a}{A}}{A}$.\\
+To solve the issue from the last section, rather than defining yet another side condition, we recognize that replacing $A$ with $(1 + \decomp A)$ caused the problematic reappearence of $A^*$ after distribution (\ref{align:problematic}). If we could replace $A$ with $(\decomp A)$, there would be no need for the fixpoint. The derivation would go like this:
+\begin{proof} (Sketch)
+\begin{align}
+A^* &\leq  1 + A \times A^* && \text{by unfold}\\
+ &\leq 1 + (\decomp{A}) \times A^* && \text{by } \dslcom{peek}~\text{with }\dslcom{IH}\\
+ &\leq 1 + \decomp{A^*} && \text{distributivity}
+\end{align}
+\end{proof}
+Where we define $\dslcom{peek}$ as.
+\[ \infer{\contains{}{peek ~ c}{A^*}{1 + B \times A^*}}{\contains{}{c}{A}{1 + B}} \]
+\mycomment{remove remark}
+\begin{remark}
+It seems likely that a variant of the Kozen measure could be defined that would allow $\dslcom{peek}$ to be derived from the Henglein and Nielsen's fix rule. This is no consequence to us as we are aiming at replacing the general fixpoint construct with a stricter construct that only allows obviously terminating recursion
+\end{remark}
+
+\subsection{Restricting the fixpoint}
+We have described an algorithm to synthesize efficient decomposition coercions using $\dslcom{peek}$. In particular, the decomposition makes no use of the general fixpoint. For now we however use this decomposition to build Grabmeyer coercions that however do make use of the general fixpoint rule
+\[\infer{\containsP{}{\fix ~f.decomp_A;(id + \Sigma_{a \in \Sigma} id\times f_a); recomp_B}{A}{B}{S_1}}{\containsP{\dslcom{f} : A \leq B}{f_a}{\derive{a}{A}}{\derive{a}{B}}{S_1}, \forall a \in \Sigma} \]
+
+% \begin{minted}{Coq}
+% Fixpoint decomp (A : regex) : A -> (o A) +  
+%                             \big[Plus/Empt]_(i <- l) ((Event i)_;_(i \ Event a)
+
+% fun a =>
+% match A with 
+% | Star B =>  match drop ((star_ctx decomp) a)
+%              | fold (inl ()) => inl () 
+%              | fold (inr (a',a_sigma)) =>  distr a' (star_ctx comp (dropinv a_sigma))
+% ...
+% end 
+% with
+%          comp (A : regex) : (o A) +  
+%                             \big[Plus/Empt]_(i <- l) ((Event i)_;_(i \ Event a) -> A
+% \end{minted}
+% \footnote{We omit definition of \textsf{distr}. As we saw earlier, \textsf{starctx} and \textsf{drop} are linear time taversals of the parse tree.}
+% This program has exponential runtime due to the recursive call \textsf{decomp} in \textsf{starctx}. The ineffeciency is due to the decomposition of the wole list when we only care about the decomposition of the head. 
+
+% \begin{lemma}
+% \noindent \\
+% (1) Decomposition and recomposition is derivable with the rules of weak equivalence with $\dslcom{peek}$ and $\dslcom{peekinv}$\\
+% (2) The runtime is best-case constant and worst-case linear
+%\end{lemma}
+% \[
+% \contains{}{\fix ~f.d;(id + \Sigma_{a \in \Sigma} id\times f_a); e}{A}{B} \qquad \text{assuming }f_a : \derive{a}{A} \rightarrow \derive{a}{B}, \forall ~ a \in \Sigma \]
+In the work of Henglein and Nielsen it is beneficial to have a general fixpoint rule that can be instantiated with different side conditions, as it makes their proof space so large that they can derive all the rules in each of the three axiomatizations they study (Salomaa,Kozen,Grabmeyer). Their proof space thus contains fast linear-time coercion and slow exponential time-coercions. In this work however, our interests differ, we are interested in: 1) efficient and simple synthesis of coercions; 2) The interpretation of these coercions must yield linear time programs.
+Regarding the second point, we saw that Grabmeyer coercions interpret to fast programs, so we will aim restricting recursion to only allow us such derivations. Let us investigate the recursion pattern in a Grabmeyer coercion:\\
+For regular expression $A$, after executing decomposition $\dslcom{d}$ we have 
+ \[ \myo{A} + \decomp{A} \]
+ The right summand is piped into $\Sigma_{a \in \Sigma} \dslcom{id}\times f_a$, where $\dslcom{id}$ will be applied to the parse tree $\mathsf{a} : a$ for each $a \in \Sigma$. Any recursive call to $\dslcom{f}$ in any of the continuations $\mathsf{f_a}$, will thus happen in the right component $\mathsf{t} : \derive{a}{A}$ of the pair $(\mathsf{a},\mathsf{t}) : a \times \derive{a}{A}$. 
+% The general fix rule is more general than we need it to be and for mechanization purposes it is more convenient to restrict our syntax so that it does not contain exotic terms (those that do not satisfy the side condition in Henglein and Nielsens system).
+This recursion pattern tells us that we may freely add our conclusion to our set of assumptions without any sideconditions:
+\[\infer{\contains{\Gamma}{\fix ~f.d}{A}{B}}{ \contains{\Gamma, \dslcom{f}: A \leq B}{d}{A}{B}}
+\]
+So long that we restrict discharge of an assumption till after the consumption of an event
+\[\infer{\contains{\Gamma, \mathsf{f} : A \leq B, \Gamma'}{var~f}{a \times A}{a \times B}}{}
+\]
+Let us call this for event guarded recursion. Notice that event guardedness is built into the syntax; the assumption $\mathsf{f}$ with input type $A$ can be used only to build $\mathsf{var~f}$ which has input type $a \times A$.
+
+We can now replace the general fix rule with event guarded recursion and $\dslcom{peek}$. The effect of restricting the coercion language is that firstly; Only fast proofs are derivable. Secondly, the system has no exotic terms, $\fix f. f$ is not derivable. Put differently, all rules are compositional, and context is not necessary in order to build a subterm in the coercion sytem. 
+
+These changes simplifies the soundness proof which essentially comes down to proving termination of interpretation. Restricting the syntax of coercions simplifies the termination argument for the interpreter. 
+
+Completeness on the other hand is essentially coercion synthesis and the elimination of the side condition removes the computation cost of checking the side conditions during synthesis. This is significant for side condition $S_2$ which takes time linear in the size of the coercion.\\\\
+The new definition of the coercion system can be seen in Figure (\ref{fig:system})
+\begin{figure}
+\caption{The new coercion system is the rules of Henglein and Nielsen, with fixpoint and variable rules replaced by these rules}
+\label{fig:system}
+\centering
+\begin{displaymath}
+\begin{array}{lll}
+% \myaxiomC{shuffle}{A + B + C}{A + (B + C)} \qquad  
+% \myaxiomC{retag}{A + B}{B + A} \qquad 
+% \myaxiomC{untagL}{0 + A}{A} 
+% \\\\
+% \containsG{untag}{A + A}{A}   \qquad \containsG{tagL}{A}{A + B} \qquad
+
+% \myaxiomC{assoc}{A \times B \times C}{A \times (B \times C)}
+% \\\\\
+% \myaxiomC{swap}{A \times 1}{A} 
+% \myaxiomC{proj}{1 \times A}{A} \qquad
+% \myaxiomC{abortR}{A \times 0}{0} \qquad
+% \myaxiomC{abortL}{0 \times A}{0} 
+% \\\\
+% \myaxiomC{distL}{A \times (B + C)} {A \times B + A \times C} \qquad
+% \myaxiomC{distR}{(A + B)\times C}{A \times C + B \times C} 
+% \\\\
+% \myaxiomC{wrap}{1 + A \times A^*}{A^* } \qquad \myaxiomC{id}{A}{A}
+% \\\\
+% \infer{\containsG{c;d}{A}{C}}{\containsG{c}{A}{B} & \containsG{d}{B}{C}} \qquad
+
+% \infer{\containsG{c + d}{A + B}{ C + D}}{\containsG{c}{A}{C} & \containsG{d}{B}{D}}  \qquad
+
+% \infer{\containsG{c \times d}{A \times B}{ C \times D}}{\containsG{c}{A}{C} & \containsG{d}{B}{D}} 
+% \\\\
+\infer{\contains{}{\dslcom{peek}~d}{A^*}{1 + B \times A^*}}{\contains{}{d}{A}{1 + B}} \qquad
+\\\\
+\infer{\contains{\Gamma}{\fix ~f.d}{A}{B}}{ \contains{\Gamma, \dslcom{f}: A \leq B}{d}{A}{B}} \qquad
+\infer{\contains{\Gamma, \mathsf{f} : A \leq B, \Gamma'}{var~f}{a \times A}{a \times B}}{}
+\end{array}
+\end{displaymath}
+\end{figure}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "main"
+%%% End:

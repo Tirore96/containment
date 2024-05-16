@@ -1,0 +1,217 @@
+
+
+
+Completness of the coercion system holds if all language containments are derivable as coercions
+\[ A \subseteq B \implies \exists \dslcom{c}.\contains{}{c}{A}{B}\]
+Coq is a constructive logic which means a Coq proof of this property is a function that maps a language containment proof $A \subseteq B$ to a witness $\dslcom{c}$ that satisfies $\contains{}{c}{A}{B}$. Intutitively one can with a completeness proof in hand, define a synthesis procedure that builds $\dslcom{c}$ by implementing a decision procedure for containment. The most involved part in the definition of such a procedure is the termination proof. In reality, the completeness proof relies on a similar finiteness argument because the coercion derivation must be inductively derivable. In this section we define a variant of the procedure in Almeida et al. \cite{AMR09} that decides containment and prove its termination. In the next section, this termination argument will be used to show completeness.
+
+It is known that regular expression equivalence $A = B$ can be decided by trying to build a finite bisimulation $R$ that contains this pair $(A,B)$. 
+Mechanising the termination proof of such a procedure is quite involved. To the best of our knowledge the shortest mechanised proof of such a decision in the litterature is by Apserti \cite{A12} proving it in less than 1200 lines of code by adding point annotations to regular expresssions. These point annotations allow a simple way to enumerate all reachable pairs. We take a similar approach without point annotations that admits a shorter termination proof. To allow this comparison between the techniques we provide a self-contained file without the coercion system that proves decidability of regular expression equivalence in less than 900 lines. We now explain the approach.
+
+% \begin{definition}[Parameterized coinduction] 
+% $G \in (C \monarrow C) )$
+% \end{definition}
+\subsection{Containment as Simulation}
+The brozowski derivative and the nullary operator provide a simple way to construct a determinstic (infinite)-state automaton by taking the derivative as transition function and nullary operator as state finality. Regular expressions can then be related by simulation of their respective automata. We omit the formal definition of the automata construction and simply state simulation as:
+%It is known that regular expression containment is equivalent  simulation on regular expressions as determinstic automaton. The brozowski derivative $\derive{a}{A}$ is the transition function and the nullary operator $\mynu{\cdot}$ defines finality of a state. With this extensional view, language containment is stated coinductively as:
+\begin{definition}[Simulation]
+\[\infer={A \sim B}{\mynu{A} \implies \mynu{B} & \forall a \in \Sigma, \derive{a}{A} \sim \derive{a}{B} }\]
+\end{definition}
+Simulation is a coinductive definition, and has the following coinduction principle (taking $F$ as the generating function for $\sim$):\\
+\[ (A,B) \in R \land R \subseteq F(R) \implies A \sim B  \]
+That is, to show a simulation it suffices to find a (possibly infinitary) relation $R$ that is a post fixedpoint of $F$. 
+\begin{lemma}\label{lem:simcon}
+Simulation coincides with language contaiment
+\end{lemma}
+\begin{proof}
+Add sketch if room
+\end{proof}
+\subsection{Deciding Simulation (naieve)}
+A natural definition of the decision procedure can be derived from an inductive sequent presentation of Simulation 
+\[\infer{\Gamma \vdash A \simind B}{\mynu{A} \implies \mynu{B} &  \Gamma, A \simind B \vdash \derive{a}{A} \simind \derive{a}{B},\forall a \in \Sigma }\]
+We have defined a single-rule axiomatization of containment, $\sim_{ind}$, that contains only Grabmeyer's \textsf{COMP/FIX} rule presented as a containment. This axiomatization is sound but not complete. To see why, let us derive the natural decision procedure that is suggested by $\sim_{ind}$
+% This proof principle can be awkard to use because a post fixed point must be guessed up front. Hur et al. [cite] introduce parameterized coinduction that allows $R$ to be constructed incrementally throughout the proof. They introduce the parameterized greatest fixpoint
+%  \[ G_f(R) \triangleq gfp(\lambda X. F(X \cup R))
+% \]
+% Where $G_f(\{\}) = gfp(F)$. The following rule allows the accumulation into $R$
+% \[ Y \subseteq G_f(X) \iff Y \subseteq G_f(X \cup Y)
+% \]
+% Relating this back to simulation, is showing an inclusion:
+% \[A \sim B = \{(A,B)\} \subseteq G_f(\{\})  \]
+% If we were to prove that $A^*$ is in simulation with $\dstar{A}$, for any $A$, the accumulation rule would add to $R$ the following infinitary relation
+% \[ X = \{ A^*  \sim  \dstar{A} | A \in \mathcal{Regex} \} \]
+% \[  X \subseteq  G_f(\{\})  \iff X \subseteq  G_f(\{X\})  \]
+% We will call this infinitary coinduction.\\
+% If on the other hand we were to prove this statement with $A$ fixed to $\event{a}$ for some specic event $a$, we would accumulate $R$ by a single pair:
+% \[  \{(\dstar{\event{a}},\event{a}^*)\} \subseteq  G_f(\{\})  \iff X \subseteq  G_f(\{(\dstar{\event{a}},\event{a}^*))  \]
+% We will call this finitary coinduction. Brandt and Henglein (1997) showed that some times finitary coinduction can be captured by natural deduction systems. For example, they showed that coinductively defined equivalence of $\mu$-types
+% can be captured by a natural deduction judgment $\Gamma \vdash \tau = \tau' $ where $\Gamma$ corresponds to the $R$ that accumulates during parameterized coinduction. As natural deductions are inductive finite derivations, only finitary coinduction can be modeled, which works for $\mu$-types because they encode regular trees which have finitely many distinct sub-trees, putting an upperbound on the reachable pairs one may see during a derivation. A similar result holds for regular expressions.\\
+
+
+% This proof principle can be awkard to use because a post fixed point must be guessed up front. Hur et al. [cite] introduce parameterized coinduction that allows $R$ to be constructed incrementally throughout the proof. They introduce the parameterized greatest fixpoint
+% \[ G_f(R) \triangleq gfp(\lambda X. F(X \cup R))
+% \]
+% Where $G_f(\{\}) = gfp(F)$. The following rule allows the accumulation into $R$
+% \[ Y \subseteq G_f(X) \iff Y \subseteq G_f(X \cup Y)
+% \]
+% Relating this back to simulation, is showing an inclusion:
+% \[A \sim B = \{(A,B)\} \subseteq G_f(\{\})  \]
+% If we were to prove that $A^*$ is in simulation with $\dstar{A}$, for any $A$, the accumulation rule would add to $R$ the following infinitary relation
+% \[ X = \{ A^*  \sim  \dstar{A} | A \in \mathcal{Regex} \} \]
+% \[  X \subseteq  G_f(\{\})  \iff X \subseteq  G_f(\{X\})  \]
+% We will call this infinitary coinduction.\\
+% If on the other hand we were to prove this statement with $A$ fixed to $\event{a}$ for some specic event $a$, we would accumulate $R$ by a single pair:
+% \[  \{(\dstar{\event{a}},\event{a}^*)\} \subseteq  G_f(\{\})  \iff X \subseteq  G_f(\{(\dstar{\event{a}},\event{a}^*))  \]
+% We will call this finitary coinduction. Brandt and Henglein (1997) showed that some times finitary coinduction can be captured by natural deduction systems. For example, they showed that coinductively defined equivalence of $\mu$-types
+% can be captured by a natural deduction judgment $\Gamma \vdash \tau = \tau' $ where $\Gamma$ corresponds to the $R$ that accumulates during parameterized coinduction. As natural deductions are inductive finite derivations, only finitary coinduction can be modeled, which works for $\mu$-types because they encode regular trees which have finitely many distinct sub-trees, putting an upperbound on the reachable pairs one may see during a derivation. A similar result holds for regular expressions.\\
+
+% We recall that the definition of simulation was:
+% \[\infer={A \sim B}{\mynu{A} \implies \mynu{B} & \forall a \in \Sigma, \derive{a}{A} \sim \derive{a}{B} }\]
+%  We have intentionally designed the coercion language to allow Grabmeyer coercions
+% \[\infer{\containsP{}{\fix ~f.decomp_A;(id + \Sigma_{a \in \Sigma} id\times f_a); recomp_B}{A}{B}{S_1}}{\containsP{\dslcom{f} : A \leq B}{f_a}{\derive{a}{A}}{\derive{a}{B}}{S_1}, \forall a \in \Sigma} \]
+% %\[\contains{}{\fix ~f.d;(id + \Sigma_{a \in \Sigma} id\times f_a); e}{A}{B}\]
+% And the continuations $\dslcom{f}_a$ will be derived under the extended assumption: $\contains{(A,B)}{f_a}{\derive{a}{A}}{\derive{a}{B}}$. In general, our context $\Gamma$ in $\containsG{c}{E}{F}$ is finite and we can thus not simulate the infinitary coinduction going on in the simulation relation. We must constrain simulation to an equivalent relation that only does finitary coinduction.\\
+% This gives rise to a finite characterisation of containment as a terminating decision procedure. We present a less effecient version of the decision procedure from Almeida \cite{AMR09}
+\begin{align}
+\simulationb{V}{A}{B} =\begin{cases}
+			\true, & \text{if }(A,B) \in V\\
+                      \bigwedge_{a \in \Sigma}\simulationb{V \cup \{(A,B)\}}{\derive{a}{A}}{\derive{a}{B}}, & \text{otherwise}
+		 \end{cases}
+\end{align}
+So long that we let $(A,B) \in V$ check membership modulus ACI. To show completeness of the coercion system one could do it as:
+\begin{enumerate}
+\item Prove $A \sim B$ implies $\simulationb{\{\}}{A}{B}$, by finitiness of distinct derivatives modulus ACI
+\item Prove $\simulationb{\{\}}{A}{B}$ implies $\exists c.~\contains{}{c}{A}{B}$ by functional induction
+\end{enumerate}
+Doing (1.) in a proof assistant like Coq is challenging because the termination argument must be translated into a property that can be characterized by an inductive judgment, which we can structurally recurse on. The Bragga method [cite] explains in detail how one may separate the termination argument from the definition of a recursive function, by instead of reucrsing on the input $x$, recursing on an inductive proof about $x$, called $\mathbb{D}~x$. We take this approach and it is easier to define $\mathbb{D}~x$ if we move from standard brozowski derivatives to partial derivatives. Normally partial derivatives are defined by mapping a regular expression to a set of regular expression. In our mechanization we use inductive lists instead of sets, and to keep the paper formalization as close as possible to the mechanization, we will present partial derivatives exactly as they have been defined in the code.\\
+\mycomment{In vector A, replace tilde with arrow}
+\begin{definition}[Partial derivatives]
+  \begin{displaymath}
+    \begin{array}{lll}
+\pd{a}{0} = [0] \qquad \pd{a}{1} = [0] \qquad \pd{a}{a} = [1] \qquad \pd{a}{a'} = [\mathsf{if}~a=a'~\mathsf{then}~1~\mathsf{else}~0]\\\\
+\pd{a}{A + B} = \cat{\pd{a}{A}}{\pd{a}{B}} \qquad
+\pd{a}{A^*} = \pd{a}{A} \times  A^*
+% \pd{a}{A^*} = \mathsf{map }(\lambda x.~x \times A^*)~\pd{a}{A} 
+\\\\
+\pd{a}{A \times B} = \mathsf{if}~\mynu{A}~\mathsf{then}~ (\pd{a}{A} \times B) \cdot \pd{a}{B}~\mathsf{else}~\pd{a}{B}
+%\cat{(\mathsf{map }(\lambda x.~x \times B)~\pd{a}{B})}{\pd{a}{B}} ~\text{ if }~\mynu{A} = 1~
+% \pd{a}{A \times B} = \cat{(\mathsf{map }(\lambda x.~x \times B)~\pd{a}{B})}{\pd{a}{B}} ~\text{ if }~\mynu{A} = 1~
+%\\\\
+%\pd{a}{A \times B} = (\mathsf{map }(\lambda x.~x \times B)~\pd{a}{B}) ~\text{ if }~\mynu{A} = 0~ 
+    \end{array}
+  \end{displaymath}
+The partial derivative of a list of regular expressions $\tilde{A}$ is:
+\[\pd{a}{\tilde{A}} = \mathsf{undup}(\mathsf{flatten}(\mymapn{\partial_a}{\tilde{A}}))\]
+The nullariness of a list of regular expressions is:
+\[\mynu{\tilde{A}} = 1 ~\text{if }~\exists A \in \tilde{A}~st. ~ \mynu{A}=1 \text{ otherwise } 0\]
+\end{definition}
+% Using partial derivatives, we c
+% So long that we let $(A,B) \in V$ check membership modulus ACI. To show completeness of the coercion system one could do it as:
+% \begin{enumerate}
+% \item Prove $A \sim B$ implies $\simulationb{\{\}}{A}{B}$, by finitiness of distinct derivatives modulus ACI
+% \item Prove $\simulationb{\{\}}{A}{B}$ implies $\exists c.~\contains{}{c}{A}{B}$ by functional induction
+% \end{enumerate}
+% Doing (1.) in a proof assistant like Coq is challenging because the termination argument must be translated into a property that can be characterized by an inductive judgment, which we can structurally recurse on. The Bragga method [cite] explains in detail how one may separate the termination argument from the definition of a recursive function, by instead of reucrsing on the input $x$, recursing on an inductive proof about $x$, called $\mathbb{D}~x$. We take this approach and it is easier to define $\mathbb{D}~x$ if we move from standard brozowski derivatives to partial derivatives. Normally partial derivatives are defined by mapping a regular expression to a set of regular expression. In our mechanisation we use inductive lists instead of sets, and to keep the paper formalization as close as possible to the mechanisation, we will present partial derivatives exactly as they have been defined in the code.\\
+%We can now define Simulation with partial derivatives
+We now define $\simulationb{V}{\cdot}{\cdot}$ procedure with partial derivatives
+\begin{definition}[$\mathsf{simulation}_V$]
+\begin{align}
+\simulationb{V}{\tilde{A}}{\tilde{B}} =\begin{cases}
+			\true, & \text{if }(\pder{A}{B}) \in V\\
+                      \bigwedge_{a \in \Sigma}\simulationb{V \cup \{\pder{A}{B}\}}{\mypar{a}{\tilde{A}}}{\mypar{a}{\tilde{B}}}, & \text{otherwise}
+		 \end{cases}
+\end{align}
+\end{definition}
+%\[\infer={\tilde{A} \sim \tilde{B}}{\mynu{\tilde{A}} \implies \mynu{\tilde{B}} &\mypar{a}{\tilde{A}} \sim \mypar{a}{\tilde{B}}, \forall a \in \Sigma }\]
+
+% \begin{lemma}
+% $A \sim B$ iff $[A] \sim [B]$
+% \end{lemma}
+\subsection{Termination}
+\mycomment{actually the code only uses the partial one, goes directly from language containment I think}
+We compute the $\pi$ enumeration from Champarnaud and Ziadi \cite{CZ01} adapted to lists
+\begin{definition}[Enumeration]
+  \begin{displaymath}
+    \begin{array}{lll}
+  \pi(0) = [] \qquad \pi(1) = [] \qquad \pi(a) = [1] \qquad \pi(A + B) = \cat{\pi(A)}{\pi(B)} \qquad \pi(A^*) =\pi(A) \times A^*  \\\\
+  \pi(A \times B) = (\pi(A) \times B) \cdot \pi(B)  
+% \cat{\mymap{\lambda x.~x \times B}{\pi(A)}}{\pi(B)}
+%\mymap{\lambda x.~x \times A^*}{\pi(A)}
+    \end{array}
+  \end{displaymath}
+
+%We extend this to a pair of lists of regular expressions:
+%\[\pi(\tilde{A},\tilde{B})= \mathsf{cartesian}(\pi(\tilde{A}),\pi(\tilde{B}))\]
+\end{definition}
+We extend their definition of $\pi$ to $\mathsf{list}~\re$ and $\mathsf{list}~\re \times \mathsf{list}~\re$
+\[\pi([])=[[]] \qquad \pi(A::\tilde{A}) = \pi(A) \times \pi(\tilde{A}) \qquad \pi(\tilde{A},\tilde{B})= \pi(\tilde{A}) \times \pi(\tilde{B})\]
+This lets us state that the enumeration, computed by $\pi$, contains enumerations of derivatives 
+\begin{lemma}\label{lem:closure}
+ $(\tilde{A},\tilde{B}) \in \pi(\partial_a(\tilde{C},\tilde{D}))$ implies  $(\tilde{A},\tilde{B}) \in \pi((\tilde{C},\tilde{D}))$ 
+\end{lemma}
+We use this lemma to prove termination of $\simulationb{V}{\cdot}{\cdot}$. Again we present the definitions that were actually used in the mechanisation. In a proof assistant like Coq, a termination argument must be given as an inductive type, which a fixpoint can structurally recurse on. The Bragga method \cite{WMF21} allows the separation of the termination argument from the function definition. Instead of recursing on any part of the input $V$ or $(\pder{A}{B})$, one inductively characterizes a domain for the function $\mathbb{D}~V~\pder{A}{B}$, which the fixpoint structurally recurses on. We define a domain $\mathbb{D}$ that follows the course-of-values of $\simulationb{V}{\cdot}{\cdot}$
+\begin{definition}[Domain]
+  \begin{displaymath}
+    \begin{array}{lll}
+      \infer[\mathbb{D}_{stop}]{\domm{V}{\pder{A}{B}}}{\pder{A}{B} \in V} \qquad \infer[\mathbb{D}_{step}]{\domm{V}{\pder{A}{B}}}{\pder{A}{B} \notin V & \mathsf{uniq}(\pder{A}{B}) & \domm{(\pder{A}{B}::V)}{\partial_a(\pder{A}{B})},\forall a \in \Sigma}
+    \end{array}
+  \end{displaymath}
+\end{definition}
+A derivation of $\mathbb{D}~\emptyset~\pder{A}{B})$ tells us that $\tilde{A}$ and $\tilde{B}$ are unique lists and the process of repeatedly taking partial derivatives will result in a cycle evidenced by $\mathbb{D}_{stop}$. For unique lists, such a derivation always exists.
+%And define the decision procedure that follows the course-of-values of $\mathbb{D}$:
+%The structural recursion of $\simulationb{V}{\pder{A}{B}}$ is defiend on $\domm{V}{\pder{A}{B}}$, which means the function is only defined on $\tilde{A}$ and $\tilde{B}$ when we can derive $\domm{V}{\pder{A}{B}}$. We prove the following:
+\begin{lemma}
+If $\tilde{A}$ and $\tilde{B}$ are unique lists, $\domm{V}{\pder{A}{B}}$ is derivable for any $V$.
+\end{lemma}
+\begin{proof}
+Relies on Lemma (\ref{lem:closure}), from which we show the following decreasing measure:\\
+Define $M(V,\pder{A}{B} = |\pi(\pder{A}{B}) \backslash \{V\}|  $ \mycomment{using set notation for lists}\\
+If $\tilde{A}$ and $\tilde{B}$ are unique and $\pder{A}{B} \notin V$ then $M(\pder{A}{B}::V,\mypar{a}{\pder{A}{B}}) <  M(V,\pder{A}{B}) $
+\end{proof}
+We can now state the decidability result
+\begin{lemma}\label{lem:dec}
+$A \subseteq B$ iff $\simulationb{nil}{[A]}{[B]}$
+\end{lemma}
+
+We proved this property to get a functional induction principle that will help us to prove completeness of the coercion system. As an intermediate result we however have a mechanized decidability of regular expression containment. In the mechanization we define $\mathsf{bisimulationb}$ analogously to show that the method is the same for deciding regular expression equivalence. Many mechanizations of this result exists in the literature, but we think this might be the shortest proof of regular expression equivalence in the literature. It is shorter than [cite Matita], whose main contribution was the compactness of their proof. We believe our concicseness is achieved by defining partial derivatives using lists and computing a closure by extending the standard definition of $\pi(A)$ on a single regular expression to a list of regular expresions $\pi(\tilde{A})$.\\\\
+Now with a functional indunction principle in hand we are ready to build the coercions. Since we are working with lists of regular expressions $\tilde{A}$, to avoid clutter we will write $\tilde{A}$ in a position where a regular expression is expected to mean $\mysum{A}{\tilde{A}}$ The main theorem of the completeness proof is:
+\begin{theorem}
+Assuming for all $\pder{E}{F} \in V$ that $\pder{E}{F} \in \Gamma$, then\\
+$\simulationb{V}{\tilde{A}}{\tilde{B}}$ implies that there exists $\dslcom{c}$ s.t. $\contains{\Gamma}{c}{\tilde{E}}{\tilde{F}}$
+\end{theorem}
+% $\simulationb{V}{\pder{A}{B}}$ is defined on lists of regular expressions, so we define coercions that let us jump from 
+\begin{proof}[Sketch]
+By induction on $\domm{V}{\pder{E}{F}}$. Derive the following variants of decomposition and recomposition:
+\begin{align}
+&\forall \tilde{A},a.~\exists \dslcom{c}.~\contains{}{c}{(\tilde{A}}{\myo{\tilde{A}} + \Sigma_{a \in \Sigma} a \times \mypar{a}{\tilde{A}}} \ref{align:pdecomp}\\
+&\forall \tilde{A},a.~\exists \dslcom{c}.~\contains{}{c}
+{\myo{\tilde{A}} + \Sigma_{a \in \Sigma} a \times \mypar{a}{\tilde{A}}}
+{\tilde{A}} \ref{align:precomp}
+\end{align}
+The proof follows the shape of the Grambeyer coercion:
+\[\contains{}{\fix ~f.d;(id + \Sigma_{a \in \Sigma} id\times f_a); e}{A}{B}\]
+We first apply $\fix$, then by decomposition and recomposition (\label{align:pdecomp},\label{align:precomp}) it suffices to show for each $a \in \Sigma$ that there exists $\dslcom{c}$ s.t. $\contains{\Gamma,\pder{A}{B}}{c}{\mypar{a}{\tilde{A}}}{\mypar{a}{\tilde{B}}}$, which is our induction hypothesis.
+\end{proof}
+\begin{corollary}[Completeness and synthesis]
+\mycomment{Mention this is compact decision procedure for equivalence, point to file}
+(1): If $A \leq B$ then there exists $\dslcom{c}$ s.t. $\contains{}{c}{A}{B}$\\
+(2): There exists a procedure such that decides the containment $ A \leq B$ and in the positive case synthesises a coercion $\contains{}{c}{A}{B}$
+\end{corollary}
+
+
+% computing an enumeration of reachable partial derivatives \mycomment{How is this different from equivP in technique and loc}.  
+
+
+%Completeness and synthesis are related. Completeness does in this setting mean that all language containments \textsf{Contains A B} can be derived in the coercion system of Figure (\ref{fig:system}). In the presence of a decision procedure for language containment \textsf{dec : \{Contains A B\} + \{~ Contains A B\}}, we can use the completeness proof to synthesize a coercion, going from \textsf{Contains A B} to $\contains{}{c}{A}{B}$.
+% Recall that we aim at synthesising Grabmeyer style coercions which inductively emulate finitary coinduction proofs of similarity. We recall the definition of simulation
+
+%We follow the completeness proof of Henglein and Nielsen and build $c$ as a Grabmeyer coercion.\\
+
+
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "main"
+%%% End:
