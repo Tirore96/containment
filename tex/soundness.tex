@@ -117,25 +117,26 @@ $\contains{}{c}{A}{B}$ implies $A \subseteq B$
 \subsection{Representation}
 In Coq we represent a derivation of $\containsG{c}{A}{B}$ as the term  \textsf{c : dsl Gamma A B}.
 \mycomment{change drop to peek in code}
-\begin{minted}{Coq}
-Inductive dsl (Gamma: seq (regex * regex)) : regex -> regex -> Type := 
-| shuffle A B C : dsl Gamma ((A _+_ B) _+_ C) (A _+_ (B _+_ C))
-| dfix A B : dsl ((A,B):: Gamma) A B -> dsl Gamma A B.
-| var a A B :   (A,B) \in Gamma -> dsl Gamma (Event a _;_ A) (Event a _;_  B) 
-...
-\end{minted}
-One builds a variable using two regular expressions \textsf{A} and \textsf{B} and a proof that their pair is in the environment. 
-\begin{minted}{Coq}
-Lemma pf_in : (A,B) \in [(A,B)]. Proof. ... Qed.
-Definition var_example : dsl [(A,B)] (a * A) (a * B)  := var a A B pf_in
-\end{minted}
+\mycomment{Outcommented coq code due to minted package errors}
+% \begin{minted}{Coq}
+% Inductive dsl (Gamma: seq (regex * regex)) : regex -> regex -> Type := 
+% | shuffle A B C : dsl Gamma ((A _+_ B) _+_ C) (A _+_ (B _+_ C))
+% | dfix A B : dsl ((A,B):: Gamma) A B -> dsl Gamma A B.
+% | var a A B :   (A,B) \in Gamma -> dsl Gamma (Event a _;_ A) (Event a _;_  B) 
+% ...
+% \end{minted}
+% One builds a variable using two regular expressions \textsf{A} and \textsf{B} and a proof that their pair is in the environment. 
+% \begin{minted}{Coq}
+% Lemma pf_in : (A,B) \in [(A,B)]. Proof. ... Qed.
+% Definition var_example : dsl [(A,B)] (a * A) (a * B)  := var a A B pf_in
+% \end{minted}
 Applying \textsf{dfix} extends the environment. In the derivation below, we \textsf{dfix} extends the empty environment \textsf{nil} with \textsf{((1 + Star a),(Star a))} and \textsf{var a (1 + Star a) (Star a) pf\_in2} refers to this entry.
-\begin{minted}{Coq}
-Lemma pf_in2 : ((1 + Star a),(Star a)) \in [(1 + Star a) (Star a)].
-Definition example : dsl nil (1 + Star a) (Star a) := 
-dfix (ctrans (peek cid)
-     (ctrans (cplus cid (var a (1+(Star a)) (Star a) pf_in2)) wrap))
-\end{minted}
+% \begin{minted}{Coq}
+% Lemma pf_in2 : ((1 + Star a),(Star a)) \in [(1 + Star a) (Star a)].
+% Definition example : dsl nil (1 + Star a) (Star a) := 
+% dfix (ctrans (peek cid)
+%      (ctrans (cplus cid (var a (1+(Star a)) (Star a) pf_in2)) wrap))
+% \end{minted}
 
 % The type of the interpretation function is seen below
 % \begin{minted}{Coq}

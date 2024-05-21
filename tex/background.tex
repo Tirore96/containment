@@ -263,12 +263,13 @@ $\contains{f : A^* \leq B^*}{\dslcominv{wrap} ; \dslcom{id} + \dslcom{c} \times 
 By the fix-rule with %$S_3$ we get
 we get $\contains{}{\fix~f. \dslcominv{wrap} ; \dslcom{id} + \dslcom{c} \times \dslcom{f};  \dslcom{wrap}}{A^*}{B^*}$ which is just the map function on a list 
 \mycomment{Replace with code font Fritz used}
-\begin{minted}{Coq}
+\mycomment{add coq minted linting later}
+\begin{verbatim}
 Definition map :=  fix f (a : Star) := let v := match fold a with 
                        | inl () => inl ()
                        | inr (a',b) => inr (c a',f b)
                       in fold v
-\end{minted}
+\end{verbatim}
 Which is terminating because of structural recursion. To use this termination argument for the coercion derivation we instantiate $P$ with $S_3$. We have now derived
 \[\infer{\containsP{}{\fix~f. \dslcominv{wrap} ; \dslcom{id} + \dslcom{c} \times \dslcom{f};  \dslcom{wrap}}{A^*}{B^*}{S_3}}{\containsP{}{c}{A}{B}{S_3}}\]
 \end{example}
@@ -413,7 +414,8 @@ We express this termination argument as the instantiation of $P$ with $S_1$. We 
 % from which one can apply the fix-rule with side condition $S_1$ to derive
 % \[\contains{}{\fix~f. \dslcom{d}; (\dslcom{id} + \dslcom{untag} ; \dslcom{assoc} ; (\dslcom{id} \times \dslcom{f})) ;\dslcom{r}}{a^* \times (a^* )^*}{a^*}\] 
 This corresponds to the gallina code below
-\begin{minted}{Coq}
+\mycomment{add coq minted linting later}
+\begin{verbatim}
 Definition decomp a := ...
 Definition recomp a := ...
 Fixpoint grambeyer_denesting (a : (Star a) * (Star (Star a))) : Star a := 
@@ -424,7 +426,7 @@ let res :=
                    | (tt,p) => (tt, f p)
                   end 
 in recomp res
-\end{minted}
+\end{verbatim}
 This yields a linear runtime assuming efficient implementations of $\mathsf{decomp}$ and $\mathsf{recomp}$.
 % This is syntactically checked by $S_1$. And important details is that this side condition is satisfied because $\myo{\Sigma_{a \in \Sigma} \derive{a}{A}} = 0$.
 \end{example}

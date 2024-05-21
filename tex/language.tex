@@ -67,11 +67,12 @@ We now show how to derive an efficient decomposition for $a^* \times (a^*)^*$ wi
 %To be precise, given that a parse tree has leaves \textsf{tt} and \textsf{Event a}, fast decomposition (and recomposition) has a recursion pattern that is a depth-first traversal of the parse tree that halt at the occurence of the first \textsf{Event a} leaf. For example, in the parse tree \textsf{fold (inr ((fold (inr (a,t)))))}, the recursive shall should not be applied to the subterm \textsf{t} in \textsf{(a,t)}. It is important to emphasize that we only are interested in efficient decomposition/recomposition \mycomment{any aspects of recomposition that might differ from decomposition? Yes I think recomposition does not need fixpoints, which could be mentioned, also check code}, since this might be performed multiple times in a Grabmeyer-style coercion derivation. Salomaa proved that $A = \decomp{A}$ and by completeness of the HN system, there must exist decomposition and recomposition coercions, but they are very slow. They take exponential time to compute. In the rest of this section we focus mostly on decomposition as recomposition is analogous.\\\\
 %Haven emphasized the importance of efficient decomposition we now show an efficient decomposition of $a^*\times \dstar a$ into $\leq 1 + a \times (((1 \times a^*) \times \dstar a) + (1 \times a^*) \times \dstar a)$ derivable in HN: Given the input type $a^*\times \dstar a$, our input is parse tree $(t_1,t_2)$ and we should only inspect $t_2$ if the leaves of $t_1$ are all \textsf{tt}. 
 Intuitively a parse tree $\mathsf{t} : a^* \times (a^*)^*$ is a list $\mathsf{l} : \mathsf{list~a}$ paired with a nested list $\mathsf{ll} : \mathsf{list~(list~a)}$. We want to define a function that tries to find the first $\mathsf{a}$ in $(\mathsf{l},\mathsf{ll}) : \mathsf{list~a} \times \mathsf{list~(list~a)}$
-\begin{minted}{Haskell}
+\mycomment{Consider haskell linting, looks nice}
+\begin{verbatim}
 decomp ([],[]) = inl ()
 decomp ([],l::ll') = decomp (l,ll')
 decomp (a::l',ll) = inr (a,(l',ll))
-\end{minted}
+\end{verbatim}
 % We start from the intutive gallina program
 % \begin{minted}{Coq}
 % Fixpoint decomp (aa : (Star a) * (Star (Star a))) 
