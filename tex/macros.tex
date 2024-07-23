@@ -9,6 +9,8 @@
 
 
 \newcommand{\myo}[1]{o(#1)}
+\newcommand{\myoeq}[2]{o(#1) = #2}
+
 \newcommand{\derive}[2]{#1 \backslash #2}
 \newcommand{\regex}{regex}
 \newcommand{\prop}{Prop}
@@ -21,15 +23,22 @@
 
 \newcommand{\dsl}[1]{\textsf{#1}}
 \newcommand{\dsltype}[2]{#1 <nil= #2}
-\newcommand{\match}[2]{#1 \in #2}
+\newcommand{\match}[2]{ #1 \in #2}
+\newcommand{\matchv}[2]{\vdash #1 \in #2}
+
 \newcommand{\mynu}[1]{\mathsf{nu}(#1)}
+\newcommand{\mynueq}[2]{\mynu{#1}=#2}
+
 \newcommand{\true}{\mathsf{true}}
+
 \newcommand{\false}{\mathsf{false}}
 \newcommand{\containsG}[3]{\Gamma \vdash_P \mathsf{#1} : #2 \leq #3 }
 \newcommand{\contains}[4]{#1 \vdash \mathsf{#2} : #3 \leq #4 }
 \newcommand{\fix}{\mathsf{fix}}
 \newcommand{\myfix}[2]{\mathsf{fix}~\mathsf{#1}.#2}
 \newcommand{\oft}[2]{#1 : #2}
+\newcommand{\oftv}[2]{\vdash #1 : #2}
+
 \newcommand{\pair}[2]{(#1,#2)}
 \newcommand{\inj}[1]{\mathsf{in}(#1)}
 \newcommand{\fold}[1]{\mathsf{wrap(#1)}}
@@ -56,6 +65,10 @@
 \newcommand{\type}[1]{\mathcal{T}\interp{#1}}
 %\renewcommand{\type}[1]{#1}
 \newcommand{\flatten}[1]{\mathsf{flatten}(#1)}
+\newcommand{\flattenn}{\mathsf{flatten}}
+\newcommand{\parse}[1]{\mathsf{parse}(#1)}
+\newcommand{\parset}[2]{\mathsf{parse}(#1,#2)}
+
 \newcommand{\pres}[1]{\mathsf{pres}(#1)}
 \newcommand{\irule}[3]{\dslcom{#1}(\textsf{#2})=\textsf{#3}}
 \newcommand{\iruleG}[4]{#1 \vdash \dslcom{#1}(\textsf{#2})=\textsf{#3}}
@@ -95,3 +108,10 @@
 
 
 
+\newcommand{\dawit}[1]{\textcolor{red}{\footnotesize Dawit: #1}}
+
+\newcommand{\coq}[1]{\textsf{#1}}
+
+\newcommand{\ptree}[2]{\vdash #1: #2}
+\newcommand{\bder}[3]{#1_{#2_{#3}}}
+\newcommand{\bdereq}[4]{\bder{#1}{#2}{#3} = #4}

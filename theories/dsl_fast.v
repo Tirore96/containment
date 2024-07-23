@@ -1527,7 +1527,6 @@ match l with
          else 0::(inc_seq n l')
 end.
 Definition to_string (A : Type) (a : A) (aa : seq A) (l : seq nat) := map (nth a aa) l.
-Definition split_l {A : Type} (l : seq A) := map (fun n => (take n l,seq.drop n l)) (iota 0 (size l)).
 Fixpoint seq_first (A B : Type) (P : A -> option B) (l : seq A) := 
 match l with 
 | nil => None 

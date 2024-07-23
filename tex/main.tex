@@ -12,7 +12,7 @@
 \usepackage{graphicx}
 \usepackage{hyperref}
 \usepackage{proof}
-%\usepackage{minted}
+\usepackage{minted}
 \usepackage{xcolor}
 \usepackage{stmaryrd}
 \usepackage{numprint}
@@ -81,17 +81,22 @@ In this paper we prove that efficient coercions can be synthesized efficiently a
  \section{Introduction}\label{sec:introduction}
 \input introduction  
 
-\section{Background}\label{sec:background}
+\section{Regular expression as types}\label{sec:background}
 \input background
 
-\section{Faster Grabmeyer Coercions, A New Coercion Language}\label{sec:language}
-\input language
+\section{Axiomatizing containment}\label{sec:axiomatization}
+\input axiomatization
+
+% \section{Faster Grabmeyer Coercions, A New Coercion Language}\label{sec:language}
+% \input language
+
+\section{Soundness and interpretation} \label{sec:soundness}
+\input soundness
 
 \section{Deciding contaiment}\label{sec:decide}
 \input decide
 
-\section{Soundness and interpretation} \label{sec:soundness}
-\input soundness
+
 
 \section{Benchmarking}
 \input bench
@@ -99,7 +104,7 @@ In this paper we prove that efficient coercions can be synthesized efficiently a
 \section{discussion and related work}\label{sec:discussion}
 \input discussion
 
-
-\bibliography{ref}  
+\bibliographystyle{acm}
+\bibliography{ref}   
 
 \end{document}

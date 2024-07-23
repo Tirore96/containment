@@ -235,6 +235,154 @@ exists (to_pTree (typingP1 _ _ Ht)). rewrite pflatten_to_pTree. apply/eqP=>//.
 Qed.
 
 
+(*Definition split_l {A : Type} (l : seq A) := map (fun n => (take n l,seq.drop n l)) (iota 0 (size l)).*)
+
+Fixpoint split_l {A : Type} (l : seq A) := 
+(nil,l)::
+match l with 
+| nil => nil
+| a::l' => map (fun x => (a::(fst x),snd x)) (split_l l')
+end.
+
+Eval vm_compute in (split_l (0 :: 1 :: 2 ::3::nil)).
+
+
+
+(*Fixpoint split_l {A : Type} (l l' : seq A) := 
+(l,l')::
+match l' with 
+| nil => nil 
+| a::l'' => split_l (l++[::a]) l''
+end.*)
+
+(*Lemma in_split_aux : forall (A : eqType) (l l' l0 l1: seq A), l0 ++ l1 = l ++ l' -> (l0,l1) \in split_l l l'.
+Proof. Admitted.
+
+Lemma in_split : forall (A : eqType) (l l0 l1: seq A), l0 ++ l1 = l -> (l0,l1) \in split_l nil l.
+Proof. Admitted.*)
+
+Lemma in_split : forall (A : eqType) (s1 s2 : seq A), (s1, s2) \in split_l (s1 ++ s2).
+Proof.
+move=> A0. elim. ssa. de s2.
+move=> a l IH. ssa. rewrite inE.  apply/orP. right. apply/mapP. econ. eauto. done.
+Qed.
+
+Lemma pTree_nu : forall (r : @regex A), nu r = true -> {T : pTree r | pflatten T = nil}.
+Proof.
+elim;ssa. exists p_tt. done. 
+destruct (nu r) eqn:Heqn. 
+de X. exists (p_inl x). done.
+ssa. de X0. exists (p_inr x). done.
+apply X in H0. apply X0 in H1. de H0. de H1.
+exists (p_pair x x0). ssa. rewrite e e0. done.
+exists (p_fold (p_inl (p_tt))). done.
+Qed.
+
+
+
+Lemma pTree_der : forall (r : @regex A) a (T : pTree (derive a r)), {T' : pTree r | pflatten T' = a::(pflatten T) }.
+Proof.
+elim.
+move=> a. simpl. ssa. inv T. ssa. inv T.
+move=> s a.
+ssa.  move : T. de (eqVneq s a). subst. 
+exists (p_singl a). ssa. 
+move : T. apply:pTree_case=>//;intros;inv_eq. rewrite -eq_regex //.  
+inv T.
+ssa. 
+move : T. apply:pTree_case=>//;intros;inv_eq. rewrite -eq_regex //=.  
+move: (@X a p).
+case. ssa. exists (p_inl x). done.
+move: (@X0 a p).
+case. ssa. rewrite -eq_regex //=. exists (p_inr x). done.
+
+ssa. 
+move : T. 
+destruct (nu r) eqn:Heqn.
+apply:pTree_case=>//;intros;inv_eq. rewrite -eq_regex //.  simpl.
+move : p. apply:pTree_case=>//;intros;inv_eq. rewrite -eq_regex //=.  
+
+move: (X a p0). case. ssa. exists (p_pair x p1). ssa. rewrite p. done.
+move: (X0 a p). case.
+ssa. apply pTree_nu in Heqn. de Heqn.
+exists (p_pair x0 x). ssa. rewrite -eq_regex. ssa. rewrite e p0. done.
+
+
+apply:pTree_case=>//;intros;inv_eq. rewrite -eq_regex //.  simpl.
+move: (X a p0). case. ssa. exists (p_pair x p1). ssa. rewrite p. done.
+ssa.
+
+move : T. 
+apply:pTree_case=>//;intros;inv_eq. rewrite -eq_regex //.  simpl.
+move: (X a p0). case. ssa. exists ((p_fold (p_inr (p_pair x p1)))). ssa. rewrite p. done.
+Qed.
+
+Lemma pTree_maybe : forall s (r : @regex A), sumor ({T : pTree r | pflatten T == s}) (~ Match s r).
+Proof.
+elim;ssa.
+destruct (nu r) eqn:Heqn.
+apply pTree_nu in Heqn. de Heqn. left. exists x. apply/eqP. done.
+right. intro. move/nuP : H. rewrite Heqn. done.
+de (X (a \ r)). de s. 
+move: (@pTree_der _ _ x).
+case. ssa. left. exists x0. apply/eqP. rewrite (eqP i) in p. done.
+right. intro. apply : n.
+move/deriveP : H. done.
+Defined.
+
+Definition parse_string : forall s (r : @regex A), Match s r -> {T : pTree r | pflatten T == s}.
+Proof.
+intros. move: (pTree_maybe s r). case. done. done.
+Defined.
+
+Example test : 0 == 0.
+Unset Printing Notations.
+rewrite /eq_op. Definition nr := @regex nat. Print Equality.axioms_. 
+ Check (nr : Prop).
+ Check (Datatypes_nat__canonical__eqtype_Equality : Set). eqType.
+ Check ( hasDecEq.eq_op (Equality.class Datatypes_nat__canonical__eqtype_Equality)).
+
+  
+(*suff: {TT : (pTree r * pTree r0) | pflatten (p_pair (fst TT) (snd TT)) == s} + {~ exists s0 s1, (s0,s1) \in split_l s /\ Match s0 r /\ Match s1 r0}.
+  ssa. de X1. de s0. left. exists (p_pair (fst x) (snd x)). ssa.
+  right. intro. apply n. inv H. econ. econ. con. 2:con;eauto. apply in_split.
+  move Heq: (split_l s) => l.
+  elim : l s Heq.
+  ssa. right. intro. ssa.
+  ssa. de s. inv Heq.*)
+  de (X nil). de s.
+  de (X0 nil). de s. left. exists (p_pair x x0). ssa. rewrite (eqP i) (eqP i0). done.
+  right. intro. inv H. de s1. subst. done.
+  right. intro. inv H. de s1. 
+  ssa.
+ssa. rewrite inE in H. norm_eqs. inv H.
+  right. intro. ssa. rewrite inE in H. norm_eqs. inv H.
+  inv Heq. clear Heq.
+  edestruct X1. simpl.
+  left. exists (p_tt,p_tt).
+  
+
+ have : s = nil ++ s. done. move=>->.
+  
+
+
+suff: 
+ {T : pTree (r _;_ r0) | pflatten T == s} + {~ Match s (r _;_ r0)}
+right. intro. inv H.
+
+move Heq: (split_l s) => l.
+  elim : l s Heq.
+  de s.
+  de (X nil). de s.
+  de (X0 nil). de s. left. exists (p_pair x x0). ssa. rewrite (eqP i) (eqP i0). done.
+  right. intro. inv H. de s1. subst. done.
+  right. intro. inv H. de s1.
+  ssa.
+  de X1.
+- de s. left. Print pTree. exists (p_fold (p_inl p_tt)). done.
+  right. intro. inv H.
+
+
 Definition constr_eps_coerce r0 r1 (H : contains_r r0 r1): pTree r0 -> pTree r1 := 
 fun T =>  (proj1_sig (Match_pTree (H _ (pTree_Match (to_typing T))))).
 
