@@ -3,12 +3,17 @@ claim allow more effecient coercions. Effeciency is related to interpretation}
 
 The coercion system is sound if all derivable coercions are language containments:
 \[\contains{}{c}{E}{F} \implies E \subseteq F\]
-This is closely related to the interpretation of a coercion $\interp{\dslcom{c}} : \type{E} \rightarrow \type{F}$ due to a correspondance between language membership $s \in A$ and type inhabitance $\mathsf{t} : \type{A}$
-\begin{lemma}\label{lem:types}
-$\mathsf{t} : \type{A}$ implies $\flatten{\mathsf{t}} \in A$\\
-$s \in A$ implies $\exists \mathsf{t}.~\mathsf{t} : \type{A}$ and $\flatten{\mathsf{t}} = s$
-\end{lemma}
-Lemma (\ref{lem:types}) allows us to prove soundness, by defining a terminating interpretation function from coercion derivations $\contains{}{c}{E}{F}$ to coercions in the function space $\type{E} \rightarrow \type{F}$.
+This is closely related to the interpretation of a coercion
+$\interp{\dslcom{c}} : \type{E} \rightarrow \type{F}$ due to the
+correspondance shown by Lemma \ref{lem:matchparse}.
+
+
+%  between language membership $s \in A$ and type inhabitance $\mathsf{t} : \type{A}$
+% \begin{lemma}\label{lem:types}
+% $\mathsf{t} : \type{A}$ implies $\flatten{\mathsf{t}} \in A$\\
+% $s \in A$ implies $\exists \mathsf{t}.~\mathsf{t} : \type{A}$ and $\flatten{\mathsf{t}} = s$
+% \end{lemma}
+% Lemma (\ref{lem:types}) allows us to prove soundness, by defining a terminating interpretation function from coercion derivations $\contains{}{c}{E}{F}$ to coercions in the function space $\type{E} \rightarrow \type{F}$.
 % \begin{lemma}
 % The existence of an interpretation function $\interp{ \contains{}{c}{E}{F}} : \{f : \type{E} \rightarrow \type{F}~ |~ \pres{f} \}$ implies soundness of the coercion system
 % \end{lemma}

@@ -26,10 +26,20 @@ Simulation coincides with language contaiment
 \begin{proof}
 Add sketch if room
 \end{proof}
-\subsection{Deciding Simulation (naieve)}
-A natural definition of the decision procedure can be derived from an inductive sequent presentation of Simulation 
-\[\infer{\Gamma \vdash A \simind B}{\mynu{A} \implies \mynu{B} &  \Gamma, A \simind B \vdash \derive{a}{A} \simind \derive{a}{B},\forall a \in \Sigma }\]
-We have defined a single-rule axiomatization of containment, $\sim_{ind}$, that contains only Grabmeyer's \textsf{COMP/FIX} rule presented as a containment. This axiomatization is sound but not complete. To see why, let us derive the natural decision procedure that is suggested by $\sim_{ind}$
+\dawit{Removed naieve simulation}
+%\subsection{Deciding Simulation (naieve)}
+% A natural definition of the decision procedure can be derived from an inductive sequent presentation of Simulation 
+% \[\infer{\Gamma \vdash A \simind B}{\mynu{A} \implies \mynu{B} &  \Gamma, A \simind B \vdash \derive{a}{A} \simind \derive{a}{B},\forall a \in \Sigma }\]
+% We have defined a single-rule axiomatization of containment,
+% $\sim_{ind}$, that contains only Grabmeyer's \textsf{COMP/FIX} rule
+% presented as a containment. This axiomatization is sound but not
+% complete. To see why, let us derive the natural decision procedure
+% that is suggested by $\sim_{ind}$
+
+
+
+
+
 % This proof principle can be awkard to use because a post fixed point must be guessed up front. Hur et al. [cite] introduce parameterized coinduction that allows $R$ to be constructed incrementally throughout the proof. They introduce the parameterized greatest fixpoint
 %  \[ G_f(R) \triangleq gfp(\lambda X. F(X \cup R))
 % \]
@@ -72,18 +82,19 @@ We have defined a single-rule axiomatization of containment, $\sim_{ind}$, that 
 % %\[\contains{}{\fix ~f.d;(id + \Sigma_{a \in \Sigma} id\times f_a); e}{A}{B}\]
 % And the continuations $\dslcom{f}_a$ will be derived under the extended assumption: $\contains{(A,B)}{f_a}{\derive{a}{A}}{\derive{a}{B}}$. In general, our context $\Gamma$ in $\containsG{c}{E}{F}$ is finite and we can thus not simulate the infinitary coinduction going on in the simulation relation. We must constrain simulation to an equivalent relation that only does finitary coinduction.\\
 % This gives rise to a finite characterisation of containment as a terminating decision procedure. We present a less effecient version of the decision procedure from Almeida \cite{AMR09}
-\begin{align}
-\simulationb{V}{A}{B} =\begin{cases}
-			\true, & \text{if }(A,B) \in V\\
-                      \bigwedge_{a \in \Sigma}\simulationb{V \cup \{(A,B)\}}{\derive{a}{A}}{\derive{a}{B}}, & \text{otherwise}
-		 \end{cases}
-\end{align}
-So long that we let $(A,B) \in V$ check membership modulus ACI. To show completeness of the coercion system one could do it as:
-\begin{enumerate}
-\item Prove $A \sim B$ implies $\simulationb{\{\}}{A}{B}$, by finitiness of distinct derivatives modulus ACI
-\item Prove $\simulationb{\{\}}{A}{B}$ implies $\exists c.~\contains{}{c}{A}{B}$ by functional induction
-\end{enumerate}
-Doing (1.) in a proof assistant like Coq is challenging because the termination argument must be translated into a property that can be characterized by an inductive judgment, which we can structurally recurse on. The Bragga method [cite] explains in detail how one may separate the termination argument from the definition of a recursive function, by instead of reucrsing on the input $x$, recursing on an inductive proof about $x$, called $\mathbb{D}~x$. We take this approach and it is easier to define $\mathbb{D}~x$ if we move from standard brozowski derivatives to partial derivatives. Normally partial derivatives are defined by mapping a regular expression to a set of regular expression. In our mechanization we use inductive lists instead of sets, and to keep the paper formalization as close as possible to the mechanization, we will present partial derivatives exactly as they have been defined in the code.\\
+% \begin{align}
+% \simulationb{V}{A}{B} =\begin{cases}
+% 			\true, & \text{if }(A,B) \in V\\
+%                       \bigwedge_{a \in \Sigma}\simulationb{V \cup \{(A,B)\}}{\derive{a}{A}}{\derive{a}{B}}, & \text{otherwise}
+% 		 \end{cases}
+% \end{align}
+% So long that we let $(A,B) \in V$ check membership modulus ACI. To show completeness of the coercion system one could do it as:
+% \begin{enumerate}
+% \item Prove $A \sim B$ implies $\simulationb{\{\}}{A}{B}$, by finitiness of distinct derivatives modulus ACI
+% \item Prove $\simulationb{\{\}}{A}{B}$ implies $\exists c.~\contains{}{c}{A}{B}$ by functional induction
+% \end{enumerate}
+\dawit{Text about bragga method commented out}
+% Doing (1.) in a proof assistant like Coq is challenging because the termination argument must be translated into a property that can be characterized by an inductive judgment, which we can structurally recurse on. The Bragga method [cite] explains in detail how one may separate the termination argument from the definition of a recursive function, by instead of reucrsing on the input $x$, recursing on an inductive proof about $x$, called $\mathbb{D}~x$. We take this approach and it is easier to define $\mathbb{D}~x$ if we move from standard brozowski derivatives to partial derivatives. Normally partial derivatives are defined by mapping a regular expression to a set of regular expression. In our mechanization we use inductive lists instead of sets, and to keep the paper formalization as close as possible to the mechanization, we will present partial derivatives exactly as they have been defined in the code.\\
 \mycomment{In vector A, replace tilde with arrow}
 \begin{definition}[Partial derivatives]
   \begin{displaymath}
