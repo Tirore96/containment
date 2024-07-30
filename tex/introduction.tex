@@ -1,0 +1,16 @@
+In this paper we treat regular expressions as, essentially, grammars by interpreting them as types; 
+define coercions as string preserving functions on parse trees (elements of those types); 
+synthesize computationally efficient coercions; and perform such synthesis itself efficiently.  
+This is motivated by the prospect of employing nonstandard compact data structures for strings that are statically known to belong to a particular regular expression.  While being outside the scope of this paper, this application is discussed briefly at the end.  The key contextual aspect from this use case is this: It is insufficient to just know whether or not a regular expression is contained in another regular expression; it is even insufficient to know that the containment has a constructive proof that can be interpreted operationally as a function on parse trees; we also need to make sure that the operational interpretation is computationally efficient.   
+
+All parts are mechanized in Coq.  While achieving a mechanization is a pleasant result in itself, the process of mechanization has helped us develop both theory and pragmatics of efficient coercion synthesis.  In other words, even if somebody is only interested in getting a good tool for coercion synthesis, mechanization as a methodology can guide the development of such tools.
+  
+
+
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "main"
+%%% End:
